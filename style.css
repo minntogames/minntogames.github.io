@@ -1,4 +1,14 @@
 
+.box5 {
+    padding: 0.5em 1em;
+    margin: 2em 0;
+    border: double 5px #4ec4d3;
+}
+.box5 p {
+    margin: 0; 
+    padding: 0;
+}
+
 .box {
   border-left: 5px double skyblue;
   border-right: 5px double skyblue;
