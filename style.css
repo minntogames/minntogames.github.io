@@ -18,3 +18,10 @@
   height: 50px;
   background-color: darkgrey;
 }
+
+.box {
+  border-left: 5px double skyblue;
+  border-right: 5px double skyblue;
+  background-color: #eee;
+  padding: 2em;
+}
