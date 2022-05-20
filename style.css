@@ -28,7 +28,11 @@
   padding-top: 50px;
   overflow: auto;
 }
- 
+
+div.center {
+    text-align: center; 
+}
+
 .footer {
   position: fixed;
   bottom: 0;
