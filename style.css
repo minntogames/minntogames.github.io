@@ -32,6 +32,10 @@
 div.center {
     text-align: center; 
 }
+div{
+  background:lightblue;
+  margin-bottom:10px;
+}
 
 .footer {
   position: fixed;
