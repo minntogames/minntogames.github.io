@@ -16,6 +16,14 @@
   padding: 2em;
 }
 
+.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 50px;
+  background-color: darkgrey;
+}
+
 .ribbon5 {
   display: inline-block;
   position: relative;
@@ -49,14 +57,6 @@
   border-style: solid;
 }
 
-.header {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  height: 50px;
-  background-color: darkgrey;
-}
- 
 .main {
   padding-top: 50px;
   overflow: auto;
