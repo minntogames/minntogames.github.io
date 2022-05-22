@@ -61,7 +61,7 @@
     transform: translate(0);
   }
 }
-
+/*ボックス５*/
 .box5 {
     padding: 0.5em 1em;
     margin: 2em 0;
@@ -71,14 +71,14 @@
     margin: 0; 
     padding: 0;
 }
-
+/*ボックス*/
 .box {
   border-left: 5px double skyblue;
   border-right: 5px double skyblue;
   background-color: #eee;
   padding: 2em;
 }
-
+/*リボン*/
 .ribbon5 {
   display: inline-block;
   position: relative;
