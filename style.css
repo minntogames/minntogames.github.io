@@ -27,7 +27,7 @@
 .main-heading-primary {
   display: block;
   font-size: 4.0rem;
-  font-weight: 400;
+  font-weight: 200;
   letter-spacing: 35px;
   animation: moveInLeft 1s ease-out;
 }
