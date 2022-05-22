@@ -1,3 +1,66 @@
+/*一番上*/
+.main {
+  position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.main-heading {
+  color: #777;
+  text-transform: uppercase;
+}
+
+.main-heading-primary {
+  display: block;
+  font-size: 5.0rem;
+  font-weight: 400;
+  letter-spacing: 35px;
+  animation: moveInLeft 1s ease-out;
+}
+
+.main-heading-secondary {
+  font-family: sans-serif;
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 31px;
+  color: hotpink;
+  animation: moveInRight 1s ease-out;
+}
+
+@keyframes moveInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+  
+  80% {
+    transform: translateX(10px);
+  }
+  
+  100% {
+    opacity: 1;
+    transform: translate(0);
+  }
+}
+
+@keyframes moveInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  
+  80% {
+    transform: translateX(-10px);
+  }
+  
+  100% {
+    opacity: 1;
+    transform: translate(0);
+  }
+}
 
 .box5 {
     padding: 0.5em 1em;
@@ -14,14 +77,6 @@
   border-right: 5px double skyblue;
   background-color: #eee;
   padding: 2em;
-}
-
-.header {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  height: 50px;
-  background-color: darkgrey;
 }
 
 .ribbon5 {
@@ -57,11 +112,6 @@
   border-style: solid;
 }
 
-.main {
-  padding-top: 50px;
-  overflow: auto;
-}
-
 .box2 {
     padding: 0.5em 1em;
     margin: 2em 0;
@@ -90,12 +140,4 @@
   -webkit-transform: translateY(4px);
   transform: translateY(4px);/*下に動く*/
   border-bottom: none;/*線を消す*/
-}
-
-.footer {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 50px;
-  background-color: darkgrey;
 }
