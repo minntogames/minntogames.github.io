@@ -1,0 +1,12 @@
+/*ボックス*/
+.box {
+  border-left: 5px double skyblue;
+  border-right: 5px double skyblue;
+  background-color: #eee;
+  padding: 2em;
+}
+
+h2 {
+  /*線の種類（実線） 太さ 色*/
+  border-bottom: solid 3px black;
+}
