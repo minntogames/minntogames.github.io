@@ -1,0 +1,78 @@
+#commentBox {
+	font-size:95%;
+	position:relative;
+}
+#commentBox #passworddialog {
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	margin: auto;
+	width:350px;
+	height:100px;
+	background-color:#eee;
+	position:fixed;
+	display:none;
+	border-left:solid #aaa 1px;
+	border-top:solid #aaa 1px;
+	border-right:solid #000 1px;
+	border-bottom:solid #000 1px;
+	padding: 1em;
+	text-align: center;
+}
+#commentBox #passworddialog .titlebar {
+	line-height:1.5em;
+	/*background-color:#000;*/
+	/*color:#fff;*/
+	text-align: left;
+}
+#commentBox #passworddialog .passwordbox {
+	padding:.5em;
+}
+#commentBox textarea {
+	/*font-size:.5em;*/
+}
+#commentBox .commentlist {
+	/*background-color:#f0f0f0;*/
+	margin-bottom:.8em;
+	border:solid #aaa 1px;
+	padding:.75em;
+}
+#commentBox .commentlist .id {
+	float:left;
+	margin-right:0;
+	width:0;
+	visibility: hidden;
+}
+#commentBox .commentlist .title {
+	font-weight:bold;
+	float:left;
+}
+#commentBox .commentlist .name {
+	margin-left:0;
+	float:left;
+}
+#commentBox .commentlist .deleteButton {
+	float:right;
+	border:solid #888 1px;
+	text-align:center;
+	text-decoration:none;
+	color:#000;
+	background-color:#fff;
+	font-size:75%;
+	padding: .3em;
+}
+#commentBox .commentlist .date {
+	float:left;
+	margin-left: 1em;
+}
+#commentBox .commentlist .comment {
+	/*margin:5px;*/
+	margin-top:.3em;
+}
+ol.rule{
+	padding-left: 2em;
+}
+#commentform{
+	margin-bottom: 1em;
+}
