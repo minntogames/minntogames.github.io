@@ -139,32 +139,57 @@
     padding: 0;
 }
 
-.footer02 {
- color: #808080;
- background: #e5e5e5;
- text-align: center;
- padding: 30px;
+ 
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
-.footer02 a {
- color: #808080;
- text-decoration: none;
+ 
+#footer01 {
+  position: relative;
+  background: #222;
 }
-.footer02 a:hover {
- text-decoration: underline;
+ 
+#footer01 .logo {
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #111;
 }
-.footer02 .menu {
- margin: 0;
- padding: 0;
- list-style: none;
- display: flex;
- flex-wrap: wrap;
- justify-content: center;
+ 
+#footer01 .logo a {
+  display: inline-block;
 }
-.footer02 .menu li {
- margin: 0;
- padding: 0 20px;
+ 
+#footer01 .logo img {
+  width: 120px;
 }
-.footer02 .copyright {
- margin: 0;
- padding: 20px 0 0 0;
+ 
+#footer01 .nav a {
+  display: block;
+  padding: 0 10px;
+  color: #ccc;
 }
+ 
+@media only screen and (min-width: 641px) {
+  //PCのみ
+  #footer01 .nav {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    padding: 20px 0;
+  }
+  #footer01 .nav a:hover {
+    color: #ca353b;
+  }
+}
+ 
