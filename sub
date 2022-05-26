@@ -1,0 +1,193 @@
+/*一番上*/
+
+.box4{
+    padding: 8px 19px;
+    margin: 2em 0;
+    color: #2c2c2f;
+    background: #cde4ff;
+    border-top: solid 5px #5989cf;
+    border-bottom: solid 5px #5989cf;
+}
+.box4 p {
+    margin: 0; 
+    padding: 0;
+}
+/*あれ*/
+.main {
+  position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.main-heading {
+  color: #777;
+  text-transform: uppercase;
+}
+
+.main-heading-primary {
+  display: block;
+  font-size: 3.0rem;
+  letter-spacing: 35px;
+  animation: moveInLeft 1s ease-out;
+}
+
+.main-heading-secondary {
+  font-family: sans-serif;
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 31px;
+  color: hotpink;
+  animation: moveInRight 1s ease-out;
+}
+
+@keyframes moveInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+  
+  80% {
+    transform: translateX(10px);
+  }
+  
+  100% {
+    opacity: 1;
+    transform: translate(0);
+  }
+}
+
+@keyframes moveInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  
+  80% {
+    transform: translateX(-10px);
+  }
+  
+  100% {
+    opacity: 1;
+    transform: translate(0);
+  }
+}
+/*ボックス５*/
+.box5 {
+    padding: 0.5em 1em;
+    margin: 2em 0;
+    border: double 5px #4ec4d3;
+}
+.box5 p {
+    margin: 0; 
+    padding: 0;
+}
+/*ボックス*/
+.box {
+  border-left: 5px double skyblue;
+  border-right: 5px double skyblue;
+  background-color: #eee;
+  padding: 2em;
+}
+/*リボン*/
+.ribbon5 {
+  display: inline-block;
+  position: relative;
+  height: 60px;
+  line-height: 60px;
+  text-align: center;
+  padding: 7px 0;
+  font-size: 18px;/*文字サイズ*/
+  background: mediumblue;/*背景色*/
+  color: #FFF;/*文字色*/
+  box-sizing: border-box;
+}
+.ribbon5 h3 {
+  margin: 0;
+  padding: 0 30px 0 15px;
+  border-top: dashed 1px #FFF;
+  border-bottom: dashed 1px #FFF;
+  line-height: 46px;
+}
+
+.ribbon5:after {
+  position: absolute;
+  content: '';
+  z-index: 1;
+  top: 0;
+  right: 0;
+  width: 0px;
+  height: 0px;
+  border-width: 30px 15px 30px 0px;
+  border-color: transparent #fff transparent transparent;
+  border-style: solid;
+}
+
+.box2 {
+    padding: 0.5em 1em;
+    margin: 2em 0;
+    font-weight: bold;
+    color: #6091d3;/*文字色*/
+    background: #FFF;
+    border: solid 3px #6091d3;/*線*/
+    border-radius: 10px;/*角の丸み*/
+}
+.box2 p {
+    margin: 0; 
+    padding: 0;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+ 
+#footer01 {
+  position: relative;
+  background: #222;
+}
+ 
+#footer01 .logo {
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #111;
+}
+ 
+#footer01 .logo a {
+  display: inline-block;
+}
+ 
+#footer01 .logo img {
+  width: 120px;
+}
+ 
+#footer01 .nav a {
+  display: block;
+  padding: 0 10px;
+  color: #ccc;
+}
+ 
+@media only screen and (min-width: 641px) {
+  //PCのみ
+  #footer01 .nav {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    padding: 20px 0;
+  }
+  #footer01 .nav a:hover {
+    color: #ca353b;
+  }
+}
