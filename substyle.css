@@ -146,6 +146,10 @@ ul {
   padding: 0;
 }
  
+.li {
+    float: left;
+}
+
 #footer01 {
   position: relative;
   background: #222;
