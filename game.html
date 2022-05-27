@@ -39,13 +39,13 @@ var fjsRDunjonWorldTemplate = function() {
 	}
 
 	// 主人公ステータス初期値
-	this.START_MHP = 9999;
-	this.START_STR = 99;
-	this.START_TOUGH = 99;
+	this.START_MHP = 20;
+	this.START_STR = 8;
+	this.START_TOUGH = 8;
 
 	// 主人公初期データ
 	this.charTable[0].type = 1;
-	this.charTable[0].chr = '⚫';
+	this.charTable[0].chr = '＠';
 	this.charTable[0].name = "主人公";
 	this.charTable[0].hp = this.START_MHP;
 	this.charTable[0].mhp = this.START_MHP;
@@ -63,7 +63,7 @@ var fjsRDunjonWorldTemplate = function() {
 
 	// スライム
 	this.charTable[1].type = 2;
-	this.charTable[1].chr = '🔵';
+	this.charTable[1].chr = 'ｓ';
 	this.charTable[1].name = "スライム";
 	this.charTable[1].hp = 10;
 	this.charTable[1].mhp = 10;
@@ -81,7 +81,7 @@ var fjsRDunjonWorldTemplate = function() {
 
 	// コウモリ
 	this.charTable[2].type = 3;
-	this.charTable[2].chr = '🦇';
+	this.charTable[2].chr = 'ｂ';
 	this.charTable[2].name = "コウモリ";
 	this.charTable[2].hp = 12;
 	this.charTable[2].mhp = 12;
@@ -117,7 +117,7 @@ var fjsRDunjonWorldTemplate = function() {
 
 	// 大トカゲ
 	this.charTable[4].type = 5;
-	this.charTable[4].chr = '🐊';
+	this.charTable[4].chr = 'ｒ';
 	this.charTable[4].name = "大トカゲ";
 	this.charTable[4].hp = 25;
 	this.charTable[4].mhp = 25;
@@ -135,7 +135,7 @@ var fjsRDunjonWorldTemplate = function() {
 
 	// オオカミ
 	this.charTable[5].type = 6;
-	this.charTable[5].chr = '🐺';
+	this.charTable[5].chr = 'ｗ';
 	this.charTable[5].name = "オオカミ";
 	this.charTable[5].hp = 32;
 	this.charTable[5].mhp = 32;
@@ -209,8 +209,8 @@ var fjsRDunjonWorldTemplate = function() {
 	this.charTable[9].type = 10;
 	this.charTable[9].chr = 'Ｔ';
 	this.charTable[9].name = "トラ";
-	this.charTable[9].hp = 1000;
-	this.charTable[9].mhp = 1000;
+	this.charTable[9].hp = 87;
+	this.charTable[9].mhp = 87;
 	this.charTable[9].str = 50;
 	this.charTable[9].tough = 45;
 	this.charTable[9].at = 50;
@@ -227,14 +227,14 @@ var fjsRDunjonWorldTemplate = function() {
 	this.charTable[10].type = 11;
 	this.charTable[10].chr = 'Ｄ';
 	this.charTable[10].name = "紅竜";
-	this.charTable[10].hp = 9999;
-	this.charTable[10].mhp = 9999;
+	this.charTable[10].hp = 180;
+	this.charTable[10].mhp = 180;
 	this.charTable[10].str = 120;
 	this.charTable[10].tough = 120;
 	this.charTable[10].at = 120;
 	this.charTable[10].def = 120;
 	this.charTable[10].exp = 0;
-	this.charTable[10].mexp = 10000;
+	this.charTable[10].mexp = 255;
 	this.charTable[10].actionPoint = 0;
 	this.charTable[10].actionCharge = 4;
 	this.charTable[10].actionAttack = 100;
