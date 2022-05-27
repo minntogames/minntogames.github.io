@@ -1,0 +1,1302 @@
+<html>
+<script type="text/javascript">
+/*
+	ダンジョンRPG
+
+	2010-07-03～2010-12-19 創作プログラミングの街
+
+	ゲーム画面表示用のHTMLタグやスタイルシート設定などすべてコードに含まれているので、scriptタグで貼り付けるだけで実行できます
+*/
+
+// ゲーム管理クラス
+var fjsRDunjonWorldTemplate = function() {
+
+	var i;
+
+	// 現在の階層
+	this.level = 0;
+
+	// 現在階マップデータ
+	this.map = new Array();
+
+	// キャラクタ情報配列作成
+	this.charList = new Array();
+
+	// キャラクタ（主人公と敵）テンプレート
+	this.charTable = new Array();
+
+	// キャラクタテンプレート作成
+	for (i = 0;i < 11;i++) {
+		this.charTable.push(new fjsRDunjonChr());
+	}
+
+	// 主人公ステータス初期値
+	this.START_MHP = 20;
+	this.START_STR = 8;
+	this.START_TOUGH = 8;
+
+	// 主人公初期データ
+	this.charTable[0].type = 1;
+	this.charTable[0].chr = '＠';
+	this.charTable[0].name = "主人公";
+	this.charTable[0].hp = this.START_MHP;
+	this.charTable[0].mhp = this.START_MHP;
+	this.charTable[0].str = this.START_STR;
+	this.charTable[0].tough = this.START_TOUGH;
+	this.charTable[0].at = 0;
+	this.charTable[0].def = 0;
+	this.charTable[0].exp = 0;
+	this.charTable[0].mexp = 0;
+	this.charTable[0].actionPoint = 0;
+	this.charTable[0].actionCharge = 4;
+	this.charTable[0].actionAttack = 0;
+	this.charTable[0].actionFollow = 0;
+	this.charTable[0].actionMove = 0;
+
+	// スライム
+	this.charTable[1].type = 2;
+	this.charTable[1].chr = 'ｓ';
+	this.charTable[1].name = "スライム";
+	this.charTable[1].hp = 10;
+	this.charTable[1].mhp = 10;
+	this.charTable[1].str = 3;
+	this.charTable[1].at = 3;
+	this.charTable[1].tough = 4;
+	this.charTable[1].def = 4;
+	this.charTable[1].exp = 0;
+	this.charTable[1].mexp = 8;
+	this.charTable[1].actionPoint = 0;
+	this.charTable[1].actionCharge = 5;
+	this.charTable[1].actionAttack = 50;
+	this.charTable[1].actionFollow = 10;
+	this.charTable[1].actionMove = 60;
+
+	// コウモリ
+	this.charTable[2].type = 3;
+	this.charTable[2].chr = 'ｂ';
+	this.charTable[2].name = "コウモリ";
+	this.charTable[2].hp = 12;
+	this.charTable[2].mhp = 12;
+	this.charTable[2].str = 5;
+	this.charTable[2].tough = 8;
+	this.charTable[2].at = 5;
+	this.charTable[2].def = 8;
+	this.charTable[2].exp = 0;
+	this.charTable[2].mexp = 16;
+	this.charTable[2].actionPoint = 0;
+	this.charTable[2].actionCharge = 4;
+	this.charTable[2].actionAttack = 80;
+	this.charTable[2].actionFollow = 80;
+	this.charTable[2].actionMove = 60;
+
+	// ミミズ
+	this.charTable[3].type = 4;
+	this.charTable[3].chr = 'ｍ';
+	this.charTable[3].name = "ミミズ";
+	this.charTable[3].hp = 20;
+	this.charTable[3].mhp = 20;
+	this.charTable[3].str = 10;
+	this.charTable[3].tough = 7;
+	this.charTable[3].at = 10;
+	this.charTable[3].def = 7;
+	this.charTable[3].exp = 0;
+	this.charTable[3].mexp = 25;
+	this.charTable[3].actionPoint = 0;
+	this.charTable[3].actionCharge = 5;
+	this.charTable[3].actionAttack = 60;
+	this.charTable[3].actionFollow = 30;
+	this.charTable[3].actionMove = 50;
+
+	// 大トカゲ
+	this.charTable[4].type = 5;
+	this.charTable[4].chr = 'ｒ';
+	this.charTable[4].name = "大トカゲ";
+	this.charTable[4].hp = 25;
+	this.charTable[4].mhp = 25;
+	this.charTable[4].str = 14;
+	this.charTable[4].tough = 15;
+	this.charTable[4].at = 14;
+	this.charTable[4].def = 15;
+	this.charTable[4].exp = 0;
+	this.charTable[4].mexp = 35;
+	this.charTable[4].actionPoint = 0;
+	this.charTable[4].actionCharge = 5;
+	this.charTable[4].actionAttack = 70;
+	this.charTable[4].actionFollow = 40;
+	this.charTable[4].actionMove = 30;
+
+	// オオカミ
+	this.charTable[5].type = 6;
+	this.charTable[5].chr = 'ｗ';
+	this.charTable[5].name = "オオカミ";
+	this.charTable[5].hp = 32;
+	this.charTable[5].mhp = 32;
+	this.charTable[5].str = 18;
+	this.charTable[5].tough = 20;
+	this.charTable[5].at = 18;
+	this.charTable[5].def = 20;
+	this.charTable[5].exp = 0;
+	this.charTable[5].mexp = 50;
+	this.charTable[5].actionPoint = 0;
+	this.charTable[5].actionCharge = 4;
+	this.charTable[5].actionAttack = 90;
+	this.charTable[5].actionFollow = 80;
+	this.charTable[5].actionMove = 40;
+
+	// オーク
+	this.charTable[6].type = 7;
+	this.charTable[6].chr = 'Ｏ';
+	this.charTable[6].name = "オーク";
+	this.charTable[6].hp = 42;
+	this.charTable[6].mhp = 42;
+	this.charTable[6].str = 22;
+	this.charTable[6].tough = 22;
+	this.charTable[6].at = 22;
+	this.charTable[6].def = 22;
+	this.charTable[6].exp = 0;
+	this.charTable[6].mexp = 65;
+	this.charTable[6].actionPoint = 0;
+	this.charTable[6].actionCharge = 4;
+	this.charTable[6].actionAttack = 80;
+	this.charTable[6].actionFollow = 70;
+	this.charTable[6].actionMove = 50;
+
+	// グール
+	this.charTable[7].type = 8;
+	this.charTable[7].chr = 'Ｇ';
+	this.charTable[7].name = "グール";
+	this.charTable[7].hp = 52;
+	this.charTable[7].mhp = 52;
+	this.charTable[7].str = 26;
+	this.charTable[7].tough = 20;
+	this.charTable[7].at = 26;
+	this.charTable[7].def = 20;
+	this.charTable[7].exp = 0;
+	this.charTable[7].mexp = 85;
+	this.charTable[7].actionPoint = 0;
+	this.charTable[7].actionCharge = 4;
+	this.charTable[7].actionAttack = 80;
+	this.charTable[7].actionFollow = 80;
+	this.charTable[7].actionMove = 40;
+
+	// 洞窟熊
+	this.charTable[8].type = 9;
+	this.charTable[8].chr = 'B';
+	this.charTable[8].name = "洞窟熊";
+	this.charTable[8].hp = 65;
+	this.charTable[8].mhp = 65;
+	this.charTable[8].str = 36;
+	this.charTable[8].tough = 30;
+	this.charTable[8].at = 36;
+	this.charTable[8].def = 30;
+	this.charTable[8].exp = 0;
+	this.charTable[8].mexp = 120;
+	this.charTable[8].actionPoint = 0;
+	this.charTable[8].actionCharge = 5;
+	this.charTable[8].actionAttack = 70;
+	this.charTable[8].actionFollow = 50;
+	this.charTable[8].actionMove = 40;
+
+	// トラ
+	this.charTable[9].type = 10;
+	this.charTable[9].chr = 'Ｔ';
+	this.charTable[9].name = "トラ";
+	this.charTable[9].hp = 87;
+	this.charTable[9].mhp = 87;
+	this.charTable[9].str = 50;
+	this.charTable[9].tough = 45;
+	this.charTable[9].at = 50;
+	this.charTable[9].def = 45;
+	this.charTable[9].exp = 0;
+	this.charTable[9].mexp = 160;
+	this.charTable[9].actionPoint = 0;
+	this.charTable[9].actionCharge = 3;
+	this.charTable[9].actionAttack = 80;
+	this.charTable[9].actionFollow = 50;
+	this.charTable[9].actionMove = 70;
+
+	// ドラゴン
+	this.charTable[10].type = 11;
+	this.charTable[10].chr = 'Ｄ';
+	this.charTable[10].name = "紅竜";
+	this.charTable[10].hp = 180;
+	this.charTable[10].mhp = 180;
+	this.charTable[10].str = 120;
+	this.charTable[10].tough = 120;
+	this.charTable[10].at = 120;
+	this.charTable[10].def = 120;
+	this.charTable[10].exp = 0;
+	this.charTable[10].mexp = 255;
+	this.charTable[10].actionPoint = 0;
+	this.charTable[10].actionCharge = 4;
+	this.charTable[10].actionAttack = 100;
+	this.charTable[10].actionFollow = 0;
+	this.charTable[10].actionMove = 0;
+
+	// マップサイズ設定
+	this.MAP_COLS = 15;
+	this.MAP_ROWS = 15;
+
+	// 穴の位置設定
+	this.MAP_HOLE_X = Math.floor(this.MAP_COLS / 2);
+	this.MAP_HOLE_Y = Math.floor(this.MAP_ROWS / 2);
+
+	// スタート位置設定
+	this.START_X = Math.floor(this.MAP_COLS / 2);
+	this.START_Y = Math.floor(this.MAP_ROWS / 2) + 2;
+
+	// 処理カウンタ
+	this.levelTick = 0;
+
+	// 敵出現カウンタ
+	this.enemyPop = 50;
+
+	// ゲーム初期化
+	this.reset = function() {
+
+		var i;
+
+		// マップ配列初期化
+		for (i = 0;i < this.MAP_ROWS;i++) {
+			this.map[i] = new Array();
+		}
+
+		// 主人公作成
+		this.charList[0] = new fjsRDunjonChr();
+		this.charList[0].assign(this.charTable[0]);
+
+		this.charList[0].mhp = fjsRDunjonWorld.START_MHP + Math.floor(Math.sqrt(fjsRDunjonWorld.charList[0].exp * 3));
+		this.charList[0].str = fjsRDunjonWorld.START_STR + Math.floor(Math.sqrt(fjsRDunjonWorld.charList[0].exp * 1.8));
+		this.charList[0].tough = fjsRDunjonWorld.START_TOUGH + Math.floor(Math.sqrt(fjsRDunjonWorld.charList[0].exp * 1.8));
+
+		this.enemyPop = 50;
+		this.levelTick = 0;
+
+		this.charList[0].updateStatus();
+
+	}
+
+	// ゲーム中の更新処理
+	this.levelProcess = function() {
+
+		// 15カウント毎にHP回復
+		if ((this.levelTick % 15) == 14 && this.charList[0].hp < this.charList[0].mhp) {
+
+			// 主人公の最大HPに応じて回復量を決定
+			this.charList[0].hp += 1 + Math.floor(this.charList[0].mhp / 30);
+
+			// 回復の結果主人公のHPが最大HPを超えていたらHPを最大HPに
+			if (this.charList[0].hp > this.charList[0].mhp) {
+				this.charList[0].hp = this.charList[0].mhp;
+			}
+
+		}
+
+		// 敵が8匹以下なら一定期間毎に敵出現
+		if ((this.levelTick % this.enemyPop) == 0 && this.charList.length < 8) {
+
+			// 敵の位置を乱数で決定
+			x = 1 + Math.floor(Math.random() * this.MAP_COLS - 2);
+			y = 1 + Math.floor(Math.random() * this.MAP_ROWS - 2);
+
+			// 配置可能な位置なら敵を配置
+			if (this.canMove(x, y) && (x != this.MAP_HOLE_X && y != this.MAP_HOLE_Y)) {
+
+				// 敵オブジェクトを生成
+				var obj = new fjsRDunjonChr();
+
+				// 現在の階層に応じて敵の種類を決定しパラメータを初期化
+				obj.assign(this.charTable[this.level + 1 + Math.floor(Math.random() * 2)]);
+				obj.x = x;
+				obj.y = y;
+
+				// 生成した敵をキャラクタリストに追加
+				this.charList.push(obj);
+
+			}
+
+		}
+
+		this.levelTick++;
+
+	}
+
+	// 指定位置が穴か判定
+	this.isHole = function(x, y) {
+
+		if (x < 0 || x >= this.MAP_COLS || y < 0 || y >= this.MAP_ROWS) {
+			return false;
+		}
+
+		if (this.map[x][y] == 1) {
+			return true;
+		}
+
+		return false;
+
+	}
+
+	// 指定位置に進入可能か判定
+	this.canMove = function(x, y) {
+
+		var i;
+
+		if (x < 0 || x >= this.MAP_COLS || y < 0 || y >= this.MAP_ROWS) {
+			return false;
+		}
+
+		if (this.map[x][y] != 0) {
+			return false;
+		}
+
+		for (i = 0;i < this.charList.length;i++) {
+			if (this.charList[i].hp > 0 && x == this.charList[i].x && y == this.charList[i].y) {
+				return false;
+			}
+		}
+
+		return true;
+
+	}
+
+	this.nextLevel = function() {
+		this.newLevel(this.level + 1);
+	}
+
+	// 階の移動処理（マップデータ作成と敵の初期配置）
+	this.newLevel = function(level) {
+
+		var i;
+		var j;
+		var elm;
+
+		// マップパーツ配置
+		for (i = 0;i < this.MAP_ROWS;i++) {
+			for (j = 0;j < this.MAP_COLS;j++) {
+				if (i == 0 || i == this.MAP_ROWS - 1 || j == 0 || j == this.MAP_COLS - 1) {
+					this.map[j][i] = 4;
+				} else {
+					if (level != 7 && i == this.MAP_HOLE_Y && j == this.MAP_HOLE_X) {
+						this.map[j][i] = 1;
+					} else {
+						this.map[j][i] = 0;
+					}
+				}
+			}
+		}
+
+		// 穴の周りに壁を配置
+		if (level != 7) {
+
+			for (i = this.MAP_HOLE_Y - 1;i < this.MAP_HOLE_Y + 2;i++) {
+				for (j = this.MAP_HOLE_X - 1;j < this.MAP_HOLE_X + 2;j++) {
+					if (j != this.MAP_HOLE_X || i == this.MAP_HOLE_Y + 1) {
+						this.map[j][i] = 4;
+					}
+				}
+			}
+
+		}
+
+		// ゲーム画面の各要素を表示
+		for (i = 0;i < fjsRDunjonWorld.MAP_ROWS;i++) {
+			for (j = 0;j < fjsRDunjonWorld.MAP_COLS;j++) {
+
+				elm = document.getElementById('fjsRDunjonCell' + Number(j).toString(16) + Number(i).toString(16));
+
+				// マップ要素描画
+				switch (fjsRDunjonWorld.map[j][i]) {
+
+				case 0:
+
+					elm.style.background = fjsRDunjonCellBG;
+
+					break;
+
+				case 2:
+
+					elm.style.background = '#000000';
+
+					break;
+
+				case 4:
+
+					elm.style.background = '#e0e0ff';
+
+					break;
+
+				}
+
+				elm.innerHTML = '';
+
+			}
+		}
+
+		// 階数表示
+		elm = document.getElementById('fjsRDunjonLevelLabel');
+		elm.innerHTML = '地下' + (level + 1) + '階';
+
+		this.charList[1] = new fjsRDunjonChr();
+		this.charList[1].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[1].x = 1;
+		this.charList[1].y = Math.floor(this.MAP_ROWS / 2);
+
+		this.charList[2] = new fjsRDunjonChr();
+		this.charList[2].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[2].x = this.MAP_COLS - 2;
+		this.charList[2].y = Math.floor(this.MAP_ROWS / 2);
+
+		this.charList[3] = new fjsRDunjonChr();
+		this.charList[3].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[3].x = Math.floor(this.MAP_COLS / 2);
+		this.charList[3].y = 1;
+
+		this.charList[4] = new fjsRDunjonChr();
+		this.charList[4].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[4].x = Math.floor(this.MAP_COLS / 2);
+		this.charList[4].y = this.MAP_ROWS - 2;
+
+		this.charList[5] = new fjsRDunjonChr();
+		this.charList[5].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[5].x = 1;
+		this.charList[5].y = 1;
+
+		this.charList[6] = new fjsRDunjonChr();
+		this.charList[6].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[6].x = this.MAP_COLS - 2;
+		this.charList[6].y = 1;
+
+		this.charList[7] = new fjsRDunjonChr();
+		this.charList[7].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[7].x = this.MAP_COLS - 2;
+		this.charList[7].y = this.MAP_ROWS - 2;
+
+		this.charList[8] = new fjsRDunjonChr();
+		this.charList[8].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
+		this.charList[8].x = 1;
+		this.charList[8].y = this.MAP_ROWS - 2;
+
+		// 地下8階ならドラゴン追加
+		if (level == 7) {
+
+			this.charList[9] = new fjsRDunjonChr();
+			this.charList[9].assign(this.charTable[10]);
+			this.charList[9].x = this.MAP_HOLE_X;
+			this.charList[9].y = this.MAP_HOLE_Y;
+
+			// 敵の湧出周期を二倍に
+			this.enemyPop = 100;
+
+		}
+
+		// 主人公の初期位置設定
+		this.charList[0].x = this.START_X;
+		this.charList[0].y = this.START_Y;
+
+		this.level = level;
+		this.levelTick = 0;
+
+	}
+
+	// キャラクタ間の距離を取得
+	this.distance = function(chr1, chr2) {
+
+		return Math.abs(chr1.x - chr2.x) + Math.abs(chr1.y - chr2.y);
+
+	}
+
+	// 攻撃処理
+	this.attack = function(atk, def) {
+
+		// ダメージ基本値計算
+		var dmg = Math.floor(Math.sqrt(atk.at * (atk.at / def.def)));
+
+		// ダメージに乱数を加える
+		dmg += Math.floor(Math.random() * Math.sqrt(atk.hp / 4));
+
+		if (dmg < 1) {
+			return;
+		}
+
+		def.attacked(dmg);
+
+		// 攻撃対象が死亡
+		if (def.hp <= 0) {
+
+			// 主人公
+			if (def == this.charList[0]) {
+
+				fjsRDunjonState = fjsRDunjonSTATE_OVER;
+
+				fjsGameMessage = "ゲームオーバー";
+
+			} else {
+
+				atk.exp += def.mexp;
+
+				if (atk.exp > 9999) {
+					atk.exp = 9999;
+				}
+
+				// 経験値に応じてステータス設定
+				this.charList[0].mhp = fjsRDunjonWorld.START_MHP + Math.floor(Math.sqrt(fjsRDunjonWorld.charList[0].exp * 3));
+				this.charList[0].str = fjsRDunjonWorld.START_STR + Math.floor(Math.sqrt(fjsRDunjonWorld.charList[0].exp * 1.8));
+				this.charList[0].tough = fjsRDunjonWorld.START_STR + Math.floor(Math.sqrt(fjsRDunjonWorld.charList[0].exp * 1.8));
+
+				this.charList[0].updateStatus();
+
+				// ドラゴンを倒したらクリア
+				if (def.type == 11) {
+
+					fjsRDunjonState = fjsRDunjonSTATE_CLEAR;
+
+					fjsGameMessage = "クリア";
+
+				}
+
+				// キャラクタ配列内倒した敵の位置に最後尾の敵をコピー
+				for (i = 1;i < this.charList.length - 1;i++) {
+					if (this.charList[i] == def) {
+
+						this.charList[i] = this.charList[this.charList.length - 1];
+
+						break;
+
+					}
+				}
+
+				// 倒した敵を削除
+				delete def;
+
+				// キャラクタ配列の最後尾を削除
+				this.charList.pop();
+
+			}
+
+		}
+
+	}
+
+}
+
+// キャラクタクラス
+var fjsRDunjonChr = function() {
+
+	this.type = 0;
+	this.chr = '';
+
+	this.x = 0;
+	this.y = 0;
+
+	this.hp = 0;
+
+	this.mhp = 0;
+	this.str = 0;
+	this.def = 0;
+
+	this.damage = 0;
+
+	// パラメータをコピー
+	this.assign = function(arg) {
+
+		this.type = arg.type;
+		this.chr = arg.chr;
+		this.name = arg.name;
+
+		this.x = arg.x;
+		this.y = arg.y;
+
+		this.hp = arg.hp;
+		this.mhp = arg.mhp;
+		this.str = arg.str;
+		this.tough = arg.tough;
+		this.at = arg.at;
+		this.def = arg.def;
+		this.exp = arg.exp;
+		this.mexp = arg.mexp;
+
+		this.damage = arg.damage;
+
+		this.actionPoint = arg.actionPoint;
+		this.actionCharge = arg.actionCharge;
+
+		this.actionAttack = arg.actionAttack;
+		this.actionFollow = arg.actionFollow;
+		this.actionMove = arg.actionMove;
+
+	}
+
+	this.updateStatus = function() {
+
+		this.at = this.str;
+		this.def = this.tough;
+
+	}
+
+	// 攻撃されたときの処理
+	this.attacked = function(dmg) {
+
+		this.hp -= dmg;
+
+		if (this.hp < 0) {
+			this.hp = 0;
+		}
+
+		// ダメージフラグ設定
+		this.damage = dmg;
+
+	}
+
+	// キャラクタ（敵）の行動処理
+	this.action = function() {
+
+		// 行動可能カウンタが0でなければ行動しない
+		if (this.actionPoint > 0) {
+			return;
+		}
+
+		var ex = this.x;
+		var ey = this.y;
+
+		// 行動可能カウンタを再設定
+		this.actionPoint = this.actionCharge;
+
+		// 主人公に隣接していたら行動確率に応じて攻撃
+		if (fjsRDunjonWorld.distance(this, fjsRDunjonWorld.charList[0]) == 1 && (Math.random() * 100) < this.actionAttack) {
+
+			fjsRDunjonWorld.attack(this, fjsRDunjonWorld.charList[0]);
+
+			return;
+
+		}
+
+		// 追跡
+		if (fjsRDunjonWorld.distance(this, fjsRDunjonWorld.charList[0]) > 1 && (Math.random() * 100) < this.actionFollow) {
+
+			if (this.x != fjsRDunjonWorld.charList[0].x && this.y != fjsRDunjonWorld.charList[0].y) {
+
+				if (Math.random() < 0.5) {
+
+					if (this.x < fjsRDunjonWorld.charList[0].x) {
+						ex++;
+					} else {
+						ex--;
+					}
+
+				} else {
+
+					if (this.y < fjsRDunjonWorld.charList[0].y) {
+						ey++;
+					} else {
+						ey--;
+					}
+
+				}
+
+				if (fjsRDunjonWorld.canMove(ex, ey)) {
+
+					this.x = ex;
+					this.y = ey;
+
+
+				}
+
+				return;
+
+			} else {
+
+				if (this.x != fjsRDunjonWorld.charList[0].x) {
+
+					if (this.x < fjsRDunjonWorld.charList[0].x) {
+						ex++;
+					} else {
+						ex--;
+					}
+
+				}
+
+				if (this.y != fjsRDunjonWorld.charList[0].y) {
+
+					if (this.y < fjsRDunjonWorld.charList[0].y) {
+						ey++;
+					} else {
+						ey--;
+					}
+
+				}
+
+				if (fjsRDunjonWorld.canMove(ex, ey)) {
+
+					this.x = ex;
+					this.y = ey;
+
+
+				}
+
+				return;
+
+			}
+
+		}
+
+		if (Math.random() * 100 < this.actionMove) {
+
+			if (Math.random() < 0.5) {
+
+				ex = this.x + Math.floor(Math.random() * 3) - 1;
+				ey = this.y;
+
+			} else {
+
+				ex = this.x;
+				ey = this.y + Math.floor(Math.random() * 3) - 1;
+
+			}
+
+			if (fjsRDunjonWorld.canMove(ex, ey)) {
+
+				this.x = ex;
+				this.y = ey;
+
+			}
+
+		}
+
+	}
+
+}
+
+var fjsRDunjonWorld = new fjsRDunjonWorldTemplate();
+
+var fjsRDunjonSTATE_START = 0;
+var fjsRDunjonSTATE_GAME = 1;
+var fjsRDunjonSTATE_CLEAR = 2;
+var fjsRDunjonSTATE_OVER = 3;
+
+var fjsRDunjonState = fjsRDunjonSTATE_START;
+
+// 方向キー状態
+var fjsRDunjonStick = 0;
+
+var fjsRDunjonTimerID = 0;
+
+var fjsRDunjonCellBG = '#808080';
+var fjsRDunjonDamageCellBG = '#cc9999';
+
+var fjsRDunjonAttackingEnemy = null;
+var fjsRDunjonCount = 0;
+var fjsOnPause = false;
+
+var fjsGameMessage = null;
+
+fjsRDunjonInit();
+
+function fjsRDunjonInit() {
+
+	// 表示用HTML
+	var html = '';
+	var i;
+
+	html = html + '<div id="fjsRDunjonHolder" style="padding: 0; margin-top: 0; margin-bottom: 0; margin-left: auto; margin-right: auto; width: 225px; background: #66aacc;" onKeyDown="fjsRDunjonKeyDown(event)" onKeyUp="fjsRDunjonKeyUp(event)" onClick="fjsRDunjonSetFocus()">' + "\n";
+
+	html = html + '<div id="fjsRDunjonLevelLabel" style="color: #000000; padding: 0; margin: 0; background: #cccccc; font-size: 12px; font-family: monospace; text-align: center;">地下1階</div>';
+	html = html + '<div id="fjsRDunjonStatusHP" style="color: #ffffff; padding: 0; margin: 0; background: #000000; font-size: 12px; font-family: monospace; text-align: left;"><table style="padding: 0; margin: 0;"><tr style="padding: 0; margin: 0;"><td style="padding: 0; margin: 0; color: #ffffff; font-size: 14px; font-family: monospace;">HP</td><td style="padding: 0; margin: 0; text-align: left;"><div style="padding: 0; margin: 0; text-align: left;"><div id="fjsRDunjonStatusMaxHPBar" style="padding: 0; margin: 0; height: 12px; background: #cc0066;"><div id="fjsRDunjonStatusHPBar" style="padding: 0; margin: 0; height: 12px; background: #00cc00;"></div></div></div></td></tr></table></div>';
+
+	html = html + '<div id="fjsRDunjonEnemyHP" style="color: #ffffff; padding: 0; margin: 0; background: #000000; text-align: left;"><table style="padding: 0; margin: 0;"><tr style="padding: 0; margin: 0;"><td id="fjsRDunjonEnemyName" style="padding: 0; margin: 0; color: #ffffff; font-size: 14px; font-family: monospace; text-align: left;">敵</td><td style="padding: 0; margin: 0; text-align: left;"><div style="padding: 0; margin: 0; text-align: left;"><div id="fjsRDunjonEnemyMaxHPBar" style="padding: 0; margin: 0; height: 12px; background: #cc0066;"><div id="fjsRDunjonEnemyHPBar" style="padding: 0; margin: 0; height: 12px; background: #00cc00;"></div></div></div></td></tr></table></div>';
+
+	html = html + '<div id="fjsRDunjonStatusArea" style="color: #000000; padding: 0; margin: 0; background: #99cc99; font-size: 12px; font-family: monospace; text-align: left;">経験値</div>';
+
+	html = html + '<div style="color: #ffffe0; background: #ffffe0; text-align: left;"><input type="text" id="fjsRDunjonFocusButton" style="border: none; width: 1px; height: 1px;"></div>' + "\n";
+
+	html = html + '<table style="padding: 0; margin: 0; background: #000000;" cellspacing="0" cellpadding="0">' + "\n";
+
+	// ゲーム画面HTMLタグ作成
+	for (i = 0;i < fjsRDunjonWorld.MAP_ROWS;i++) {
+
+		html = html + '<tr style="padding: 0; margin: 0;">' + "\n";
+
+		for (j = 0;j < fjsRDunjonWorld.MAP_COLS;j++) {
+
+			html = html + '<td id="fjsRDunjonCell' + Number(j).toString(16) + Number(i).toString(16) + '" style="background: #000000; color: #ffffff; font-size: 12px; font-family: monospace; text-align: center; padding: 0; margin: 0; width: 15px; height: 15px;"></td>';
+
+		}
+
+		html = html + '</tr>' + "\n";
+
+	}
+
+	html = html + "</table>\n";
+
+	html = html + "</div>\n";
+
+	// ゲームHTMLを表示
+	document.write(html);
+
+	// ゲームリセット
+	fjsRDunjonReset();
+
+	// ゲーム画面描画
+	fjsRDunjonDraw();
+
+	// ゲーム処理関数を呼び出す
+	fjsRDunjonTimerID = setTimeout("fjsRDunjonProcess()", 40);
+
+}
+
+function fjsRDunjonSetFocus() {
+	document.getElementById("fjsRDunjonFocusButton").focus();
+}
+
+// ゲームリセット
+function fjsRDunjonReset() {
+
+	var elm;
+
+	fjsRDunjonWorld.reset();
+
+	fjsRDunjonWorld.newLevel(0);
+
+	document.getElementById("fjsRDunjonHolder").focus();
+
+	fjsRDunjonState = fjsRDunjonSTATE_START;
+	fjsGameMessage = "カーソルキーで開始";
+
+	fjsRDunjonAttackingEnemy = null;
+
+	elm = document.getElementById('fjsRDunjonEnemyName');
+
+	elm.innerHTML = "敵";
+
+	elm = document.getElementById('fjsRDunjonEnemyMaxHPBar');
+
+	elm.style.width = '0px';
+	elm.style.height = '12px';
+
+	elm = document.getElementById('fjsRDunjonEnemyHPBar');
+
+	elm.style.width = '0px';
+	elm.style.height = '12px';
+
+}
+
+// ゲーム描画
+function fjsRDunjonDraw() {
+
+	var i;
+	var j;
+	var messageX;
+	var messageY;
+	var mesBG;
+
+	var elm;
+
+	// 床をクリア
+	for (i = 0;i < fjsRDunjonWorld.MAP_ROWS;i++) {
+		for (j = 0;j < fjsRDunjonWorld.MAP_COLS;j++) {
+			if (fjsRDunjonWorld.map[j][i] == 0) {
+
+				elm = document.getElementById('fjsRDunjonCell' + Number(j).toString(16) + Number(i).toString(16));
+
+				elm.style.background = fjsRDunjonCellBG;
+
+				elm.innerHTML = '';
+
+			}
+		}
+	}
+
+	// キャラクタ描画
+	for (i = 0;i < fjsRDunjonWorld.charList.length;i++) {
+		if (fjsRDunjonWorld.charList[i].hp > 0) {
+
+			elm = document.getElementById('fjsRDunjonCell' + Number(fjsRDunjonWorld.charList[i].x).toString(16) + Number(fjsRDunjonWorld.charList[i].y).toString(16));
+
+			// キャラクタがダメージを受けていたら背景色設定
+			if (fjsRDunjonWorld.charList[i].damage > 0) {
+				elm.style.background = fjsRDunjonDamageCellBG;
+			}
+
+			if (i == 0) {
+
+				// 主人公なら青
+				elm.style.color = '#0000ff';
+
+			} else {
+
+				// 敵
+				if (fjsRDunjonWorld.charList[i].type == 11) {
+					elm.style.color = '#ffcccc';
+				} else {
+					elm.style.color = '#ffffff';
+				}
+
+			}
+
+			// キャラクタ文字設定
+			elm.innerHTML = fjsRDunjonWorld.charList[i].chr;
+
+		}
+	}
+
+	elm = document.getElementById('fjsRDunjonStatusMaxHPBar');
+
+	// HP最大値グラフ表示
+	elm.style.width = fjsRDunjonWorld.charList[0].mhp + 'px';
+
+	elm = document.getElementById('fjsRDunjonStatusHPBar');
+
+	// 現在HPグラフ表示
+	elm.style.width = fjsRDunjonWorld.charList[0].hp + 'px';
+
+	// 攻撃中の敵キャラクタ情報表示
+	if (fjsRDunjonAttackingEnemy != null) {
+
+		elm = document.getElementById('fjsRDunjonEnemyName');
+
+		elm.innerHTML = fjsRDunjonAttackingEnemy.name;
+
+		elm = document.getElementById('fjsRDunjonEnemyMaxHPBar');
+
+		elm.style.width = fjsRDunjonAttackingEnemy.mhp + 'px';
+
+		elm = document.getElementById('fjsRDunjonEnemyHPBar');
+
+		elm.style.width = fjsRDunjonAttackingEnemy.hp + 'px';
+
+	}
+
+	elm = document.getElementById('fjsRDunjonStatusArea');
+
+	elm.innerHTML = 'HP:' + fjsRDunjonWorld.charList[0].hp + '/' + fjsRDunjonWorld.charList[0].mhp + ' 攻撃力:' + fjsRDunjonWorld.charList[0].at + ' 守備力:' + fjsRDunjonWorld.charList[0].def + '<br>経験値:' + fjsRDunjonWorld.charList[0].exp;
+
+	// メッセージ文字列描画
+	if (fjsGameMessage != null) {
+
+		if (fjsRDunjonCount % 8 < 4) {
+			mesBG = '#333333';
+		} else {
+			mesBG = '#000000';
+		}
+
+		messageY = Math.floor(fjsRDunjonWorld.MAP_ROWS / 2);
+		messageX = Math.floor((fjsRDunjonWorld.MAP_COLS - fjsGameMessage.length) / 2);
+
+		for (i = 0;i < fjsGameMessage.length;i++) {
+
+			elm = document.getElementById('fjsRDunjonCell' + Number(messageX + i).toString(16) + Number(messageY).toString(16));
+
+			elm.style.color = '#ffffff';
+			elm.style.background = mesBG;
+
+			elm.innerHTML = fjsGameMessage.charAt(i);
+
+		}
+
+	}
+
+}
+
+// メインループ
+function fjsRDunjonProcess() {
+
+	if (!fjsOnPause) {
+		fjsRDunjonGame();
+	}
+
+	fjsRDunjonCount++;
+
+	fjsRDunjonDraw();
+
+	fjsRDunjonTimerID = setTimeout("fjsRDunjonProcess()", 40);
+
+}
+
+// ゲーム処理
+function fjsRDunjonGame() {
+
+	var i;
+	var j;
+	var elm;
+
+	switch (fjsRDunjonState) {
+
+	case fjsRDunjonSTATE_START:
+
+		// カーソルキー入力でゲーム開始
+		if (fjsRDunjonStick != 0) {
+
+			fjsRDunjonState = fjsRDunjonSTATE_GAME;
+			clearGameMessage();
+
+		}
+
+		return;
+
+	case fjsRDunjonSTATE_OVER:
+	case fjsRDunjonSTATE_CLEAR:
+
+		return;
+
+	}
+
+	var i;
+	var ex, ey;
+
+	var dx = 0, dy = 0;
+	var attack = false;
+	var action = false;
+
+	fjsRDunjonWorld.levelProcess();
+
+	for (i = 0;i < fjsRDunjonWorld.charList.length;i++) {
+
+		// 各キャラクタのダメージアニメフラグをクリア
+		fjsRDunjonWorld.charList[i].damage = 0;
+
+		// 各キャラクタの行動可能カウンタを減算
+		if (fjsRDunjonWorld.charList[i].actionPoint > 0) {
+			fjsRDunjonWorld.charList[i].actionPoint--;
+		}
+
+	}
+
+	// 主人公が行動可能なら行動処理
+	if (fjsRDunjonWorld.charList[0].actionPoint < 1) {
+
+		// 上キー押下
+		if (fjsRDunjonStick == 1) {
+			dy = -1;
+		}
+
+		// 下キー押下
+		if (fjsRDunjonStick == 2) {
+			dy = 1;
+		}
+
+		// 左キー押下
+		if (fjsRDunjonStick == 4) {
+			dx = -1;
+		}
+
+		// 右キー押下
+		if (fjsRDunjonStick == 8) {
+			dx = 1;
+		}
+
+		// 移動処理
+		if (dx != 0 || dy != 0) {
+
+			i = 1;
+
+			// 敵と接触状態で敵方向のキー押下なら攻撃
+			while (fjsRDunjonWorld.charList.length > i) {
+
+				if (fjsRDunjonWorld.charList[i].hp > 0 && (fjsRDunjonWorld.charList[0].x + dx) == fjsRDunjonWorld.charList[i].x && (fjsRDunjonWorld.charList[0].y + dy) == fjsRDunjonWorld.charList[i].y) {
+
+					fjsRDunjonAttackingEnemy = fjsRDunjonWorld.charList[i];
+
+					fjsRDunjonWorld.attack(fjsRDunjonWorld.charList[0], fjsRDunjonAttackingEnemy);
+
+					attack = true;
+					action = true;
+
+					break;
+
+				}
+
+				i++;
+
+			}
+
+			// 穴に入ったら次の階へ
+			if (!attack && fjsRDunjonWorld.isHole(fjsRDunjonWorld.charList[0].x + dx, fjsRDunjonWorld.charList[0].y + dy)) {
+
+				fjsRDunjonWorld.nextLevel();
+
+				return;
+
+			}
+
+			// 移動可能なら移動
+			if (!attack && fjsRDunjonWorld.canMove(fjsRDunjonWorld.charList[0].x + dx, fjsRDunjonWorld.charList[0].y + dy)) {
+
+				fjsRDunjonWorld.charList[0].x += dx;
+				fjsRDunjonWorld.charList[0].y += dy;
+
+				action = true;
+
+			}
+
+			// 行動可能カウンタを初期化
+			if (action) {
+				fjsRDunjonWorld.charList[0].actionPoint = fjsRDunjonWorld.charList[0].actionCharge;
+			}
+
+		}
+
+	}
+
+	i = 1;
+
+	// 敵の行動処理
+	while (fjsRDunjonWorld.charList.length > i) {
+		fjsRDunjonWorld.charList[i++].action();
+	}
+
+}
+
+function clearGameMessage() {
+
+	fjsGameMessage = null;
+
+	// ゲーム画面クリア
+	for (i = 0;i < fjsRDunjonWorld.MAP_ROWS;i++) {
+		for (j = 0;j < fjsRDunjonWorld.MAP_COLS;j++) {
+
+			elm = document.getElementById('fjsRDunjonCell' + Number(j).toString(16) + Number(i).toString(16));
+
+			// マップ要素描画
+			switch (fjsRDunjonWorld.map[j][i]) {
+
+			case 0:
+
+				elm.style.background = fjsRDunjonCellBG;
+
+				break;
+
+			case 2:
+
+				elm.style.background = '#000000';
+
+				break;
+
+			case 4:
+
+				elm.style.background = '#e0e0ff';
+
+				break;
+
+			}
+
+			elm.innerHTML = '';
+
+		}
+	}
+
+}
+
+// キー押下イベント処理
+function fjsRDunjonKeyDown(e) {
+
+	var code = 0;
+
+	code = e.keyCode;
+
+	// カーソルキー押下状態に応じて方向キーフラグ設定
+	switch (code) {
+
+	// 上キー
+	case 38:
+
+		fjsRDunjonStick |= 1;
+
+		break;
+
+	// 下キー
+	case 40:
+
+		fjsRDunjonStick |= 2;
+
+		break;
+
+	// 左キー
+	case 37:
+
+		fjsRDunjonStick |= 4;
+
+		break;
+
+	// 右キー
+	case 39:
+
+		fjsRDunjonStick |= 8;
+
+		break;
+
+	}
+
+}
+
+// キー解放イベント処理
+function fjsRDunjonKeyUp(e) {
+
+	var code = 0;
+
+	code = e.keyCode;
+
+	// カーソルキー押下状態に応じて方向キーフラグ設定
+	switch (code) {
+
+	// 上キー
+	case 38:
+
+		fjsRDunjonStick &= ~1;
+
+		break;
+
+	// 下キー
+	case 40:
+
+		fjsRDunjonStick &= ~2;
+
+		break;
+
+	// 左キー
+	case 37:
+
+		fjsRDunjonStick &= ~4;
+
+		break;
+
+	// 右キー
+	case 39:
+
+		fjsRDunjonStick &= ~8;
+
+		break;
+
+	// リターンキー
+	case 13:
+
+		switch (fjsRDunjonState) {
+
+		// ゲーム中ならポーズ切り替え
+		case fjsRDunjonSTATE_GAME:
+
+			fjsOnPause = !fjsOnPause;
+
+			if (fjsOnPause) {
+				fjsGameMessage = "ポーズ中";
+			} else {
+				clearGameMessage();
+			}
+
+			break;
+
+		// ゲーム終了状態ならリセット
+		case fjsRDunjonSTATE_OVER:
+		case fjsRDunjonSTATE_CLEAR:
+
+			fjsRDunjonReset();
+
+			break;
+
+		}
+
+		break;
+
+	}
+
+}
+</script>
+</html>
