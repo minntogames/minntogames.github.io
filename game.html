@@ -240,24 +240,6 @@ var fjsRDunjonWorldTemplate = function() {
 	this.charTable[10].actionAttack = 100;
 	this.charTable[10].actionFollow = 0;
 	this.charTable[10].actionMove = 0;
-	
-	// まおう
-	this.charTable[11].type = 12;
-	this.charTable[11].chr = 'Ｚ';
-	this.charTable[11].name = "魔王";
-	this.charTable[11].hp = 300;
-	this.charTable[11].mhp = 300;
-	this.charTable[11].str = 190;
-	this.charTable[11].tough = 120;
-	this.charTable[11].at = 200;
-	this.charTable[11].def = 200;
-	this.charTable[11].exp = 0;
-	this.charTable[11].mexp = 999;
-	this.charTable[11].actionPoint = 0;
-	this.charTable[11].actionCharge = 4;
-	this.charTable[11].actionAttack = 100;
-	this.charTable[11].actionFollow = 0;
-	this.charTable[11].actionMove = 0;
 
 	// マップサイズ設定
 	this.MAP_COLS = 15;
@@ -502,18 +484,13 @@ var fjsRDunjonWorldTemplate = function() {
 		this.charList[8].x = 1;
 		this.charList[8].y = this.MAP_ROWS - 2;
 
-		this.charList[9] = new fjsRDunjonChr();
-		this.charList[9].assign(this.charTable[level + 1 + Math.floor(Math.random() * 2)]);
-		this.charList[9].x = 1;
-		this.charList[9].y = this.MAP_ROWS - 2;
-		
 		// 地下8階ならドラゴン追加
-		if (level == 8) {
+		if (level == 7) {
 
-			this.charList[10] = new fjsRDunjonChr();
-			this.charList[10].assign(this.charTable[11]);
-			this.charList[10].x = this.MAP_HOLE_X;
-			this.charList[10].y = this.MAP_HOLE_Y;
+			this.charList[9] = new fjsRDunjonChr();
+			this.charList[9].assign(this.charTable[10]);
+			this.charList[9].x = this.MAP_HOLE_X;
+			this.charList[9].y = this.MAP_HOLE_Y;
 
 			// 敵の湧出周期を二倍に
 			this.enemyPop = 100;
