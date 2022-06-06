@@ -1,5 +1,10 @@
 /*一番上*/
 
+body {
+ margin: 0;
+ padding: 0;
+}
+
 .box4{
     padding: 8px 19px;
     margin: 2em 0;
