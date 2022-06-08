@@ -1,9 +1,18 @@
 /*一番上*/
 
-body {
- margin: 0;
- padding: 0;
-}
+body
+    {
+     margin:0px;          /* ページ全体のmargin */
+     padding:0px;         /* ページ全体のpadding */
+     text-align:center;   /* 下記のautoに未対応用のセンタリング */
+    }
+#main
+    {
+     margin-left:auto;    /* 左側マージンを自動的に空ける */
+     margin-right:auto;   /* 右側マージンを自動的に空ける */
+     text-align:left;     /* 中身を左側表示に戻す */
+     width:650px;         
+    }
 
 .box4{
     padding: 8px 19px;
