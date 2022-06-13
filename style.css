@@ -173,10 +173,10 @@ body
  margin: 0;
  padding: 0 0 20px 0;
 }
-.footer06 .wrap .box {
+.footer06 .wrap .box3 {
  width: 30%;
 }
-.footer06 .wrap .box ul {
+.footer06 .wrap .box3 ul {
  margin: 0;
  padding: 0 0 20px 0;
  list-style: none;
@@ -195,13 +195,13 @@ body
 .footer06 .wrap h3 {
  border: none;
 }
-.footer06 .wrap .box {
+.footer06 .wrap .box3 {
  width: 100%;
 }
-.footer06 .wrap .box ul {
+.footer06 .wrap .box3 ul {
  border-top: 1px #c4c4c4 solid;
 }
-.footer06 .wrap .box ul li a {
+.footer06 .wrap .box3 ul li a {
  display: block;
  padding: 5px 15px;
  border-bottom: 1px #c4c4c4 solid;
