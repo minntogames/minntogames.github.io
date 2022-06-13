@@ -22,6 +22,7 @@ body
 .tracking-in-expand-fwd {
 	-webkit-animation: tracking-in-expand-fwd 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
 	        animation: tracking-in-expand-fwd 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+	text-align: center;
 }
 @-webkit-keyframes tracking-in-expand-fwd {
   0% {
