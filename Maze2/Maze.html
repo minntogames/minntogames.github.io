@@ -1,6 +1,6 @@
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<meta http-equiv="Content-Script-Type" content="text/javascript">
 	<meta http-equiv="Content-Style-Type" content="text/css">
 	<script src="Style.js"></script>
@@ -391,25 +391,25 @@
 		funHeadWrite();
 		BODYS ='<table width="' + MAP_W + '" height="' + MAP_H + '" border="0" cellpadding="0" cellspacing="0">\n';
 		BODYS+='<tr><td width="' + MAP_W + '" height="' + MAP_H + '">';
-		BODYS+='<img src="' + MAPS_PIC[KARI[HOUGAKU]].src + '" width="' + MAP_W + '" height="' + MAP_H + '" name="map1" alt="’n}" border="0">';
+		BODYS+='<img src="' + MAPS_PIC[KARI[HOUGAKU]].src + '" width="' + MAP_W + '" height="' + MAP_H + '" name="map1" alt="åœ°å›³" border="0">';
 		BODYS+='<\/td><\/tr><\/table><br clear="all">\n';
 
-		BODYS+='<span id="LayTime" style="position:absolute;visibility:visible;">@TIME 00F00F00<\/span>\n';
+		BODYS+='<span id="LayTime" style="position:absolute;visibility:visible;">ã€€TIME 00ï¼š00ï¼š00<\/span>\n';
 
 		BODYS+='<table align="center" border="0" cellpadding="0" cellspacing="0"><form><tr>\n';
 		BODYS+='<td><\/td>\n';
-		BODYS+='<td><input type="button" value="ª(i)" onClick="parent.FrameMain.funChar_Idou(3);" class="botan"><\/td>\n';
+		BODYS+='<td><input type="button" value="â†‘(é€²)" onClick="parent.FrameMain.funChar_Idou(3);" class="botan"><\/td>\n';
 		BODYS+='<td><\/td>\n';
 		BODYS+='<\/tr>\n<tr>\n';
-		BODYS+='<td><input type="button" value="©(¶)" onClick="parent.FrameMain.funChar_Idou(0);" class="botan"><\/td>\n';
+		BODYS+='<td><input type="button" value="â†(å·¦)" onClick="parent.FrameMain.funChar_Idou(0);" class="botan"><\/td>\n';
 		BODYS+='<td><\/td>\n';
-		BODYS+='<td><input type="button" value="¨(‰E)" onClick="parent.FrameMain.funChar_Idou(2);" class="botan"><\/td>\n';
+		BODYS+='<td><input type="button" value="â†’(å³)" onClick="parent.FrameMain.funChar_Idou(2);" class="botan"><\/td>\n';
 		BODYS+='<\/tr>\n<tr>\n';
 		BODYS+='<td><\/td>\n';
-		BODYS+='<td><input type="button" value="«(Œã)" onClick="parent.FrameMain.funChar_Idou(1);" class="botan"><\/td>\n';
+		BODYS+='<td><input type="button" value="â†“(å¾Œ)" onClick="parent.FrameMain.funChar_Idou(1);" class="botan"><\/td>\n';
 		BODYS+='<td><\/td>\n';
 		BODYS+='<\/tr>\n<tr>\n<td><\/td>\n<td>';
-		BODYS+='<br><input type="button" value="I—¹‚·‚é(E)" onClick="parent.FrameMain.funGameEnd();" class="botan">\n';
+		BODYS+='<br><input type="button" value="çµ‚äº†ã™ã‚‹(E)" onClick="parent.FrameMain.funGameEnd();" class="botan">\n';
 		BODYS+='<\/td>\n<td><\/td>\n<\/tr>\n<\/form><\/table><br clear="all">\n';
 
 		funFootWrite();
@@ -435,12 +435,12 @@
 		funHeadWrite();
 		BODYS ='<table width="' + MAP_W + '" height="' + MAP_H + '" border="0" cellpadding="0" cellspacing="0">\n';
 		BODYS+='<tr><td width="' + MAP_W + '" height="' + MAP_H + '">\n';
-		BODYS+='<img src="' + MAPS_PIC[15].src + '" width="' + MAP_W + '" height="' + MAP_H + '" name="map1" alt="’n}" border="0"><\/td><\/tr>\n';
+		BODYS+='<img src="' + MAPS_PIC[15].src + '" width="' + MAP_W + '" height="' + MAP_H + '" name="map1" alt="åœ°å›³" border="0"><\/td><\/tr>\n';
 		BODYS+='<tr><td align="center"><br>\n' + GOAL_MESSAGE + '<br><br>';
 		BODYS+='<form>\n';
 
 		if(GOAL_ACTION == 0)
-			BODYS+='<input type="button" value="I—¹‚·‚é(E)" onClick="parent.FrameMain.funGameEnd();" class="botan">\n';
+			BODYS+='<input type="button" value="çµ‚äº†ã™ã‚‹(E)" onClick="parent.FrameMain.funGameEnd();" class="botan">\n';
 
 		BODYS+='<\/form>\n';
 		BODYS+='<\/td><\/tr><\/table>\n';
@@ -521,22 +521,22 @@
 		if(MASU % 2 == 0 || MASU < 6 || MASU > 50)
 			{
 			BODYS+='<br><br><h2>System Error<\/h2><br><br>';
-			BODYS+='İ’è€–Ú‚ÉˆÙí‚ª‚ ‚è‚Ü‚·B<br>\n';
+			BODYS+='è¨­å®šé …ç›®ã«ç•°å¸¸ãŒã‚ã‚Šã¾ã™ã€‚<br>\n';
 			}
 		else if(((document.getElementById) && (!document.all)) || (document.all))
 			{
 			BODYS+='<br><br>' + START_MOJI +'<br><br>';
 			BODYS+='<form>\n';
-			BODYS+='<input type="button" value="ƒQ[ƒ€ƒXƒ^[ƒg" onClick="parent.FrameMain.funLoadPage();" class="botan"><br><br>\n';
-			BODYS+='<input type="button" value="ƒz[ƒ€‚Ö–ß‚é" onClick="parent.FrameMain.funHomeGo();" class="botan">\n';
+			BODYS+='<input type="button" value="ã‚²ãƒ¼ãƒ ã‚¹ã‚¿ãƒ¼ãƒˆ" onClick="parent.FrameMain.funLoadPage();" class="botan"><br><br>\n';
+			BODYS+='<input type="button" value="ãƒ›ãƒ¼ãƒ ã¸æˆ»ã‚‹" onClick="parent.FrameMain.funHomeGo();" class="botan">\n';
 			BODYS+='<\/form>\n';
 			}
 		else 
 			{
-			BODYS+='<br><br>\‚µ–ó‚ ‚è‚Ü‚¹‚ñ‚ªA‚¨‹q—l‚ÌŒ»İ‚ÌŠÂ‹«‚Å‚Í‚±‚ÌƒQ[ƒ€‚Í‚²—˜—p‚É‚È‚ê‚Ü‚¹‚ñB<br><br>';
-			BODYS+='‚¨è”‚ğ‚¨‚©‚¯‚µ‚Ü‚·‚ªA<br><br>';
-			BODYS+='Internet Explorer 5ˆÈãANetscape Communicator 6ˆÈã<br><br>';
-			BODYS+='‚Ìƒuƒ‰ƒEƒU‚É‚Ä‚²—˜—p‰º‚³‚¢‚Ü‚¹B<br><br>\n';
+			BODYS+='<br><br>ç”³ã—è¨³ã‚ã‚Šã¾ã›ã‚“ãŒã€ãŠå®¢æ§˜ã®ç¾åœ¨ã®ç’°å¢ƒã§ã¯ã“ã®ã‚²ãƒ¼ãƒ ã¯ã”åˆ©ç”¨ã«ãªã‚Œã¾ã›ã‚“ã€‚<br><br>';
+			BODYS+='ãŠæ‰‹æ•°ã‚’ãŠã‹ã‘ã—ã¾ã™ãŒã€<br><br>';
+			BODYS+='Internet Explorer 5ä»¥ä¸Šã€Netscape Communicator 6ä»¥ä¸Š<br><br>';
+			BODYS+='ã®ãƒ–ãƒ©ã‚¦ã‚¶ã«ã¦ã”åˆ©ç”¨ä¸‹ã•ã„ã¾ã›ã€‚<br><br>\n';
 			}
 
 		BODYS+='<\/td><\/tr><\/table>\n<\/div>\n';
@@ -562,17 +562,17 @@
 		ERROR_HAN=0;
 		delete MAPS;
 		delete MAP_DATA;
-		if(confirm('‰Šú‰»‚É¸”s‚µ‚Ü‚µ‚½B\nÄ“Ç‚ğs‚Á‚Ä‚æ‚ë‚µ‚¢‚Å‚·‚©H') == true)
+		if(confirm('åˆæœŸåŒ–ã«å¤±æ•—ã—ã¾ã—ãŸã€‚\nå†èª­è¾¼ã‚’è¡Œã£ã¦ã‚ˆã‚ã—ã„ã§ã™ã‹ï¼Ÿ') == true)
 			{
 			clearTimeout(TIME_SISTEM);
 			TIME_SISTEM=setTimeout('parent.location.reload();',100);
 			}
-		else { alert('ƒQ[ƒ€‚ğI—¹‚µ‚Ä\nƒz[ƒ€‚É–ß‚è‚Ü‚·B');	parent.window.location.href=HOME_URL; }
+		else { alert('ã‚²ãƒ¼ãƒ ã‚’çµ‚äº†ã—ã¦\nãƒ›ãƒ¼ãƒ ã«æˆ»ã‚Šã¾ã™ã€‚');	parent.window.location.href=HOME_URL; }
 		}
 
 
 	function funGameEnd()
-		{ if(confirm('ƒQ[ƒ€‚ğI—¹‚µ‚Ä‚æ‚ë‚µ‚¢‚Å‚·‚©H') == true){ clearInterval(TIME_TIME); funStartPage(); } }
+		{ if(confirm('ã‚²ãƒ¼ãƒ ã‚’çµ‚äº†ã—ã¦ã‚ˆã‚ã—ã„ã§ã™ã‹ï¼Ÿ') == true){ clearInterval(TIME_TIME); funStartPage(); } }
 
 	function funHomeGo()
 		{ parent.window.location.href=HOME_URL; }
@@ -590,7 +590,7 @@
 		if(SS < 10){ SS='0' + SS; }
 
 		WRITE_STRING ='<font style="font-size:13pt;">';
-		WRITE_STRING+='@TIME ' + HH + "F" + MM + 'F' + SS + '<\/font>';
+		WRITE_STRING+='ã€€TIME ' + HH + "ï¼š" + MM + 'ï¼š' + SS + '<\/font>';
 
 		if((document.getElementById) && (!document.all))
 			LAYERS_DOKO=parent.FrameDisplay.document.getElementById('LayTime');
@@ -720,7 +720,7 @@
 			if(MM < 10){ MM='0' + MM; }
 			if(SS < 10){ SS='0' + SS; }
 			WRITE_STRING+='GAME<br>CLEAR!!<br><br>';
-			WRITE_STRING+='<\/font>CLEAR TIME ' + HH + 'F' + MM + 'F' + SS + '<br>';
+			WRITE_STRING+='<\/font>CLEAR TIME ' + HH + 'ï¼š' + MM + 'ï¼š' + SS + '<br>';
 			}
 		else if(dotti==2)
 			{
@@ -883,10 +883,10 @@
 		my_key=String.fromCharCode(my_key);
 		if(IDOU_KISEI == 1)
 			{
-			if(my_key == "&" || my_key == "ª")funChar_Idou(3);
-			else if(my_key == "%" || my_key == "©")funChar_Idou(0);
-			else if(my_key == "'" || my_key == "¨")funChar_Idou(2);
-			else if(my_key == "(" || my_key == "«")funChar_Idou(1);
+			if(my_key == "&" || my_key == "â†‘")funChar_Idou(3);
+			else if(my_key == "%" || my_key == "â†")funChar_Idou(0);
+			else if(my_key == "'" || my_key == "â†’")funChar_Idou(2);
+			else if(my_key == "(" || my_key == "â†“")funChar_Idou(1);
 			else if(my_key == "e" || my_key == "E")funGameEnd();
 			}
 		else if(IDOU_KISEI == 2)
@@ -905,14 +905,14 @@
 	if(parent.frames.length < 2)
 		{
 		document.write('<body text="' + TEXT_COLOR + '" bgcolor="' + BG_COLOR + '" link="' + LINK_COLOR + '" vlink="' + VLINK_COLOR + '" alink="' + ALINK_COLOR + '" style="margin:0px;">');
-		alert('ƒtƒŒ[ƒ€‚ªŠm”F‚Å‚«‚Ü‚¹‚ñB\nƒQ[ƒ€‚ğI—¹‚µ‚Ü‚·B\n\nÄ“Ç‚ğs‚Á‚Ä‰º‚³‚¢B');
+		alert('ãƒ•ãƒ¬ãƒ¼ãƒ ãŒç¢ºèªã§ãã¾ã›ã‚“ã€‚\nã‚²ãƒ¼ãƒ ã‚’çµ‚äº†ã—ã¾ã™ã€‚\n\nå†èª­è¾¼ã‚’è¡Œã£ã¦ä¸‹ã•ã„ã€‚');
 		}
 	else 
 		document.write('<body onLoad="funStartPage();" text="' + TEXT_COLOR + '" bgcolor="' + BG_COLOR + '" link="' + LINK_COLOR + '" vlink="' + VLINK_COLOR + '" alink="' + ALINK_COLOR + '" style="margin:0px;">');
 //-->
 </script>
 <noscript>
-	<title>©“®¶¬–À˜H Ver2</title>
+	<title>è‡ªå‹•ç”Ÿæˆè¿·è·¯ Ver2</title>
 </head>
 <body text="#ffffff" bgcolor="#000000" link="#cf6722" vlink="#cf6722" alink="#cf6722" style="margin:0px;">
 </noscript>
