@@ -3,7 +3,7 @@
 	my_name1='Minnteliaのお部屋';
 
 	//ランダムリンクのURLを指定する
-	my_url2 ='https://minntogames.github.io/128371631872375736812.html';
+	my_url2 ='https://minntogames.github.io/74839172319837816378162836412318273189478163716398174981732981739174128378192738174813981732wqiueyquiwyequewyqetqwyequrs.html';
 	//ランダムリンクの文字を指定する
 	my_name2='MINNTERIAのお部屋';
 
