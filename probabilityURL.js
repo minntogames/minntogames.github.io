@@ -9,7 +9,7 @@
 
 	//リンクが表示する確率を指定する
 	//大きいほど確率は低く、小さいほど高くなります
-	ran=1000;
+	ran=65535;
 
 	if(Math.floor(Math.random()*ran) < 2)
 		document.write('<a href="'+my_url2+'">'+my_name2+'</a><br>');
