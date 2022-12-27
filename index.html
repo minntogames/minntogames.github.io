@@ -1,184 +1,187 @@
-<!-- ソースコードを見て何になるんだい？ -->
-<!-- 物好きだねぇ -->
+<!-- やぁみんな俺だ！ -->
+<!-- みんなは幸せかい？俺は不幸！それじゃ！ -->
 <!DOCTYPE html>
 <html lang="ja">
- <html>
   <head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# article: http://ogp.me/ns/article#">
-<!-- サムネ -->
-   <meta property="og:title" content="みんてりあの部屋" />
-   <meta property="og:url" content="https://minntogames.github.io/index.html" />
-   <meta property="og:image" content="https://minntogames.github.io/image/icon.ico" />
-   <meta property="og:description" content="みんてりあの公式サイトだよ" />
-   <meta property="og:type" content="website" />
-   <meta property="og:site_name" content="みんてりあの部屋" />
-   
-   <meta name="twitter:card" content="summary" />
-<!-- /サムネ -->
-   <meta charset="utf-8">
-   <title>みんてりあの部屋</title>
-   <link rel="icon" href="https://minntogames.github.io/image/icon.ico">
-   <link rel="stylesheet" href="style.css">
-<!--   メニュー  -->
-   <link rel="stylesheet" href="tab.css">
-<!--  ドロップダウン   -->
-   <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
-   
-   <script type="text/javascript">
-   $(function(){
-      // ▼マウスが載ったらサブメニューを表示
-      $("ul.ddmenu li").mouseenter(function(){
-         $(this).siblings().find("ul").hide();  // 兄弟要素に含まれるサブメニューを全部消す。
-         $(this).children().slideDown(150);     // 自分のサブメニューを表示する。
+    <!-- 埋め込み -->
+    <meta property="og:title" content="みんてりあの部屋" >
+    <meta property="og:url" content="https://minntogames.github.io/index.html">
+    <meta property="og:image" content="https://minntogames.github.io/image/icon.ico">
+    <meta property="og:description" content="みんてりあの公式サイトだよ" />
+    <meta property="og:type" content="website" >
+    <meta property="og:site_name" content="みんてりあの部屋" >
+
+    <meta name="twitter:card" content="summary" >
+    <!-- 埋め込み -->
+    <meta charset="utf-8" />
+    <title>みんてりあの部屋</title>
+    <link rel="icon" href="https://minntogames.github.io/image/icon.ico" />
+    <link rel="stylesheet" href="style.css" />
+    <!--   メニュー  -->
+    <link rel="stylesheet" href="tab.css" />
+    <!--  ドロップダウン   -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript" ></script>
+
+    <script type="text/javascript">
+      $(function () {
+        // ▼マウスが載ったらサブメニューを表示
+        $("ul.ddmenu li").mouseenter(function () {
+          $(this).siblings().find("ul").hide(); // 兄弟要素に含まれるサブメニューを全部消す。
+          $(this).children().slideDown(150); // 自分のサブメニューを表示する。
+        });
+        // ▼どこかがクリックされたらサブメニューを消す
+        $("html").click(function () {
+          $("ul.ddmenu ul").slideUp(150);
+        });
       });
-      // ▼どこかがクリックされたらサブメニューを消す
-      $('html').click(function() {
-         $('ul.ddmenu ul').slideUp(150);
-      });
-   });
-</script>
-<!--    メニュー -->
+    </script>
+    <!--    メニュー -->
   </head>
-  <body style="background-color:aquamarine;">
-   
-   <div class="box4">
-    <p style=" text-align: center;">
-     <a>
-      <img src="image/icon.ico" alt="ico" width="100" height="100" class="rotate-in-center" ONCLICK="location.href='index.html';">
-     </a></p>
-    <br>
-<h1 class="tracking-in-expand-fwd">
-<script type="text/javascript" src="probabilityURL.js"></script>
-</h1>
-<h2 style=" text-align: center;">
-<!--  ここにもじ -->
-    </h2>
-    </p>
-
-   </div>
-   <!-- memu -->
-   </div>
-<ul class="ddmenu">
-   <li id="minntok"><a href="#minntok">みんと関連</a>
-       <ul>
-           <li><a href="https://twitter.com/Minnto_Games" target="_blank" rel="noopener noreferrer">Twitter</a></li>
-           <li><a href="#minntok">youtube</a>
-               <ul>
-                   <li><a href="https://www.youtube.com/channel/UCI8wpCAtV_SttGVUeUGw1Pg/featured" target="_blank" rel="noopener noreferrer">みんと</a></li>
-                   <il><a href="https://www.youtube.com/channel/UCxHVd8P3H_B3TBWojRH72Gw" target="_blank" rel="noopener noreferrer">ブラックホール</a></li>
-               </ul>
-           </li></li>
-           <li><a href="https://discord.gg/XC9jaej6xb" target="_blank" rel="noopener noreferrer">ディスコード鯖</a></li>
-           <li><a href="https://scratch.mit.edu/users/gorirawirusu/" target="_blank" rel="noopener noreferrer">scratch</a></li>
-           <li><a href="#minntok">このサイト関連</a>
-               <ul>
-                   <li><a href="diary/diary.html">日記部屋</a></li>
-                   <li><a href="audio/sound-room-p1.html">サウンドルーム</a></li>
-                   <li><a href="museum/museum-room.html">美術館</a></li>
-               </ul>
-           </li></li>
-       </ul>
-   </li>
-   <li id="sonota"><a href="#sonota">その他</a>
-       <ul>
-           <li><a href="tetris/index.html">テトリス</a></li>
-           <li><a href="game.html">ダンジョンRPG</a></li>
-           <li><a href="Maze2/Index.html">迷路</a></li>
-           <li><a href="JavaScript.html">javaで作った部屋</a></li>
-       </ul>
-    </li>
-    <li id="menu"><a href="menu.html">メニュー</a></li>
-</ul>
-<!-- /memu -->
-   <br>
-<!--  自己紹介   -->
-   <br>
-   <div class="box5">
-    <p>どうも！みんとです。このサイトはチャンネル開設三周年を機に作ってみたサイトです！<br>
-    まだサイトを作るのは慣れてませんが許してください（笑）<br>
-    そしていろいろなことに挑戦しております。<br>
-    何卒宜しくお願い致します！！<br></p>
-   </div>
-<!--  /自己紹介   -->
-   
-      <br>
-<!-- アクセスカウンター -->
-   <div class="box5">
-    累計アクセス数<br>
-<nobr><table border="0" cellspacing="0" cellpadding="0"><tbody><tr><td><a href="https://www.free-counter.jp/"><img src="https://www.f-counter.net/ani1/48/1653747792/" alt="アクセスカウンター" border="0" style="margin:0px; padding:0px; border:0px; vertical-align:bottom"></a></td>
-<td><a href="https://www.free-counter.jp/"><img src="https://www.f-counter.net/ani2/48/1653747792/" alt="アクセスカウンター" border="0" style="margin:0px; padding:0px; border:0px; vertical-align:bottom"></a></td></tr></tbody></table></nobr>
-    
-    <p>
-    <span style="color:slateblue">アクセス50人目の人：</span><font style="color:#808000">π</font><font style="color:#C0C000">の</font><font style="color:#DFDF00">サ</font><font style="color:#FFFF00">ブ</font>　さん</p>
-    <span style="color:slateblue">アクセス100人目の人：</span><font style="color:#808000">π</font><font style="color:#C0C000">の</font><font style="color:#DFDF00">サ</font><font style="color:#FFFF00">ブ</font>　さん</p>
-    <span style="color:slateblue">アクセス200人目の人：</span><font style="color:#808000">π</font><font style="color:#C0C000">の</font><font style="color:#DFDF00">サ</font><font style="color:#FFFF00">ブ</font>　さん</p>
-    <span style="color:slateblue">アクセス300人目の人：</span><font style="color:#808000">π</font><font style="color:#C0C000">の</font><font style="color:#DFDF00">サ</font><font style="color:#FFFF00">ブ</font>　さん()</p>
-    <span style="color:slateblue">アクセス400人目の人：</span>(まだいないよ)</p>
-  　
-    <p>おめでとうございます👏</p>
-   </div>
-<p>もしアクセス数がキリのいい数字の状態で入室した方、良ければTwitterのDM、又はDiscordのDMにご連絡してください！サイトに載せます！（上のような感じで）</p>
-<!-- /アクセスカウンター -->
-
-   <div class="box"><div class="ribbon5"><h3>【更新内容】</h3></div><br><br>
-<!--更新内容-->
-    <p>2022年9月2日：サイト名をMinnteriaのお部屋に変更<br>
-     　　　　　　　　　誤字ってたところを修正<br>
-     　　　　　　　　　正式にYoutubeチャンネルにURL掲載(三周年になったため)<br>
-     　　　　　　　　　アクセス数が150突破！(確認遅<br>
-    <p>2022年9月30日：自己紹介を修正</p>
-    <p>2022年10月11日：アクセス数が200突破！</p>
-    <p>2022年11月3日：アクセス数が300突破！</p>
-    <p>2022年11月6日：色々変えた</p>
-<!--/更新内容-->
-    <p><a href="https://minntogames.github.io/UPD/index.html">すべて見る</a></p>
-   </div><br>
-
-   <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/vaep8EnIT4w?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-   <br>
-<a class="twitter-timeline" data-width="600" data-height="750" data-theme="dark" href="https://twitter.com/Minntelia_ch?ref_src=twsrc%5Etfw">Tweets by Minntelia_ch</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+  <body style="background-color: aquamarine">
+    <div class="box4">
+      <p style="text-align: center">
+        <a>
+          <img src="image/icon.ico" alt="ico" width="100" height="100" class="rotate-in-center" ONCLICK="location.href='index.html'">
+        </a>
+      </p>
+      <br />
+      <h1 class="tracking-in-expand-fwd">
+        <script type="text/javascript" src="probabilityURL.js"></script>
+      </h1>
+      <h2 style="text-align: center">
+        <!--  ここにもじ -->
+      </h2>
     </div>
-  
+    <!-- memu -->
+    <ul class="ddmenu">
+      <li id="minntok">
+        <a href="#minntok">みんと関連</a>
+        <ul>
+          <li><a href="https://twitter.com/Minnto_Games" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+          <li><a href="#minntok">youtube</a>
+            <ul>
+              <li><a href="https://www.youtube.com/channel/UCI8wpCAtV_SttGVUeUGw1Pg/featured" target="_blank" rel="noopener noreferrer" >みんと</a></li>
+              <li><a href="https://www.youtube.com/channel/UCxHVd8P3H_B3TBWojRH72Gw" target="_blank" rel="noopener noreferrer">ブラックホール</a></li>
+            </ul>
+          </li>
+          <li><a href="https://discord.gg/XC9jaej6xb" target="_blank" rel="noopener noreferrer">ディスコード鯖</a></li>
+          <li><a href="https://scratch.mit.edu/users/gorirawirusu/" target="_blank" rel="noopener noreferrer" >scratch</a></li>
+          <li>
+            <a href="#minntok">このサイト関連</a>
+            <ul>
+              <li><a href="diary/diary.html">日記部屋</a></li>
+              <li><a href="audio/sound-room-p1.html">サウンドルーム</a></li>
+              <li><a href="museum/museum-room.html">美術館</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li id="sonota">
+        <a href="#sonota">その他</a>
+        <ul>
+          <li><a href="tetris/index.html">テトリス</a></li>
+          <li><a href="game.html">ダンジョンRPG</a></li>
+          <li><a href="Maze2/Index.html">迷路</a></li>
+          <li><a href="JavaScript.html">javaで作った部屋</a></li>
+        </ul>
+      </li>
+      <li id="menu"><a href="menu.html">メニュー</a></li>
+    </ul>
+    <br>
+    <div class="test">
+      <div class="sus">
+        <br>
+        <div class="box5">
+          <p>
+            どうも！みんとです。このサイトはチャンネル開設三周年を機に作ってみたサイトです！<br>
+            まだサイトを作るのは慣れてませんが許してください（笑）<br>
+            そしていろいろなことに挑戦しております。<br>
+            何卒宜しくお願い致します！！<br>
+          </p>
+        </div>
+        <br>
+        <div class="box5">
+          累計アクセス数<br>
+          <nobr><table border="0" cellspacing="0" cellpadding="0"><tbody><tr><td><a href="https://www.free-counter.jp/"><img src="https://www.f-counter.net/ani1/48/1653747792/" alt="アクセスカウンター" border="0" style="margin: 0px; padding: 0px; border: 0px; vertical-align: bottom;"></a></td>
+          <td><a href="https://www.free-counter.jp/"><img src="https://www.f-counter.net/ani2/48/1653747792/" alt="アクセスカウンター" border="0" style="margin: 0px; padding: 0px; border: 0px; vertical-align: bottom;"></a></td></tr></tbody></table></nobr>
+
+          <p>
+            <span style="color: slateblue">アクセス50人目の人：</span><font style="color: #808000">π</font><font style="color: #c0c000">の</font><font style="color: #dfdf00">サ</font><font style="color: #ffff00">ブ</font>　さん
+          </p>
+          <p>
+            <span style="color: slateblue">アクセス100人目の人：</span><font style="color: #808000">π</font><font style="color: #c0c000">の</font><font style="color: #dfdf00">サ</font><font style="color: #ffff00">ブ</font>　さん
+          </p>
+          <p>
+            <span style="color: slateblue">アクセス200人目の人：</span><font style="color: #808000">π</font><font style="color: #c0c000">の</font><font style="color: #dfdf00">サ</font><font style="color: #ffff00">ブ</font>　さん
+          </p>
+          <p>
+            <span style="color: slateblue">アクセス300人目の人：</span><font style="color: #808000">π</font><font style="color: #c0c000">の</font><font style="color: #dfdf00">サ</font><font style="color: #ffff00">ブ</font>　さん()
+          </p>
+          <p>
+            <span style="color: slateblue">アクセス400人目の人：</span>(まだいないよ)
+          </p>
+          　
+          <p>おめでとうございます👏</p>
+        </div>
+        <p>
+          もしアクセス数がキリのいい数字の状態で入室した方、良ければTwitterのDM、又はDiscordのDMにご連絡してください！サイトに載せます！（上のような感じで）
+        </p>
+        <div class="box">
+          <div class="ribbon5"><h3>【更新内容】</h3></div>
+          <br><br>
+
+          <p>2022年9月30日：自己紹介を修正</p>
+          <p>2022年10月11日：アクセス数が200突破！</p>
+          <p>2022年11月3日：アクセス数が300突破！</p>
+          <p>2022年11月6日：色々変えた</p>
+          <p>2022年12月27日：すっきりさせた</p>
+
+          <p><a href="https://minntogames.github.io/UPD/index.html">すべて見る</a></p>
+        </div>
+        <br>
+        <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/vaep8EnIT4w?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <br>
+      </div>
+      <a class="twitter-timeline" data-width="500" data-height="1500" data-theme="dark" href="https://twitter.com/Minntelia_ch?ref_src=twsrc%5Etfw">Tweets by Minntelia_ch</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    </div>
+
     <div class="box2">
-     <p>
-  <a href="https://junken.tagomori.com/" target="_blank" rel="noopener noreferrer">
-    <img src="https://minntogames.github.io/image/ぬふ.png" width="128" height="128">
-   <p>ぬふはる同盟のサイト</a></p>
-  
-</p></div>
-<div class="footer06" id="footer">
- <div class="wrap">
-  <div class="box3">
-    <h3>タイトル(まれに更新するかも)</h3>
-    <p>
-     雪が降らない件
-    </p>
-  </div>
-  <div class="box3">
-    <h3>minnto関連</h3>
-    <ul>
-      <li><a href="https://twitter.com/Minnto_Games" target="_blank" rel="noopener noreferrer">Twitter</a></li>
-      <li><a href="https://www.youtube.com/channel/UCI8wpCAtV_SttGVUeUGw1Pg/featured" target="_blank" rel="noopener noreferrer">youtube</a></li>
-      <li><a href="https://discord.gg/XC9jaej6xb" target="_blank" rel="noopener noreferrer">ディスコード鯖</a></li>
-      <li><a href="https://scratch.mit.edu/users/gorirawirusu/" target="_blank" rel="noopener noreferrer">scratch</a></li>
-    </ul>
-  </div>
-  <div class="box3">
-    <h3>このサイト</h3>
-    <ul>
-      <li><a href="diary/diary.html">日記部屋</a></li>
-      <li><a href="audio/sound-room-p1.html">サウンドルーム</a></li>
-      <li><a href="museum/museum-room.html">美術館</a></li>
-      <li><a href="tetris/index.html">テトリス</a></li>
-      <li><a href="game.html">ダンジョンRPG</a></li>
-      <li><a href="Maze2/Index.html">迷路</a></li>
-      <li><a href="JavaScript.html">javaで作った部屋</a></li>
-    </ul>
-  </div>
-  <p class="copyright">
-    &copy; 2007-2022 Minntelia
-  </p>
- </div>
-</div>      
-      
-  </body> 
+      <div class="ribbon5"><h3>【宣伝】</h3></div>
+      <p>
+        <a href="https://junken.tagomori.com/" target="_blank" rel="noopener noreferrer">
+          <img src="https://minntogames.github.io/image/ぬふ.png" width="128" height="128">
+          <p>ぬふはる同盟のサイト</p></a>
+      </p>
+    </div>
+    <div class="footer06" id="footer">
+      <div class="wrap">
+        <div class="box3">
+          <h3>タイトル(まれに更新するかも)</h3>
+          <p>雪が降らない件</p>
+        </div>
+        <div class="box3">
+          <h3>minnto関連</h3>
+          <ul>
+            <li><a href="https://twitter.com/Minnto_Games" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+            <li><a href="https://www.youtube.com/channel/UCI8wpCAtV_SttGVUeUGw1Pg/featured" target="_blank" rel="noopener noreferrer">youtube</a></li>
+            <li><a href="https://discord.gg/XC9jaej6xb" target="_blank" rel="noopener noreferrer">ディスコード鯖</a></li>
+            <li><a href="https://scratch.mit.edu/users/gorirawirusu/" target="_blank" rel="noopener noreferrer">scratch</a></li>
+          </ul>
+        </div>
+        <div class="box3">
+          <h3>このサイト</h3>
+          <ul>
+            <li><a href="diary/diary.html">日記部屋</a></li>
+            <li><a href="audio/sound-room-p1.html">サウンドルーム</a></li>
+            <li><a href="museum/museum-room.html">美術館</a></li>
+            <li><a href="tetris/index.html">テトリス</a></li>
+            <li><a href="game.html">ダンジョンRPG</a></li>
+            <li><a href="Maze2/Index.html">迷路</a></li>
+            <li><a href="JavaScript.html">javaで作った部屋</a></li>
+          </ul>
+        </div>
+        <p class="copyright">&copy; 2007-2022 Minntelia</p>
+      </div>
+    </div>
+  </body>
 </html>
