@@ -94,9 +94,20 @@ a.random {
     opacity: 1;
   }
 }
+.test {
+  display: flex;
+}
+
+.twitter-timeline {
+  flex-grow: 1;
+}
+.sus{
+  flex-grow: 1;
+}
 
 /*ボックス５*/
 .box5 {
+    flex-grow: 1;
     padding: 0.5em 1em;
     margin: 2em 0;
     border: double 5px #4ec4d3;
