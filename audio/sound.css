@@ -1,0 +1,22 @@
+.box {
+  border-left: 5px double skyblue;
+  border-right: 5px double skyblue;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 2em;
+}
+
+h2 {
+  /*線の種類（実線） 太さ 色*/
+  border-bottom: solid 3px black;
+}
+@media (min-width: 600px) {
+  .wake0 {
+    display: flex;
+  }
+  .wake1 {
+    flex-grow: 1;
+  }
+  .wake2 {
+    flex-grow: 1;
+  }
+}
