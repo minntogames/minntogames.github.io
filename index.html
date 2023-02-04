@@ -17,11 +17,19 @@
     <title>みんてりあの部屋</title>
     <link rel="icon" href="https://minntogames.github.io/image/icon.ico" />
     <link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="year.js"></script>
+    <script type="text/javascript">
+      function ShowNowYear() {
+        var now = new Date();
+        var year = now.getFullYear();
+        document.write(year);
+      }
+    </script>
     <!--   メニュー  -->
     <link rel="stylesheet" href="tab.css" />
     <!--  ドロップダウン   -->
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript" ></script>
-
+    
     <script type="text/javascript">
       $(function () {
         // ▼マウスが載ったらサブメニューを表示
@@ -161,7 +169,7 @@
       <div class="wrap">
         <div class="box3">
           <h3>タイトル(まれに更新するかも)</h3>
-          <p>雪が降らない件</p>
+          <p>はｐｐ－にゅーいやー</p>
         </div>
         <div class="box3">
           <h3>minnto関連</h3>
@@ -185,7 +193,7 @@
             <li><a href="JavaScript.html">javaで作った部屋</a></li>
           </ul>
         </div>
-        <p class="copyright">&copy; 2007-2023 Minntelia</p>
+        <p class="copyright">&copy; 2007 - <script type="text/javascript">ShowNowYear();</script> Minnteliaのお部屋</p>
       </div>
     </div>
   </body>
