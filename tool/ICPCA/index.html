@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://minntogames.github.io/image/icon.ico" />
+    <title>みんてりあの部屋：画像内カーソル位置取得</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="https://minntogames.github.io/style.css" />
+    <script src="/script.js" defer></script>
+        <!--   メニュー  -->
+    <link rel="stylesheet" href="https://minntogames.github.io/tab.css" />
+    <!--  ドロップダウン   -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript" ></script>
+    
+    <script type="text/javascript">
+      $(function () {
+        // ▼マウスが載ったらサブメニューを表示
+        $("ul.ddmenu li").mouseenter(function () {
+          $(this).siblings().find("ul").hide(); // 兄弟要素に含まれるサブメニューを全部消す。
+          $(this).children().slideDown(150); // 自分のサブメニューを表示する。
+        });
+        // ▼どこかがクリックされたらサブメニューを消す
+        $("html").click(function () {
+          $("ul.ddmenu ul").slideUp(150);
+        });
+      });
+    </script>
+    <!--    メニュー -->
+  </head>
+  <body style="background-color: aquamarine">
+        <ul class="ddmenu">
+      <li id="minntok">
+        <a href="#minntok">みんと関連</a>
+        <ul>
+          <li><a href="https://twitter.com/Minntelia_ch" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+          <li><a href="#minntok">youtube</a>
+            <ul>
+              <li><a href="https://www.youtube.com/channel/UCI8wpCAtV_SttGVUeUGw1Pg/featured" target="_blank" rel="noopener noreferrer" >みんと</a></li>
+              <li><a href="https://www.youtube.com/channel/UCxHVd8P3H_B3TBWojRH72Gw" target="_blank" rel="noopener noreferrer">ブラックホール</a></li>
+            </ul>
+          </li>
+          <li><a href="https://discord.gg/XC9jaej6xb" target="_blank" rel="noopener noreferrer">ディスコード鯖</a></li>
+          <li><a href="https://scratch.mit.edu/users/gorirawirusu/" target="_blank" rel="noopener noreferrer" >scratch</a></li>
+          <li>
+            <a href="#minntok">このサイト関連</a>
+            <ul>
+              <li><a href="diary/diary.html">日記部屋</a></li>
+              <li><a href="audio/sound-room-p1.html">サウンドルーム</a></li>
+              <li><a href="museum/museum-room.html">美術館</a></li>
+              <li><a href="regular_customer/menu.html">常連部屋</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li id="sonota">
+        <a href="#sonota">その他</a>
+        <ul>
+          <li><a href="tetris/index.html">テトリス</a></li>
+          <li><a href="game.html">ダンジョンRPG</a></li>
+          <li><a href="Maze2/Index.html">迷路</a></li>
+          <li><a href="JavaScript.html">javaで作った部屋</a></li>
+        </ul>
+      </li>
+      <li id="tool">
+        <a href="#tool">ツール</a>
+        <ul>
+          <li><a href="tetris/index.html">ICPCA(イプサ)</a></li>
+        </ul>
+      </li>
+      <li id="menu"><a href="menu.html">メニュー</a></li>
+    </ul>
+    <h1>画像カーソル位置座標取得ジェネレーター</h1><br><br><br>
+    
+    
+    <div id="container">
+      <div>
+        <input type="file" id="imageInput" accept="image/*" />
+      </div>
+      <div>
+        <canvas id="canvas"></canvas>
+      </div>
+      <div>
+        <div id="imageSizeOutput"></div>
+        <div id="cursorPositionOutput"></div>
+        <div id="tempCursorPositionOutput"></div>
+        <button id="resetButton">一時カーソル位置リセット</button>
+      </div>
+    </div>
+    <p>
+    <h2>カーソル位置保存機構の使用方法</h2>
+
+    1. 画像をアップロードするために、ファイル選択を使用します。以下のステップに従って操作します。<br>
+       ・ 「画像を選択」ボタンをクリックします。<br>
+       ・ ファイル選択ダイアログが表示されますので、画像ファイルを選択して開きます。<br>
+    2. 画像が表示されたら、マウスカーソルの位置情報を確認できます。 <br>
+       ・画像上でマウスを動かすと、カーソルの現在の位置が表示されます。 <br>
+    3. クリックした位置のカーソル位置を一時的に保存することができます。<br>
+       ・画像上でクリックすると、カーソル位置が一時的に保存されます。<br>
+       ・保存されたカーソル位置は、「一時カーソル位置」として表示されます。 <br>
+    4. 最大で5つまでの保存されたカーソル位置を確認することができます。<br>
+       ・「保存されたカーソル位置」のセクションに、保存された位置情報が表示されます。<br>
+       ・保存されたカーソル位置は、新しいものが追加されると古いものから削除されます。<br>
+    5. 一時保存されたカーソル位置をリセットすることができます。<br>
+    　　・「リセット」ボタンをクリックすると、一時的に保存されたカーソル位置が削除されます。<br>
+    　　・「一時カーソル位置」と「保存されたカーソル位置」の表示が更新されます。<br>
+    注意:<br>
+    この機構は画像上でのカーソル位置の追跡と保存を提供します。画像の縦横幅の取得や、保存された位置情報の表示などが可能です。<br>
+    以上が、カーソル位置保存機構の使用方法のガイドです。画像のアップロード、カーソル位置の追跡、一時保存、およびリセットの操作を通じて、カーソル位置を効果的に管理することができます。
+    </p>
+  </body>
+</html>
