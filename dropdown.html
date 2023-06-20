@@ -1,4 +1,22 @@
 <!DOCTYPE html>
 <html lang="ja">
-  
+  <head>
+    <link rel="stylesheet" href="tab.css" />
+    <!--  ドロップダウン   -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript" ></script>
+    
+    <script type="text/javascript">
+      $(function () {
+        // ▼マウスが載ったらサブメニューを表示
+        $("ul.ddmenu li").mouseenter(function () {
+          $(this).siblings().find("ul").hide(); // 兄弟要素に含まれるサブメニューを全部消す。
+          $(this).children().slideDown(150); // 自分のサブメニューを表示する。
+        });
+        // ▼どこかがクリックされたらサブメニューを消す
+        $("html").click(function () {
+          $("ul.ddmenu ul").slideUp(150);
+        });
+      });
+    </script>
+  </head>
 </html>
