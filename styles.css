@@ -152,7 +152,7 @@ footer::after {
 /* 浮き出るボタン*/
 .floating-button {
     background-color: aquamarine;
-    color: #ffffff;
+    color: black;
     font-size: 16px;
     padding: 10px 20px;
     border: none;
