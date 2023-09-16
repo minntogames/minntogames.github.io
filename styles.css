@@ -44,7 +44,7 @@ main {
 /* 固定ヘッダー */
 .fixed-header {
     position: fixed;
-    top: -100px; /* 初期状態では非表示にする */
+    top: -150px; /* 初期状態では非表示にする */
     left: 0;
     width: 100%;
     background-color: #66cdaa;
