@@ -19,7 +19,7 @@ main {
 
 .header {
   background-color: #66cdaa;
-  color: #fff;
+  color: #ffffff;
   text-align: center;
   padding: 40px 0;
   border-bottom-left-radius: 20px; /* 左下の角を丸くする */
@@ -48,8 +48,8 @@ main {
     left: 0;
     width: 100%;
     background-color: #66cdaa;
-    color: #fff;
-    padding: 20px;
+    color: #ffffff;
+    padding: 20px 0;
     text-align: center;
     transition: top 0.3s; /* スクロール時のアニメーションを追加 */
     border-bottom-left-radius: 20px; /* 左下の角を丸くする */
@@ -203,3 +203,14 @@ footer::after {
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
+
+.box5 {
+    padding: 0.5em 1em;
+    margin : 30px ;
+    border: double 5px #4ec4d3;
+}
+.box5 p {
+    margin: 0; 
+    padding: 0;
+}
+h1 { text-align: center }
