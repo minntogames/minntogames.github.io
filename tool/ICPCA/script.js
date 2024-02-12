@@ -75,3 +75,21 @@ document.getElementById('imageInput').addEventListener('change', function(e) {
 
   image.src = URL.createObjectURL(e.target.files[0]);
 });
+
+document.getElementById('imageURLInput').addEventListener('change', function() {
+  var imageURL = document.getElementById('imageURLInput').value;
+  if (imageURL) {
+    var image = new Image();
+
+    image.onload = function() {
+      canvas.width = image.width;
+      canvas.height = image.height;
+      ctx.drawImage(image, 0, 0);
+
+      var imageSizeOutput = document.getElementById('imageSizeOutput');
+      imageSizeOutput.textContent = '画像のサイズ: 幅=' + image.width + '、高さ=' + image.height;
+    };
+
+    image.src = imageURL;
+  }
+});
