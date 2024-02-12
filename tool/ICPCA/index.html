@@ -81,20 +81,16 @@
     <h1>画像カーソル位置座標取得ジェネレーター</h1><br><br><br>
     
     
-    <div id="container">
-      <div>
-        <input type="file" id="imageInput" accept="image/*" />
-      </div>
-      <div>
-        <canvas id="canvas"></canvas>
-      </div>
-      <div>
-        <div id="imageSizeOutput"></div>
-        <div id="cursorPositionOutput"></div>
-        <div id="tempCursorPositionOutput"></div>
-        <button id="resetButton">一時カーソル位置リセット</button>
-      </div>
-    </div>
+    <input type="url" id="imageURLInput" placeholder="画像のURLを入力してください">
+    <input type="file" id="imageInput">
+    <br>
+    <button id="resetButton">リセット</button>
+    <br>
+    <canvas id="canvas"></canvas>
+    <div id="cursorPositionOutput"></div>
+    <div id="tempCursorPositionOutput"></div>
+    <div id="savedCursorPositionOutput"></div>
+    <div id="imageSizeOutput"></div>
     <p>
     <h2>カーソル位置保存機構の使用方法</h2>
 
