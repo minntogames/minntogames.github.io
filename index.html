@@ -6,8 +6,17 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-    
-      gtag('config', 'G-CVFB85ZGLZ');
+  
+      // 必要なデータのみを送信
+      gtag('config', 'G-CVFB85ZGLZ', {
+          'anonymize_ip': true,  // IPアドレスを匿名化
+          'send_page_view': false,  // 初回ページビューを手動で送信する場合はfalseに
+      });
+
+        // 初回ページビューの手動送信（必要な場合）
+      gtag('event', 'page_view', {
+          'page_path': window.location.pathname
+      });
   </script>
   <meta charset="UTF-8">
   <meta name="theme-color" content="#00ffbb">
