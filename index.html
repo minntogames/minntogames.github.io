@@ -30,7 +30,7 @@
     async function ShowNowYear() {
       var now = new Date();
       var year = now.getFullYear();
-      await document.write(year);
+      document.getElementById("ShowNowYear").innerHTML = `${year}`;
     }
   </script>
 </head>
@@ -113,7 +113,7 @@
           <li><a href="https://twitter.com/Minntelia_ch" target="_blank" rel="noopener noreferrer"><img src="https://minntogames.github.io/image/twi-ico.png" alt="Facebook"></a></li>
           <li><a href="https://www.youtube.com/@Minntelia" target="_blank" rel="noopener noreferrer"><img src="https://minntogames.github.io/image/you-ico.png" alt="Twitter"></a></li>
         </ul>
-        <p class="copyright">&copy; 2007 - <script type="text/javascript">ShowNowYear();</script> Minnteliaのお部屋 All rights</p>
+        <p class="copyright">&copy; 2007 - <script type="text/javascript" id="ShowNowYear">ShowNowYear();</script> Minnteliaのお部屋 All rights</p>
       </div>
     </footer>
   </div>
