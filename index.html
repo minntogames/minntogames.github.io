@@ -36,7 +36,7 @@
             var year = now.getFullYear();
 
             var newElement = document.createElement("p");
-            newElement.textContent = `${year}`;
+            newElement.textContent = `&copy; 2007 - ${year} Minnteliaのお部屋 All rights`;
             fragment.appendChild(newElement);
 
             contentDiv.appendChild(fragment);
@@ -122,7 +122,7 @@
           <li><a href="https://twitter.com/Minntelia_ch" target="_blank" rel="noopener noreferrer"><img src="https://minntogames.github.io/image/twi-ico.png" alt="Facebook"></a></li>
           <li><a href="https://www.youtube.com/@Minntelia" target="_blank" rel="noopener noreferrer"><img src="https://minntogames.github.io/image/you-ico.png" alt="Twitter"></a></li>
         </ul>
-        <p class="copyright">&copy; 2007 - <script type="text/javascript" id="ShowNowYear"></script> Minnteliaのお部屋 All rights</p>
+        <p class="copyright" id="ShowNowYear"></p>
       </div>
     </footer>
   </div>
