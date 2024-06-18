@@ -214,23 +214,3 @@ footer::after {
     padding: 0;
 }
 h1 { text-align: center }
-
-.video-container {
-  position: relative;
-  width: 560px;
-  height: 315px;
-  cursor: pointer;
-  background-image: url('https://minntogames.github.io/image/samune.webp');
-  background-size: cover;
-  background-position: center;
-}
-.play-button {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 64px;
-  height: 64px;
-  background: url('https://img.icons8.com/ios-filled/50/000000/play-button-circled--v1.png') no-repeat center;
-  background-size: contain;
-}
