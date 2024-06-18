@@ -6,7 +6,3 @@ document.addEventListener("scroll", function() {
         header.style.top = "-150px"; // スクロール位置が100px未満の場合は非表示
     }
 });
-
-// 初期ロード時とウィンドウリサイズ時に iframe を調整
-window.addEventListener('load', resizeIframe);
-window.addEventListener('resize', resizeIframe);
