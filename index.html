@@ -18,7 +18,16 @@
   <link rel="preload" href="css/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="css/styles.css"></noscript>
 
-  <script src="java/script.js" type="text/javascript" ></script>
+  <script type="text/javascript">
+    document.addEventListener("scroll", function() {
+        const header = document.querySelector(".fixed-header");
+        if (window.scrollY > 150) { // スクロール位置が100pxを超えたら表示
+            header.style.top = "0";
+        } else {
+            header.style.top = "-150px"; // スクロール位置が100px未満の場合は非表示
+        }
+    });
+  </script>
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function() {
             var contentDiv = document.getElementById("ShowNowYear");
@@ -89,7 +98,7 @@
         <h2>【関連サイト】</h2>
         <p>
           <a href="https://minntogames.github.io/frandre-bot.github.io" aria-label="フランbotのサイト">
-              <img src="https://minntogames.github.io/frandre-bot.github.io/images/ico/sic.png" width="128" height="128" alt="フランbotのサイト">
+              <img src="https://minntogames.github.io/frandre-bot.github.io/images/ico/sic.webp" width="128" height="128" alt="フランbotのサイト">
           <p>フランBot</p></a>
         </p>
       </div>
