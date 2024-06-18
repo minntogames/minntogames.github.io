@@ -9,8 +9,6 @@
     
       gtag('config', 'G-CVFB85ZGLZ');
   </script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/justinribeiro/lite-youtube-embed@latest/src/lite-yt-embed.css">
-  <script src="https://cdn.jsdelivr.net/gh/justinribeiro/lite-youtube-embed@latest/src/lite-yt-embed.js"></script>
   <meta charset="UTF-8">
   <meta name="theme-color" content="#00ffbb">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -84,7 +82,11 @@
       <br>
       <div class="fancy-border">
         <h3>【おすすめの動画】</h3>
-        <lite-youtube videoid="vaep8EnIT4w" id="youtube-iframe"></lite-youtube>
+        <div id="youtube-iframe">
+          <div class="video-container" id="videoContainer">
+            <div class="play-button"></div>
+          </div>
+        </div>
       </div> 
       <div class="fancy-border">
         <h3>【連携サイト】</h3>
