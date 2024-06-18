@@ -10,6 +10,7 @@
     
       gtag('config', 'G-CVFB85ZGLZ');
   </script>
+  <link rel="stylesheet" href="https://unpkg.com/lite-youtube-embed/src/lite-yt-embed.css">
   <meta charset="UTF-8">
   <meta name="theme-color" content="#00ffbb">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,10 +26,10 @@
   <link rel="stylesheet" href="css/styles.css">
   <script src="java/script.js" type="text/javascript" ></script>
   <script type="text/javascript">
-    function ShowNowYear() {
+    async function ShowNowYear() {
       var now = new Date();
       var year = now.getFullYear();
-      document.write(year);
+      await document.write(year);
     }
   </script>
 </head>
@@ -74,10 +75,8 @@
       </div>
       <br>
       <div class="fancy-border">
-        <h3>【おすすめの動画＆最新動画】</h3>
-        <iframe id="youtube-iframe" src="https://www.youtube-nocookie.com/embed/vaep8EnIT4w?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        <iframe src="https://youtube.com/embed/?list=UUI8wpCAtV_SttGVUeUGw1Pg/" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-      <br>
+        <h3>【おすすめの動画】</h3>
+        <lite-youtube videoid="vaep8EnIT4w"></lite-youtube>
       <div class="fancy-border">
         <h3>【連携サイト】</h3>
         <p>
@@ -100,7 +99,7 @@
     <footer>
       <div class="footer-content">
         <div class="logo">
-          <img src="https://minntogames.github.io/image/footer-rogo.png" alt="logo">
+          <img src="https://minntogames.github.io/image/footer-rogo.png" alt="logo" width="100px" height="33px">
         </div>
          <ul class="footer-links">
           <li><a href="#"><button class="floating-button">home</button></a></li>
