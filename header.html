@@ -1,0 +1,25 @@
+<template id="header-template">
+    <header>
+        <div class="fixed-header" id="header">
+            <nav>
+              <ul>
+                  <li><a href="#">home</a></li>
+                  <li><a href="chara.html">chara</a></li>
+                  <li><a href="#">近日公開</a></li>
+                  <li><a href="menu.html">menu</a></li>
+              </ul>
+            </nav>
+          </div>
+    </header>
+  </template>
+  
+  <script>
+    class MyHeader extends HTMLElement {
+      connectedCallback() {
+        const template = document.getElementById('header-template');
+        const content = template.content.cloneNode(true);
+        this.appendChild(content);
+      }
+    }
+    customElements.define('my-header', MyHeader);
+</script>
