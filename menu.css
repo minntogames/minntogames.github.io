@@ -1,10 +1,23 @@
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
 .box5 {
+    flex: 0 0 45%;
+    box-sizing: border-box;
     padding: 0.5em 1em;
-    margin : 30px ;
+    margin: 30px;
     border: double 5px #4ec4d3;
 }
-.box5 p {
-    margin: 0; 
-    padding: 0;
+
+@media (max-width: 1215px) {
+    .container {
+        display: block;
+    }
+    .box5 {
+        width: 100%;
+        margin: 15px 0;
+    }
 }
-h1 { text-align: center }

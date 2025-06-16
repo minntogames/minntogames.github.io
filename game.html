@@ -34,7 +34,7 @@ var fjsRDunjonWorldTemplate = function() {
 	this.charTable = new Array();
 
 	// キャラクタテンプレート作成
-	for (i = 0;i < 11;i++) {
+	for (i = 0;i < 12;i++) {
 		this.charTable.push(new fjsRDunjonChr());
 	}
 
@@ -189,7 +189,7 @@ var fjsRDunjonWorldTemplate = function() {
 
 	// 洞窟熊
 	this.charTable[8].type = 9;
-	this.charTable[8].chr = 'B';
+	this.charTable[8].chr = 'Ｂ';
 	this.charTable[8].name = "洞窟熊";
 	this.charTable[8].hp = 65;
 	this.charTable[8].mhp = 65;
@@ -240,6 +240,24 @@ var fjsRDunjonWorldTemplate = function() {
 	this.charTable[10].actionAttack = 100;
 	this.charTable[10].actionFollow = 0;
 	this.charTable[10].actionMove = 0;
+
+	// ドラゴン
+	this.charTable[11].type = 12;
+	this.charTable[11].chr = 'Ｄ';
+	this.charTable[11].name = "紅竜";
+	this.charTable[11].hp = 180;
+	this.charTable[11].mhp = 180;
+	this.charTable[11].str = 120;
+	this.charTable[11].tough = 120;
+	this.charTable[11].at = 120;
+	this.charTable[11].def = 120;
+	this.charTable[11].exp = 0;
+	this.charTable[11].mexp = 255;
+	this.charTable[11].actionPoint = 0;
+	this.charTable[11].actionCharge = 4;
+	this.charTable[11].actionAttack = 100;
+	this.charTable[11].actionFollow = 0;
+	this.charTable[11].actionMove = 0;
 
 	// マップサイズ設定
 	this.MAP_COLS = 15;
@@ -1307,5 +1325,10 @@ function fjsRDunjonKeyUp(e) {
 
 }
 </script>
+<p>
+	【遊び方】<br>
+	矢印キー：移動<br>
+	Enterキー：一時停止
+</p>
 		 </body>
 </html>

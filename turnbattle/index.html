@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ターン制カードバトルゲーム</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            background-color: #34495e;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .players-area, .enemies-area {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .character-card {
+            background-color: #4a6a8c;
+            border-radius: 12px;
+            padding: 15px;
+            width: 180px;
+            text-align: center;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+            cursor: pointer;
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .character-card.active {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
+            border-color: #f1c40f; /* Active player highlight */
+        }
+
+        .character-card.selected {
+            border-color: #3498db; /* Target selection highlight */
+            background-color: #5b7da0;
+        }
+
+        .character-card.enemy {
+            background-color: #8c4a4a;
+            border-color: #e74c3c; /* Enemy highlight */
+        }
+
+        .character-card.enemy.selected {
+            border-color: #f39c12; /* Selected enemy highlight */
+            background-color: #a05b5b;
+        }
+
+        /* 選択可能なターゲットの新しいスタイル */
+        .character-card.selectable-target {
+            border-color: #3498db; /* Selectable target highlight */
+            box-shadow: 0 0 15px #3498db, 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .character-card:hover:not(.active):not(.selected) {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #f39c12;
+        }
+
+        .card-stats {
+            font-size: 0.9em;
+            color: #bdc3c7;
+        }
+
+        .card-stats p {
+            margin: 4px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-stats i {
+            margin-right: 5px;
+            color: #bdc3c7;
+        }
+
+        .hp-bar-container {
+            width: 100%;
+            background-color: #333;
+            border-radius: 5px;
+            height: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background-color: #27ae60;
+            width: 100%; /* Initial width */
+            border-radius: 5px;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .enemy-hp-bar {
+            background-color: #e74c3c;
+        }
+
+        .game-log {
+            background-color: #2c3e50;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9em;
+            border: 1px solid #3b5066;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            line-height: 1.4;
+            color: #ecf0f1;
+        }
+
+        .log-entry.damage { color: #e74c3c; }
+        .log-entry.heal { color: #27ae60; }
+        .log-entry.turn { color: #f1c40f; }
+        .log-entry.game-over { color: #c0392b; font-weight: bold; }
+        .log-entry.win { color: #2ecc71; font-weight: bold; }
+
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .game-button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+        }
+
+        .game-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        }
+
+        .game-button:hover::before {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .game-button:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2c3e50;
+            border: 3px solid #f1c40f;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ecf0f1;
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .message-box button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+
+        .message-box button:hover {
+            background-color: #2980b9;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+            }
+
+            .character-card {
+                width: 140px;
+                padding: 10px;
+            }
+
+            .card-name {
+                font-size: 1em;
+            }
+
+            .card-stats {
+                font-size: 0.8em;
+            }
+
+            .game-log {
+                font-size: 0.8em;
+            }
+
+            .game-button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 15px;
+            }
+
+            .character-card {
+                width: 120px;
+                padding: 8px;
+            }
+
+            .card-name {
+                font-size: 0.9em;
+            }
+
+            .card-stats {
+                font-size: 0.75em;
+            }
+            .players-area, .enemies-area {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>⚔️ ターン制カードバトル ⚔️</h1>
+
+        <div class="game-area">
+            <h2>敵 👹</h2>
+            <div id="enemiesArea" class="enemies-area">
+                <!-- 敵のカードがここに生成されます -->
+            </div>
+
+            <h2>味方 💪</h2>
+            <div id="playersArea" class="players-area">
+                <!-- 味方のカードがここに生成されます -->
+            </div>
+        </div>
+
+        <div class="game-log" id="gameLog">
+            <!-- ゲームログがここに表示されます -->
+        </div>
+
+        <div class="controls">
+            <button id="attackButton" class="game-button">攻撃！</button>
+            <button id="healButton" class="game-button">回復！</button>
+            <button id="nextTurnButton" class="game-button" disabled>次のターン</button>
+            <button id="restartButton" class="game-button" style="background-color: #e74c3c;">最初から</button>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box">
+        <p id="messageText"></p>
+        <button id="closeMessageBox">OK</button>
+    </div>
+
+    <script>
+        // キャラクターの基本クラス
+        class Character {
+            constructor(name, maxHp, attack, healing, isPlayer = true) {
+                this.name = name;
+                this.maxHp = maxHp;
+                this.currentHp = maxHp;
+                this.attack = attack;
+                this.healing = healing;
+                this.isPlayer = isPlayer;
+                this.element = null; // DOM要素を保持
+            }
+
+            // ダメージを受ける
+            takeDamage(amount) {
+                this.currentHp -= amount;
+                if (this.currentHp < 0) {
+                    this.currentHp = 0;
+                }
+                this.updateHpBar();
+                // HPが0になったらカードのイベントリスナーを無効にする
+                if (this.currentHp <= 0 && this.element) {
+                    this.element.style.opacity = '0.5'; // 透明度を下げて無効化を示す
+                    this.element.style.pointerEvents = 'none'; // クリックイベントを無効化
+                    this.element.classList.remove('active', 'selected', 'selectable-target'); // ハイライトも削除
+                }
+                return `${this.name} は ${amount} ダメージ受けた。現在のHP: ${this.currentHp}`;
+            }
+
+            // 回復する
+            heal(amount) {
+                this.currentHp += amount;
+                if (this.currentHp > this.maxHp) {
+                    this.currentHp = this.maxHp;
+                }
+                this.updateHpBar();
+                // HPが0から回復したらイベントリスナーを再度有効にする（必要であれば）
+                if (this.currentHp > 0 && this.element && this.element.style.pointerEvents === 'none') {
+                    this.element.style.opacity = '1';
+                    this.element.style.pointerEvents = 'auto';
+                }
+                return `${this.name} は ${amount} 回復した。現在のHP: ${this.currentHp}`;
+            }
+
+            // HPバーを更新
+            updateHpBar() {
+                if (this.element) {
+                    const hpBar = this.element.querySelector('.hp-bar');
+                    const currentHpSpan = this.element.querySelector('.current-hp');
+                    if (hpBar) {
+                        const hpPercentage = (this.currentHp / this.maxHp) * 100;
+                        hpBar.style.width = `${hpPercentage}%`;
+                        if (hpPercentage < 30) {
+                            hpBar.style.backgroundColor = '#e74c3c'; // 赤
+                        } else if (hpPercentage < 60) {
+                            hpBar.style.backgroundColor = '#f1c40f'; // 黄色
+                        } else {
+                            hpBar.style.backgroundColor = '#27ae60'; // 緑
+                        }
+                    }
+                    if (currentHpSpan) {
+                        currentHpSpan.textContent = this.currentHp;
+                    }
+                }
+            }
+
+            // キャラクターカードを生成
+            createCardElement() {
+                const card = document.createElement('div');
+                card.classList.add('character-card');
+                if (!this.isPlayer) {
+                    card.classList.add('enemy');
+                }
+                card.dataset.name = this.name;
+
+                card.innerHTML = `
+                    <div class="card-name">${this.name}</div>
+                    <div class="card-stats">
+                        <p><i class="fas fa-heart"></i> HP: <span class="current-hp">${this.currentHp}</span> / ${this.maxHp}</p>
+                        <p><i class="fas fa-fist-raised"></i> 攻撃力: ${this.attack}</p>
+                        <p><i class="fas fa-first-aid"></i> 回復力: ${this.healing}</p>
+                    </div>
+                    <div class="hp-bar-container">
+                        <div class="hp-bar ${this.isPlayer ? '' : 'enemy-hp-bar'}"></div>
+                    </div>
+                `;
+                this.element = card;
+                this.updateHpBar(); // 初期HPバーを設定
+                return card;
+            }
+        }
+
+        // ゲームの状態を管理するオブジェクト
+        const gameState = {
+            players: [],
+            enemies: [],
+            currentPlayerIndex: 0,
+            currentTurnPhase: 'player_action', // 'player_action', 'select_target', 'enemy_action'
+            selectedAction: null, // 'attack' or 'heal'
+            selectedTarget: null, // ターゲットとなるキャラクター
+            gameOver: false,
+        };
+
+        // DOM要素
+        const playersArea = document.getElementById('playersArea');
+        const enemiesArea = document.getElementById('enemiesArea');
+        const gameLog = document.getElementById('gameLog');
+        const attackButton = document.getElementById('attackButton');
+        const healButton = document.getElementById('healButton');
+        const nextTurnButton = document.getElementById('nextTurnButton');
+        const restartButton = document.getElementById('restartButton');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const closeMessageBox = document.getElementById('closeMessageBox');
+
+        // メッセージボックスを表示
+        function showMessageBox(message, callback) {
+            messageText.textContent = message;
+            messageBox.style.display = 'block';
+            const handleClose = () => {
+                messageBox.style.display = 'none';
+                closeMessageBox.removeEventListener('click', handleClose);
+                if (callback) callback();
+            };
+            closeMessageBox.addEventListener('click', handleClose);
+        }
+
+        // ゲームログにメッセージを追加
+        function addLog(message, type = '') {
+            const entry = document.createElement('p');
+            entry.classList.add('log-entry');
+            if (type) {
+                entry.classList.add(type);
+            }
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            gameLog.prepend(entry); // 最新のログが上に来るように
+            gameLog.scrollTop = 0; // スクロールを一番上にする
+        }
+
+        // ゲームの初期化
+        function initializeGame() {
+            // プレイヤーを定義
+            gameState.players = [
+                new Character('剣士', 100, 20, 10, true),
+                new Character('魔法使い', 80, 25, 5, true),
+                new Character('僧侶', 90, 10, 20, true),
+                new Character('盗賊', 70, 15, 15, true)
+            ];
+
+            // 敵を定義
+            gameState.enemies = [
+                new Character('ゴブリン', 60, 15, 0, false),
+                new Character('スライム', 40, 10, 0, false),
+                new Character('オーク', 90, 20, 0, false)
+            ];
+
+            gameState.currentPlayerIndex = 0;
+            gameState.currentTurnPhase = 'player_action';
+            gameState.selectedAction = null;
+            gameState.selectedTarget = null;
+            gameState.gameOver = false;
+
+            playersArea.innerHTML = '';
+            enemiesArea.innerHTML = '';
+            gameLog.innerHTML = '';
+
+            // カードをDOMに追加
+            gameState.players.forEach(player => {
+                playersArea.appendChild(player.createCardElement());
+            });
+            gameState.enemies.forEach(enemy => {
+                enemiesArea.appendChild(enemy.createCardElement());
+            });
+
+            // イベントリスナーを再設定
+            setupEventListeners();
+            updateButtonStates();
+            addLog('ゲーム開始！', 'turn');
+            startPlayerTurn();
+        }
+
+        // イベントリスナーを設定
+        function setupEventListeners() {
+            // 既存のリスナーを削除 (リスタート時に重複しないように)
+            attackButton.onclick = null;
+            healButton.onclick = null;
+            nextTurnButton.onclick = null;
+            restartButton.onclick = null;
+
+            attackButton.onclick = () => selectAction('attack');
+            healButton.onclick = () => selectAction('heal');
+            nextTurnButton.onclick = endPlayerTurn;
+            restartButton.onclick = () => {
+                // confirm() の代わりに showMessageBox を使用
+                showMessageBox('本当にゲームを最初からやり直しますか？', () => {
+                    initializeGame();
+                });
+            };
+
+            // キャラクターカードのクリックイベント（ターゲット選択用）
+            document.querySelectorAll('.character-card').forEach(card => {
+                card.onclick = null; // 既存のリスナーを削除
+                card.onclick = (event) => handleCardClick(event.currentTarget);
+            });
+        }
+
+        // ボタンの状態を更新
+        function updateButtonStates() {
+            if (gameState.gameOver) {
+                attackButton.disabled = true;
+                healButton.disabled = true;
+                nextTurnButton.disabled = true;
+                return;
+            }
+
+            const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+            if (!currentPlayer || currentPlayer.currentHp <= 0) {
+                 attackButton.disabled = true;
+                 healButton.disabled = true;
+                 nextTurnButton.disabled = true;
+                 return;
+            }
+
+            switch (gameState.currentTurnPhase) {
+                case 'player_action':
+                    attackButton.disabled = false;
+                    healButton.disabled = false;
+                    nextTurnButton.disabled = true;
+                    break;
+                case 'select_target':
+                    attackButton.disabled = true;
+                    healButton.disabled = true;
+                    nextTurnButton.disabled = true;
+                    break;
+                case 'action_done':
+                    attackButton.disabled = true;
+                    healButton.disabled = true;
+                    nextTurnButton.disabled = false;
+                    break;
+                default:
+                    attackButton.disabled = true;
+                    healButton.disabled = true;
+                    nextTurnButton.disabled = true;
+            }
+        }
+
+        // ターゲットのハイライトと選択可能なターゲットのハイライトをリセット
+        function resetHighlights() {
+            document.querySelectorAll('.character-card.selected').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelectorAll('.character-card.selectable-target').forEach(card => {
+                card.classList.remove('selectable-target');
+            });
+        }
+
+        // アクションを選択
+        function selectAction(action) {
+            resetHighlights(); // 全てのハイライトをリセット
+            gameState.selectedAction = action;
+            gameState.currentTurnPhase = 'select_target';
+            addLog(`${gameState.players[gameState.currentPlayerIndex].name} が ${action === 'attack' ? '攻撃' : '回復'} を選択しました。ターゲットを選んでください。`, 'turn');
+            updateButtonStates();
+
+            // 選択可能なターゲットをハイライト
+            if (action === 'attack') {
+                gameState.enemies.filter(e => e.currentHp > 0).forEach(enemy => {
+                    // 修正: enemy.classList.add -> enemy.element.classList.add
+                    if (enemy.element) enemy.element.classList.add('selectable-target');
+                });
+            } else { // heal
+                gameState.players.filter(p => p.currentHp > 0).forEach(player => {
+                    // 修正: player.classList.add -> player.element.classList.add
+                    if (player.element) player.element.classList.add('selectable-target');
+                });
+            }
+        }
+
+        // カードクリック時の処理 (ターゲット選択)
+        function handleCardClick(cardElement) {
+            if (gameState.currentTurnPhase !== 'select_target' || gameState.gameOver) {
+                return;
+            }
+
+            const targetName = cardElement.dataset.name;
+            let target = null;
+            const isEnemyCard = cardElement.classList.contains('enemy');
+
+            if (isEnemyCard) {
+                target = gameState.enemies.find(e => e.name === targetName);
+            } else {
+                target = gameState.players.find(p => p.name === targetName);
+            }
+
+            if (!target || target.currentHp <= 0) {
+                showMessageBox('そのターゲットは選択できません！');
+                return;
+            }
+
+            // アクションに応じてターゲットを検証
+            const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+            if (gameState.selectedAction === 'attack' && !isEnemyCard) {
+                showMessageBox('攻撃は敵に対してのみ行えます！');
+                return;
+            }
+            if (gameState.selectedAction === 'heal' && isEnemyCard) {
+                showMessageBox('回復は味方に対してのみ行えます！');
+                return;
+            }
+
+            // 選択されたターゲットをハイライト
+            resetHighlights(); // 選択可能なターゲットのハイライトもリセット
+            cardElement.classList.add('selected');
+            gameState.selectedTarget = target;
+
+            performPlayerAction(currentPlayer, gameState.selectedAction, gameState.selectedTarget);
+        }
+
+        // プレイヤーのアクションを実行
+        function performPlayerAction(player, action, target) {
+            if (!player || player.currentHp <= 0) return;
+
+            let logMessage = '';
+            if (action === 'attack') {
+                const damage = player.attack + Math.floor(Math.random() * 5); // ランダム性
+                logMessage = `${player.name} は ${target.name} に ${damage} ダメージ与えた！`;
+                addLog(logMessage, 'damage');
+                target.takeDamage(damage);
+            } else if (action === 'heal') {
+                const healing = player.healing + Math.floor(Math.random() * 3); // ランダム性
+                logMessage = `${player.name} は ${target.name} を ${healing} 回復した！`;
+                addLog(logMessage, 'heal');
+                target.heal(healing);
+            }
+
+            gameState.currentTurnPhase = 'action_done';
+            updateButtonStates();
+            resetHighlights(); // アクション実行後、全てのハイライトを解除
+            checkGameEnd();
+        }
+
+        // プレイヤーのターンを開始
+        function startPlayerTurn() {
+            if (gameState.gameOver) return;
+
+            // HPが0のプレイヤーはスキップ
+            let currentPlayer = gameState.players[gameState.currentPlayerIndex];
+            let attempts = 0;
+            const maxAttempts = gameState.players.length; // 無限ループ防止のため
+            while (currentPlayer && currentPlayer.currentHp <= 0 && attempts < maxAttempts) {
+                gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+                currentPlayer = gameState.players[gameState.currentPlayerIndex];
+                attempts++;
+            }
+
+            // 全員のHPが0の場合ゲーム終了
+            if (!currentPlayer || currentPlayer.currentHp <= 0) {
+                addLog('すべてのプレイヤーが行動不能です。敵のターンに移ります。', 'turn');
+                setTimeout(performEnemyTurn, 1000);
+                return;
+            }
+
+            addLog(`${currentPlayer.name} のターンです！`, 'turn');
+            // 全てのプレイヤーカードからactiveクラスを削除
+            document.querySelectorAll('.character-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            // 現在のプレイヤーカードにactiveクラスを追加
+            if (currentPlayer.element) {
+                currentPlayer.element.classList.add('active');
+            }
+
+            gameState.currentTurnPhase = 'player_action';
+            updateButtonStates();
+        }
+
+        // プレイヤーのターンを終了
+        function endPlayerTurn() {
+            if (gameState.gameOver) return;
+
+            // 現在のプレイヤーのハイライトを解除
+            const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+            if (currentPlayer && currentPlayer.element) {
+                currentPlayer.element.classList.remove('active');
+            }
+
+            // 次のプレイヤーに切り替える
+            gameState.currentPlayerIndex++;
+            if (gameState.currentPlayerIndex >= gameState.players.length) {
+                // 全てのプレイヤーが行動したら敵のターン
+                gameState.currentPlayerIndex = 0;
+                addLog('プレイヤーのターン終了！敵のターンです。', 'turn');
+                setTimeout(performEnemyTurn, 1000); // 敵のターンを開始
+            } else {
+                startPlayerTurn(); // 次のプレイヤーのターンを開始
+            }
+        }
+
+        // 敵のターンを実行
+        function performEnemyTurn() {
+            if (gameState.gameOver) return;
+            addLog('敵のターン！', 'turn');
+
+            const livePlayers = gameState.players.filter(p => p.currentHp > 0);
+            const liveEnemies = gameState.enemies.filter(e => e.currentHp > 0);
+
+            if (livePlayers.length === 0) {
+                checkGameEnd(); // プレイヤーが全滅したらゲーム終了
+                return;
+            }
+            if (liveEnemies.length === 0) {
+                 checkGameEnd(); // 敵が全滅したらゲーム終了
+                 return;
+            }
+
+            let actionsCompleted = 0;
+            liveEnemies.forEach(enemy => {
+                if (enemy.currentHp <= 0) return; // 倒された敵は行動しない
+
+                // ランダムなプレイヤーをターゲットに選ぶ
+                const targetPlayer = livePlayers[Math.floor(Math.random() * livePlayers.length)];
+                if (targetPlayer) {
+                    const damage = enemy.attack + Math.floor(Math.random() * 5);
+                    addLog(`${enemy.name} は ${targetPlayer.name} に ${damage} ダメージ与えた！`, 'damage');
+                    targetPlayer.takeDamage(damage);
+                }
+                actionsCompleted++;
+            });
+
+            // すべての敵が行動を終えたらプレイヤーのターンに戻る
+            // ただし、すべての敵が倒されている場合はゲーム終了チェックのみ
+            if (liveEnemies.length === actionsCompleted) {
+                addLog('敵のターン終了！プレイヤーのターンに戻ります。', 'turn');
+                setTimeout(startPlayerTurn, 1500); // プレイヤーのターンを開始
+                checkGameEnd();
+            } else {
+                // 生きている敵がいない場合
+                checkGameEnd();
+            }
+        }
+
+        // ゲームの終了条件をチェック
+        function checkGameEnd() {
+            const livePlayers = gameState.players.filter(p => p.currentHp > 0);
+            const liveEnemies = gameState.enemies.filter(e => e.currentHp > 0);
+
+            if (livePlayers.length === 0) {
+                addLog('すべての味方が倒されました。ゲームオーバー！', 'game-over');
+                showMessageBox('ゲームオーバー！\nすべての味方が倒されました。', () => {
+                    gameState.gameOver = true;
+                    updateButtonStates();
+                });
+            } else if (liveEnemies.length === 0) {
+                addLog('すべての敵を倒しました。勝利！', 'win');
+                showMessageBox('勝利！\nすべての敵を倒しました！', () => {
+                    gameState.gameOver = true;
+                    updateButtonStates();
+                });
+            }
+        }
+
+        // ゲーム開始
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>
