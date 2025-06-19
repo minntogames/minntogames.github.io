@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宇宙クリッカーゲーム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #e0e7ff; /* Light text color */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Prevent scroll */
+
+            /* Base gradient and some subtle nebula effects */
+            background:
+                radial-gradient(circle at 10% 20%, rgba(30, 30, 80, 0.5) 0%, transparent 60%),
+                radial-gradient(circle at 90% 80%, rgba(50, 20, 70, 0.5) 0%, transparent 60%),
+                linear-gradient(to bottom, #0a0a0f, #1a1a2e); /* Main dark background */
+        }
+
+        /* Pseudo-elements for star layers */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Behind content */
+            background-repeat: repeat;
+        }
+
+        /* Layer 1: Distant, small, dense stars */
+        body::before {
+            background-image: radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 30% 70%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 60% 10%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 80% 90%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 5% 50%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 40% 40%, #fff, transparent);
+            background-size: 800px 800px;
+            animation: star-move-1 120s linear infinite;
+        }
+
+        /* Layer 2: Medium-sized, less dense stars */
+        body::after {
+            background-image: radial-gradient(2.5px 2.5px at 15% 85%, #fff, transparent),
+                              radial-gradient(2.5px 2.5px at 70% 30%, #fff, transparent),
+                              radial-gradient(2.5px 2.5px at 25% 60%, #fff, transparent),
+                              radial-gradient(2.5px 2.5px at 95% 5%, #fff, transparent);
+            background-size: 1500px 1500px;
+            animation: star-move-2 200s linear infinite; /* Slower */
+        }
+
+        @keyframes star-move-1 {
+            from { background-position: 0 0; }
+            to { background-position: 800px 800px; }
+        }
+
+        @keyframes star-move-2 {
+            from { background-position: 0 0; }
+            to { background-position: -1500px -1500px; } /* Different direction */
+        }
+
+        .container {
+            max-width: 90%;
+            width: 100%;
+            background-color: rgba(26, 26, 46, 0.8); /* Slightly transparent dark background */
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            height: 90vh; /* Maximize vertical space */
+            margin: 20px auto;
+        }
+        .menu-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        .sidebar {
+            width: 250px;
+            min-width: 250px;
+            background-color: #2a2a4a; /* Darker sidebar */
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 90;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 80px; /* Space for menu button */
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto; /* Allow scrolling for content */
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .star-clicker {
+            width: 200px;
+            height: 200px;
+            font-size: 150px; /* Star emoji size */
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s ease-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulse 2s infinite; /* Pulsing effect for the star */
+        }
+        .star-clicker:active {
+            transform: scale(0.95);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .upgrade-item {
+            background-color: #3b3b6b;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .upgrade-item button {
+            background-color: #6a6aff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            /* Added box-shadow transition for smoothness */
+            transition: background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .upgrade-item button:hover {
+            background-color: #4a4acb;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly larger shadow on hover */
+        }
+        /* Explicitly for disabled state to override default hover/active */
+        .upgrade-item button[disabled] {
+            background-color: #6b7280 !important; /* Tailwind gray-500, use !important to ensure override */
+            cursor: not-allowed !important;
+            pointer-events: none; /* Disables all mouse events, including hover */
+            box-shadow: none !important; /* Remove shadow when disabled */
+            opacity: 0.7; /* Slightly dim it */
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #2a2a4a;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+            position: relative; /* For close button positioning */
+        }
+        .modal.open .modal-content {
+            transform: translateY(0);
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #ccc;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .modal-button {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin: 10px;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal-button.confirm {
+            background-color: #6aff6a;
+        }
+        .modal-button:hover {
+            background-color: #e04a4a;
+        }
+        .modal-button.confirm:hover {
+            background-color: #4acb4a;
+        }
+
+        /* Styles for orbiting planets */
+        #orbiting-planets-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            /* Center the container's origin point */
+            transform: translate(-50%, -50%);
+            width: 1px; /* Acts as the central point for orbits */
+            height: 1px;
+            z-index: 1; /* Below the main star (z-20) */
+        }
+
+        .planet-orbit-wrapper {
+            position: absolute;
+            width: 1px; /* Acts as the rotation origin */
+            height: 1px;
+            top: 0;
+            left: 0;
+            transform-origin: center center; /* This wrapper rotates around its own center (which is #orbiting-planets-container's center) */
+            /* Animation applied by JS based on duration */
+        }
+
+        .planet-visual {
+            position: absolute;
+            font-size: 25px; /* Size of planet emoji */
+            transform: translate(-50%, -50%); /* Center the emoji itself */
+            /* 'left' property will be set by JS to control orbit distance */
+        }
+
+        @keyframes orbit-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+    <!-- Hamburger Menu Button -->
+    <button id="menu-button" class="menu-button p-3 rounded-full bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar" class="sidebar fixed top-0 left-0 w-64 h-full bg-gray-900 shadow-lg text-white p-6 transform -translate-x-full transition-transform duration-300 ease-in-out z-50 rounded-r-lg">
+        <ul class="space-y-4 pt-10">
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="settings-modal">設定</a>
+            </li>
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-action="new-game-strong-start">新規ゲーム (強力なスタート)</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container relative flex flex-col md:flex-row items-stretch overflow-hidden">
+        <!-- Main Content Area -->
+        <main class="main-content flex-grow p-6">
+            <!-- Game Section -->
+            <section id="game" class="section active flex flex-col items-center justify-center h-full text-center relative">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 text-blue-300">スタークリック！</h1>
+                <p class="text-2xl mb-4">星からのエネルギー: <span id="energy-display" class="font-bold text-yellow-300">0</span></p>
+
+                <!-- Orbiting Planets Container -->
+                <!-- This container is positioned absolutely and acts as the center for all orbits -->
+                <div id="orbiting-planets-container" class="absolute inset-0 flex justify-center items-center z-10">
+                    <!-- Planets will be dynamically added here by JavaScript -->
+                </div>
+
+                <div id="star-clicker" class="star-clicker flex justify-center items-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 shadow-xl border-4 border-yellow-200 cursor-pointer select-none mx-auto relative z-20">
+                    ⭐
+                </div>
+                <div class="flex flex-wrap justify-center gap-4 mt-8">
+                    <p class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md">クリックパワー: <span id="click-power-display">1</span></p>
+                    <p class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md">自動クリック: <span id="auto-click-display">0</span>/秒</p>
+                </div>
+                <button id="show-upgrades-button" class="mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
+                    アップグレード
+                </button>
+            </section>
+
+            <!-- Upgrades Section -->
+            <section id="upgrades" class="section p-6">
+                <h2 class="text-3xl md:text-4xl font-bold mb-8 text-purple-300 text-center">アップグレード</h2>
+                <div id="upgrade-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Upgrade items will be dynamically inserted here -->
+                </div>
+                <button id="back-to-game-button" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
+                    ゲームに戻る
+                </button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Generic Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <p id="modal-message" class="text-xl mb-6 text-gray-200">メッセージ</p>
+            <div class="flex justify-center gap-4">
+                <button id="modal-cancel" class="modal-button bg-gray-500 hover:bg-gray-600">キャンセル</button>
+                <button id="modal-confirm" class="modal-button confirm bg-red-600 hover:bg-red-700">はい、削除します</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-red-300 text-center">設定</h2>
+            <button id="delete-data-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
+                データを削除
+            </button>
+            <button id="close-settings-modal" class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // IndexedDB configuration
+        const DB_NAME = 'SpaceClickerDB';
+        const STORE_NAME = 'gameState';
+        const DB_VERSION = 1;
+        const BASE_STRONG_START_ENERGY_REQUIREMENT = 1000000; // 1 million energy base cost
+
+        let db; // IndexedDB database instance
+        let gameState = {
+            energy: 0,
+            clickPower: 1,
+            autoClickPower: 0,
+            strongStartLevel: 0, // New: Tracks how many strong starts have been initiated
+            upgrades: {
+                mercury: { level: 0, cost: 10, clickBonus: 1, autoBonus: 0, icon: '☿' },
+                venus: { level: 0, cost: 50, clickBonus: 3, autoBonus: 0, icon: '♀' },
+                earth: { level: 0, cost: 200, clickBonus: 0, autoBonus: 5, icon: '🌎' },
+                mars: { level: 0, cost: 1000, clickBonus: 10, autoBonus: 0, icon: '♂' },
+                jupiter: { level: 0, cost: 5000, clickBonus: 0, autoBonus: 50, icon: '♃' },
+                saturn: { level: 0, cost: 25000, clickBonus: 0, autoBonus: 200, icon: '♄' },
+                uranus: { level: 0, cost: 100000, clickBonus: 50, autoBonus: 0, icon: '⛢' },
+                neptune: { level: 0, cost: 500000, clickBonus: 0, autoBonus: 1000, icon: '♆' },
+                originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐' } // Original Planet
+            }
+        };
+
+        // DOM Elements
+        const energyDisplay = document.getElementById('energy-display');
+        const clickPowerDisplay = document.getElementById('click-power-display');
+        const autoClickDisplay = document.getElementById('auto-click-display');
+        const starClicker = document.getElementById('star-clicker');
+        const upgradeList = document.getElementById('upgrade-list');
+        const menuButton = document.getElementById('menu-button');
+        const sidebar = document.getElementById('sidebar');
+        const navLinks = document.querySelectorAll('#sidebar a');
+        const sections = document.querySelectorAll('.section');
+        const showUpgradesButton = document.getElementById('show-upgrades-button');
+        const backToGameButton = document.getElementById('back-to-game-button');
+
+        // Modals
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCancelButton = document.getElementById('modal-cancel');
+        const modalConfirmButton = document.getElementById('modal-confirm');
+        const settingsModal = document.getElementById('settings-modal');
+        const deleteDataButton = document.getElementById('delete-data-button');
+        const closeSettingsModalButton = document.getElementById('close-settings-modal');
+        const modalCloseButtons = document.querySelectorAll('.modal-close-button');
+
+        // Orbiting Planets
+        const orbitingPlanetsContainer = document.getElementById('orbiting-planets-container');
+        // Define planet data for rendering orbits
+        const planetOrbitData = {
+            mercury: { icon: '☿', orbitDistance: 80, duration: 10 },
+            venus: { icon: '♀', orbitDistance: 120, duration: 15 },
+            earth: { icon: '🌎', orbitDistance: 160, duration: 20 },
+            mars: { icon: '♂', orbitDistance: 200, duration: 25 },
+            jupiter: { icon: '♃', orbitDistance: 240, duration: 30 },
+            saturn: { icon: '♄', orbitDistance: 280, duration: 35 },
+            uranus: { icon: '⛢', orbitDistance: 320, duration: 40 },
+            neptune: { icon: '♆', orbitDistance: 360, duration: 45 },
+            originalPlanetX: { icon: '🪐', orbitDistance: 400, duration: 50 }
+        };
+
+        let currentConfirmCallback = null;
+        let currentCancelCallback = null;
+        let confirmationStep = 0; // For multi-step deletion confirmation
+
+        // --- Helper Functions ---
+
+        /**
+         * Formats a large number with units (K, M, B, T).
+         * @param {number} num - The number to format.
+         * @returns {string} The formatted number string.
+         */
+        function formatNumber(num) {
+            if (num >= 1000000000000) {
+                return (num / 1000000000000).toFixed(2) + 'T';
+            }
+            if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(2) + 'B';
+            }
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(2) + 'K';
+            }
+            return Math.floor(num).toLocaleString();
+        }
+
+        /**
+         * Calculates the current energy cost for a "Strong New Game".
+         * Cost increases exponentially with each strong start level.
+         * @returns {number} The required energy for the next strong start.
+         */
+        function getStrongStartCurrentCost() {
+            // Using Math.pow(2, ...) for a more noticeable exponential increase
+            return BASE_STRONG_START_ENERGY_REQUIREMENT * Math.pow(2, gameState.strongStartLevel);
+        }
+
+        // --- IndexedDB Functions ---
+
+        /**
+         * Initializes the IndexedDB database.
+         * Creates the object store if it doesn't exist.
+         */
+        function initDb() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    console.log('IndexedDB initialized successfully.');
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    console.error('IndexedDB error:', event.target.errorCode);
+                    reject(event.target.errorCode);
+                };
+            });
+        }
+
+        /**
+         * Saves the current game state to IndexedDB.
+         */
+        async function saveGame() {
+            if (!db) {
+                console.error("IndexedDB not initialized, cannot save.");
+                return;
+            }
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(gameState, 'gameData'); // Use a fixed key 'gameData'
+
+            request.onsuccess = () => {
+                // console.log('Game saved.');
+            };
+
+            request.onerror = (event) => {
+                console.error('Error saving game:', event.target.errorCode);
+            };
+        }
+
+        /**
+         * Loads the game state from IndexedDB.
+         * If no data is found, returns the initial game state.
+         */
+        async function loadGame() {
+            if (!db) {
+                console.error("IndexedDB not initialized, cannot load.");
+                return;
+            }
+            return new Promise((resolve) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get('gameData');
+
+                request.onsuccess = (event) => {
+                    if (event.target.result) {
+                        gameState = event.target.result;
+                        // Ensure strongStartLevel exists for older saves
+                        if (typeof gameState.strongStartLevel === 'undefined') {
+                            gameState.strongStartLevel = 0;
+                        }
+                        console.log('Game loaded.');
+                    } else {
+                        console.log('No saved game found, starting new game.');
+                        // gameState already defaults to initial state with strongStartLevel: 0
+                    }
+                    updateDisplay();
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    console.error('Error loading game:', event.target.errorCode);
+                    updateDisplay(); // Ensure display is updated even on error
+                    resolve(); // Resolve to proceed even if loading fails
+                };
+            });
+        }
+
+        /**
+         * Clears all game data from IndexedDB.
+         */
+        async function clearGameData() {
+            if (!db) {
+                console.error("IndexedDB not initialized, cannot clear data.");
+                return;
+            }
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.clear();
+
+                request.onsuccess = () => {
+                    console.log('Game data cleared from IndexedDB.');
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    console.error('Error clearing game data:', event.target.errorCode);
+                    reject(event.target.errorCode);
+                };
+            });
+        }
+
+        // --- Game Logic ---
+
+        /**
+         * Updates the display elements with current game state.
+         */
+        function updateDisplay() {
+            energyDisplay.textContent = formatNumber(gameState.energy);
+            clickPowerDisplay.textContent = formatNumber(gameState.clickPower);
+            autoClickDisplay.textContent = formatNumber(gameState.autoClickPower);
+            renderUpgrades();
+            renderOrbitingPlanets(); // Call render function for orbiting planets
+            saveGame(); // Save game state whenever display is updated (implies state change)
+        }
+
+        /**
+         * Handles the star click event.
+         */
+        function clickStar() {
+            gameState.energy += gameState.clickPower;
+            updateDisplay();
+        }
+
+        /**
+         * Renders the upgrade items in the upgrades section.
+         */
+        function renderUpgrades() {
+            upgradeList.innerHTML = ''; // Clear previous upgrades
+            for (const key in gameState.upgrades) {
+                const upgrade = gameState.upgrades[key];
+                const upgradeElement = document.createElement('div');
+                upgradeElement.className = 'upgrade-item';
+                upgradeElement.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="upgrade-icon">${upgrade.icon}</span>
+                        <div>
+                            <h3 class="text-xl font-semibold">${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}</h3>
+                            <p class="text-sm text-gray-400">レベル: ${upgrade.level}</p>
+                            ${upgrade.clickBonus > 0 ? `<p class="text-sm text-gray-400">クリックパワー +${formatNumber(upgrade.clickBonus)}</p>` : ''}
+                            ${upgrade.autoBonus > 0 ? `<p class="text-sm text-gray-400">自動クリック +${formatNumber(upgrade.autoBonus)}/秒</p>` : ''}
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold mb-2">コスト: ${formatNumber(upgrade.cost)}</p>
+                        <button data-upgrade="${key}" class="buy-upgrade px-5 py-2 rounded-lg font-semibold transition duration-200">
+                            購入
+                        </button>
+                    </div>
+                `;
+                const buyButton = upgradeElement.querySelector('.buy-upgrade');
+                if (gameState.energy < upgrade.cost) {
+                    buyButton.disabled = true;
+                    buyButton.classList.add('bg-gray-500'); // Apply disabled style
+                    buyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700'); // Remove active styles
+                } else {
+                    buyButton.disabled = false;
+                    buyButton.classList.add('bg-blue-600', 'hover:bg-blue-700'); // Apply active styles
+                    buyButton.classList.remove('bg-gray-500'); // Remove disabled style
+                }
+                buyButton.addEventListener('click', buyUpgrade);
+                upgradeList.appendChild(upgradeElement);
+            }
+        }
+
+        /**
+         * Handles the purchase of an upgrade.
+         * @param {Event} event - The click event.
+         */
+        function buyUpgrade(event) {
+            const upgradeKey = event.target.dataset.upgrade;
+            const upgrade = gameState.upgrades[upgradeKey];
+
+            if (gameState.energy >= upgrade.cost) {
+                gameState.energy -= upgrade.cost;
+                gameState.clickPower += upgrade.clickBonus;
+                gameState.autoClickPower += upgrade.autoBonus;
+                upgrade.level++;
+                upgrade.cost = Math.floor(upgrade.cost * 1.5); // Increase cost for next level
+                updateDisplay();
+            } else {
+                console.log("Not enough energy to buy " + upgradeKey);
+            }
+        }
+
+        /**
+         * Renders orbiting planets based on unlocked upgrades.
+         */
+        function renderOrbitingPlanets() {
+            orbitingPlanetsContainer.innerHTML = ''; // Clear existing planets to prevent duplicates
+
+            for (const key in gameState.upgrades) {
+                const upgrade = gameState.upgrades[key];
+                if (upgrade.level > 0) {
+                    const data = planetOrbitData[key];
+                    if (!data) continue; // Skip if no orbit data defined for this upgrade
+
+                    const orbitWrapper = document.createElement('div');
+                    orbitWrapper.className = 'planet-orbit-wrapper';
+                    orbitWrapper.style.animation = `orbit-rotate ${data.duration}s linear infinite`;
+                    // Stagger the starting point of animation for variety
+                    orbitWrapper.style.animationDelay = `${Math.random() * data.duration}s`;
+
+                    const planetVisual = document.createElement('div');
+                    planetVisual.className = 'planet-visual';
+                    planetVisual.textContent = data.icon;
+                    // Position the planet within its rotating wrapper to set orbit radius
+                    planetVisual.style.left = `${data.orbitDistance}px`;
+                    planetVisual.style.top = `0px`; // Initial vertical position on the orbit path
+
+                    orbitWrapper.appendChild(planetVisual);
+                    orbitingPlanetsContainer.appendChild(orbitWrapper);
+                }
+            }
+        }
+
+
+        /**
+         * Auto-clicks based on auto-click power.
+         */
+        function autoClickLoop() {
+            gameState.energy += gameState.autoClickPower / 10; // Divide by 10 for 100ms interval
+            updateDisplay();
+        }
+
+        /**
+         * Resets the game to its initial state.
+         * @param {boolean} strongStart - If true, apply strong start bonuses.
+         */
+        async function resetGame(strongStart = false) {
+            // Save current strongStartLevel before clearing if strongStart is true
+            const prevStrongStartLevel = gameState.strongStartLevel;
+
+            await clearGameData(); // Clear IndexedDB first
+
+            // Reset game state, increment strongStartLevel if it's a strong start
+            gameState = {
+                energy: 0,
+                clickPower: 1,
+                autoClickPower: 0,
+                strongStartLevel: strongStart ? prevStrongStartLevel + 1 : 0, // Increment or reset
+                upgrades: {
+                    mercury: { level: 0, cost: 10, clickBonus: 1, autoBonus: 0, icon: '☿' },
+                    venus: { level: 0, cost: 50, clickBonus: 3, autoBonus: 0, icon: '♀' },
+                    earth: { level: 0, cost: 200, clickBonus: 0, autoBonus: 5, icon: '🌎' },
+                    mars: { level: 0, cost: 1000, clickBonus: 10, autoBonus: 0, icon: '♂' },
+                    jupiter: { level: 0, cost: 5000, clickBonus: 0, autoBonus: 50, icon: '♃' },
+                    saturn: { level: 0, cost: 25000, clickBonus: 0, autoBonus: 200, icon: '♄' },
+                    uranus: { level: 0, cost: 100000, clickBonus: 50, autoBonus: 0, icon: '⛢' },
+                    neptune: { level: 0, cost: 500000, clickBonus: 0, autoBonus: 1000, icon: '♆' },
+                    originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐' }
+                }
+            };
+
+            if (strongStart) {
+                // Bonuses scale with strongStartLevel
+                const bonusMultiplier = 1 + (gameState.strongStartLevel * 0.1); // 10% more per level
+
+                gameState.energy = 1000 * bonusMultiplier;
+                gameState.clickPower = 10 * bonusMultiplier;
+                gameState.autoClickPower = 1 * bonusMultiplier;
+
+                // Apply initial levels to basic upgrades, also scaled by strongStartLevel
+                // Calculate the new level based on bonusMultiplier, then update cost
+                const mercuryNewLevel = Math.floor(5 * bonusMultiplier);
+                gameState.upgrades.mercury.level = mercuryNewLevel;
+                gameState.upgrades.mercury.cost = Math.floor(gameState.upgrades.mercury.cost * Math.pow(1.5, mercuryNewLevel));
+
+                const venusNewLevel = Math.floor(2 * bonusMultiplier);
+                gameState.upgrades.venus.level = venusNewLevel;
+                gameState.upgrades.venus.cost = Math.floor(gameState.upgrades.venus.cost * Math.pow(1.5, venusNewLevel));
+            }
+            updateDisplay();
+            hideModal(confirmationModal);
+            hideModal(settingsModal); // Ensure settings modal is also hidden
+            // Switch back to game section after reset
+            showSection('game');
+        }
+
+        // --- UI Functions ---
+
+        /**
+         * Shows a specific section and hides others.
+         * @param {string} sectionId - The ID of the section to show.
+         */
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                if (section.id === sectionId) {
+                    section.classList.add('active');
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+            sidebar.classList.remove('open'); // Close sidebar after selection
+        }
+
+        /**
+         * Shows a modal and sets its content and callbacks.
+         * @param {HTMLElement} modalElement - The modal DOM element.
+         * @param {string} message - The message for the confirmation modal.
+         * @param {function} confirmCallback - Callback for the confirm button.
+         * @param {function} cancelCallback - Callback for the cancel button.
+         * @param {string} confirmButtonText - Text for the confirm button.
+         * @param {string} confirmButtonClass - Tailwind class for the confirm button background.
+         * @param {string} cancelButtonText - Text for the cancel button.
+         */
+        function showGenericModal(modalElement, message, confirmCallback, cancelCallback, confirmButtonText = 'はい', confirmButtonClass = 'bg-red-600 hover:bg-red-700', cancelButtonText = 'キャンセル') {
+            if (modalElement === confirmationModal) {
+                modalMessage.textContent = message;
+
+                // Reset default states for buttons
+                modalConfirmButton.style.display = 'inline-block';
+                modalConfirmButton.disabled = false;
+                modalConfirmButton.textContent = confirmButtonText;
+                modalConfirmButton.className = 'modal-button confirm ' + confirmButtonClass;
+
+                modalCancelButton.textContent = cancelButtonText;
+                modalCancelButton.style.display = 'inline-block'; // Ensure cancel button is also visible by default
+            }
+
+            currentConfirmCallback = confirmCallback;
+            currentCancelCallback = cancelCallback;
+
+            modalElement.classList.add('open');
+        }
+
+        /**
+         * Hides a modal.
+         * @param {HTMLElement} modalElement - The modal DOM element to hide.
+         */
+        function hideModal(modalElement) {
+            modalElement.classList.remove('open');
+            currentConfirmCallback = null;
+            currentCancelCallback = null;
+
+            // Reset confirmation modal button styles to default when hidden
+            if (modalElement === confirmationModal) {
+                modalConfirmButton.style.display = 'inline-block';
+                modalConfirmButton.disabled = false;
+                modalCancelButton.textContent = 'キャンセル';
+                // Reset button text and class to default for future uses (e.g., delete data)
+                modalConfirmButton.textContent = 'はい、削除します'; // Default for delete
+                modalConfirmButton.classList.remove('bg-yellow-600', 'hover:bg-yellow-700', 'bg-green-600', 'hover:bg-green-700', 'bg-blue-600', 'hover:bg-blue-700', 'bg-red-800', 'hover:bg-red-900');
+                modalConfirmButton.classList.add('bg-red-600', 'hover:bg-red-700');
+            }
+        }
+
+        /**
+         * Handles multi-step deletion confirmation logic.
+         */
+        function confirmDeleteData() {
+            // Hide settings modal before showing confirmation modal
+            hideModal(settingsModal);
+
+            if (confirmationStep === 0) {
+                showGenericModal(confirmationModal, "本当にすべてのゲームデータを削除しますか？これは元に戻せません。", confirmDeleteData, () => { confirmationStep = 0; hideModal(confirmationModal); settingsModal.classList.add('open'); }, 'はい、削除します', 'bg-red-600 hover:bg-red-700');
+                confirmationStep++;
+            } else if (confirmationStep === 1) {
+                showGenericModal(confirmationModal, "最終確認: 本当に本当にすべてのゲームデータを削除しますか？", confirmDeleteData, () => { confirmationStep = 0; hideModal(confirmationModal); settingsModal.classList.add('open'); }, '本当に削除します！', 'bg-yellow-600 hover:bg-yellow-700'); // Change color for extra warning
+                confirmationStep++;
+            } else if (confirmationStep === 2) {
+                showGenericModal(confirmationModal, "最後の確認: ゲームデータはすべて失われます。よろしいですか？", confirmDeleteData, () => { confirmationStep = 0; hideModal(confirmationModal); settingsModal.classList.add('open'); }, '確認して削除！', 'bg-red-800 hover:bg-red-900'); // Even stronger warning color
+                confirmationStep++;
+            } else if (confirmationStep === 3) {
+                resetGame(false); // Perform full reset (not strong start)
+                confirmationStep = 0; // Reset for next time
+                hideModal(confirmationModal);
+                hideModal(settingsModal); // Ensure settings modal is also hidden after full reset
+            }
+        }
+
+        /**
+         * Handles strong start confirmation logic.
+         */
+        function confirmStrongStart() {
+            const requiredEnergy = getStrongStartCurrentCost();
+            if (gameState.energy < requiredEnergy) {
+                showGenericModal(confirmationModal, `新規ゲーム (強力なスタート) には ${formatNumber(requiredEnergy)} エネルギーが必要です。現在のエネルギーは ${formatNumber(gameState.energy)} です。`, null, () => hideModal(confirmationModal), 'OK', 'bg-blue-600 hover:bg-blue-700', '閉じる');
+                modalConfirmButton.style.display = 'none'; // Hide the 'OK' button, user only clicks '閉じる'
+                return;
+            }
+
+            showGenericModal(confirmationModal, `新規ゲーム (強力なスタート) を開始します。現在のデータはすべて削除され、レベル ${gameState.strongStartLevel + 1} のボーナス付きで開始されます。よろしいですか？`,
+                () => { // Confirm Callback
+                    resetGame(true);
+                    hideModal(confirmationModal);
+                },
+                () => { // Cancel Callback
+                    hideModal(confirmationModal);
+                },
+                '開始！',
+                'bg-green-600 hover:bg-green-700'
+            );
+        }
+
+        // --- Event Listeners ---
+
+        // Star clicker
+        starClicker.addEventListener('click', clickStar);
+
+        // Menu button toggle
+        menuButton.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+
+        // Navigation links (for modals/actions)
+        navLinks.forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const modalId = event.target.dataset.modal;
+                const action = event.target.dataset.action;
+
+                if (modalId === 'settings-modal') {
+                    settingsModal.classList.add('open');
+                } else if (action === 'new-game-strong-start') {
+                    confirmStrongStart();
+                }
+                sidebar.classList.remove('open'); // Close sidebar after selection
+            });
+        });
+
+        // Show Upgrades Button
+        showUpgradesButton.addEventListener('click', () => {
+            showSection('upgrades');
+        });
+
+        // Back to Game Button
+        backToGameButton.addEventListener('click', () => {
+            showSection('game');
+        });
+
+        // Settings Modal Interactions
+        deleteDataButton.addEventListener('click', () => {
+            confirmationStep = 0; // Reset confirmation step for deletion
+            confirmDeleteData();
+        });
+
+        closeSettingsModalButton.addEventListener('click', () => {
+            hideModal(settingsModal);
+        });
+
+        // Generic modal close buttons
+        modalCloseButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                hideModal(button.closest('.modal'));
+            });
+        });
+
+        // Generic Confirmation Modal button listeners
+        modalConfirmButton.addEventListener('click', () => {
+            if (currentConfirmCallback) {
+                currentConfirmCallback();
+            }
+            // Reset modal specific state if needed is handled in hideModal now
+        });
+
+        modalCancelButton.addEventListener('click', () => {
+            if (currentCancelCallback) {
+                currentCancelCallback();
+            }
+            // Reset modal specific state if needed is handled in hideModal now
+        });
+
+        // Initialize game on window load
+        window.onload = async () => {
+            await initDb();
+            await loadGame();
+            setInterval(autoClickLoop, 100); // Auto-click every 100ms
+            // Set initial active section
+            showSection('game');
+        };
+    </script>
+</body>
+</html>
