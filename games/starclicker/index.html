@@ -297,6 +297,50 @@
             font-size: 0.9em;
             color: #cbd5e1; /* slate-300 */
         }
+
+        /* Volume slider specific styles */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            color: #e0e7ff;
+        }
+        .volume-control input[type="range"] {
+            width: 70%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #4a4a6b;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6a6aff;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .volume-control input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6a6aff;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .volume-icon svg {
+            width: 24px;
+            height: 24px;
+            transition: color 0.2s ease-in-out; /* Smooth color transition for icon */
+        }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
@@ -384,6 +428,18 @@
         <div class="modal-content">
             <button class="modal-close-button" data-action="close-modal">&times;</button>
             <h2 class="text-3xl md:text-4xl font-bold mb-8 text-red-300 text-center">設定</h2>
+
+            <!-- Volume Control -->
+            <div class="volume-control">
+                <span id="speaker-icon" class="volume-icon cursor-pointer">
+                    <!-- SVG for volume icon, dynamically updated -->
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor">
+                        <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM3 9v6h4l5 5V4L7 9H3z"/>
+                    </svg>
+                </span>
+                <input type="range" id="volume-slider" min="0" max="100" value="50">
+            </div>
+
             <button id="release-notes-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
                 リリースノート
             </button>
@@ -409,6 +465,9 @@
             </button>
         </div>
     </div>
+
+    <!-- Audio Element -->
+    <audio id="background-music" loop src="https://minntogames.github.io/minnntogames.github.io2/edge.wav"></audio>
 
     <script>
         // IndexedDB configuration
@@ -444,11 +503,13 @@
                 cosmicDrill: { level: 0, initialCost: 1e7, cost: 1e7, clickBonus: 10000, autoBonus: 0, icon: '⛏️', maxLevel: 1 },
                 galacticReactor: { level: 0, initialCost: 5e7, cost: 5e7, clickBonus: 0, autoBonus: 10000, icon: '⚛️', maxLevel: 1 },
                 heatClicker: { level: 0, initialCost: 1e6, cost: 1e6, clickBonus: 0, autoBonus: 0, icon: '🔥', maxLevel: 1 } // Heat Clicker
-            }
+            },
+            volume: 0.5 // Default volume (0.0 to 1.0)
         };
 
         // Release Notes Data
         const releaseNotesData = [
+            { version: "v1.2", date: "2024-06-20", notes: "ゲームにBGMを追加し、設定に音量スライダーとミュート機能を追加しました。" },
             { version: "v1.1", date: "2024-06-19", notes: "新しいアップグレードと細かい調整" },
             { version: "v1.0", date: "2024-06-18", notes: "ゲームがリリースされました" }
         ];
@@ -489,9 +550,15 @@
         const releaseNotesContent = document.getElementById('release-notes-content');
         const closeReleaseNotesModalButton = document.getElementById('close-release-notes-modal');
 
+        // Audio Elements
+        const audioElement = document.getElementById('background-music');
+        const volumeSlider = document.getElementById('volume-slider');
+        const speakerIcon = document.getElementById('speaker-icon');
+
         let currentConfirmCallback = null;
         let currentCancelCallback = null;
         let confirmationStep = 0; // For multi-step deletion confirmation
+        let lastVolumeBeforeMute = gameState.volume; // Store volume before muting
 
         // --- Helper Functions ---
 
@@ -548,6 +615,26 @@
             return `hsl(${h}, ${s}%, ${l}%)`;
         }
 
+        /**
+         * Updates the speaker icon based on volume level.
+         * @param {number} volume - The current volume (0-1).
+         * @param {boolean} isMuted - Whether the audio is currently muted.
+         */
+        function updateSpeakerIcon(volume, isMuted) {
+            let pathD;
+            if (isMuted || volume === 0) {
+                // Volume Off icon
+                pathD = "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C19.56 15.34 20 13.73 20 12c0-3.28-2.11-6.04-5-6.81v2.06c2.22.82 3.79 3.02 3.79 5.09zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.27 4.27L16 21.73l1.73-1.73L21.73 21 23 19.73 4.27 3zM12 4L9.17 7H5v4h3.17l3.83 3.83V4z";
+            } else if (volume > 0 && volume <= 0.5) {
+                // Volume Down icon (low volume)
+                pathD = "M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z";
+            } else {
+                // Volume Up icon (medium/high volume)
+                pathD = "M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM3 9v6h4l5 5V4L7 9H3z";
+            }
+            speakerIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="${pathD}"/></svg>`;
+        }
+
         // --- IndexedDB Functions ---
 
         /**
@@ -588,6 +675,8 @@
             }
             // Update lastPlayedTime before saving
             gameState.lastPlayedTime = Date.now();
+            // Save current volume
+            gameState.volume = audioElement.volume;
             const transaction = db.transaction([STORE_NAME], 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
             const request = store.put(gameState, 'gameData'); // Use a fixed key 'gameData'
@@ -628,6 +717,8 @@
                         gameState.lastPlayedTime = loadedState.lastPlayedTime || Date.now();
                         gameState.heatClickMultiplier = loadedState.heatClickMultiplier || 1.0;
                         gameState.lastClickTime = loadedState.lastClickTime || Date.now();
+                        // Load volume, default to 0.5 if not present
+                        gameState.volume = loadedState.volume !== undefined ? loadedState.volume : 0.5;
 
 
                         for (const key in gameState.upgrades) {
@@ -748,6 +839,11 @@
          * Handles the star click event.
          */
         function clickStar() {
+            // Ensure music starts playing on first interaction if not already playing
+            if (audioElement.paused) {
+                audioElement.play().catch(e => console.error("Autoplay failed:", e));
+            }
+
             // Apply heat clicker bonus first if active
             if (gameState.upgrades.heatClicker && gameState.upgrades.heatClicker.level > 0) {
                 const currentTime = Date.now();
@@ -927,7 +1023,8 @@
                 lastPlayedTime: Date.now(), // Reset lastPlayedTime on new game
                 heatClickMultiplier: 1.0, // Reset on new game
                 lastClickTime: Date.now(), // Reset on new game
-                upgrades: initialUpgrades
+                upgrades: initialUpgrades,
+                volume: 0.5 // Reset volume to default
             };
 
             if (strongStart) {
@@ -958,6 +1055,11 @@
                     }
                 }
             }
+            // Update audio settings after reset
+            audioElement.volume = gameState.volume;
+            volumeSlider.value = gameState.volume * 100;
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+
             updateDisplay();
             renderUpgrades(); // Re-render upgrades after reset
             hideModal(confirmationModal);
@@ -1193,11 +1295,54 @@
             // Reset modal specific state if needed is handled in hideModal now
         });
 
+        // Volume control listeners
+        volumeSlider.addEventListener('input', () => {
+            const volume = parseFloat(volumeSlider.value) / 100;
+            audioElement.volume = volume;
+            if (volume > 0) {
+                audioElement.muted = false;
+                lastVolumeBeforeMute = volume; // Update last volume if not muted
+            }
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+        });
+
+        speakerIcon.addEventListener('click', () => {
+            if (audioElement.muted) {
+                audioElement.muted = false;
+                // Restore previous volume or default if no previous volume
+                audioElement.volume = lastVolumeBeforeMute > 0 ? lastVolumeBeforeMute : 0.5;
+                volumeSlider.value = audioElement.volume * 100;
+            } else {
+                lastVolumeBeforeMute = audioElement.volume; // Save current volume before muting
+                audioElement.muted = true;
+                volumeSlider.value = 0; // Move slider to 0 when muted
+            }
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+            // Attempt to play if it was paused and just unmuted
+            if (!audioElement.paused && !audioElement.muted) {
+                audioElement.play().catch(e => console.error("Autoplay on unmute failed:", e));
+            }
+        });
+
         // Initialize game on window load
         window.onload = async () => {
             await initDb();
             await loadGame();
             renderUpgrades(); // Initial render of upgrades list
+
+            // Initialize audio settings from loaded game state
+            audioElement.volume = gameState.volume;
+            volumeSlider.value = gameState.volume * 100;
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+            // Attempt to play music. It might be blocked until user interaction.
+            audioElement.play().catch(e => {
+                console.warn("Autoplay blocked. Music will start on first user interaction (e.g., clicking the star).", e);
+                // If autoplay is blocked, ensure the initial state reflects this
+                audioElement.muted = true; // Mark as muted if it couldn't play
+                volumeSlider.value = 0;
+                updateSpeakerIcon(0, true);
+            });
+
             setInterval(autoClickLoop, 100); // Auto-click every 100ms
             setInterval(checkHeatClickerReset, 500); // Check heat clicker reset every 500ms
             // Set initial active section
