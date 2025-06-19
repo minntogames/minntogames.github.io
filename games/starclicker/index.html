@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>宇宙クリッカーゲーム</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,6 +15,11 @@
             justify-content: center;
             align-items: center;
             overflow: hidden; /* Prevent scroll */
+            user-select: none; /* Disable text selection */
+            -webkit-user-select: none; /* For Safari */
+            -moz-user-select: none; /* For Firefox */
+            -ms-user-select: none; /* For IE/Edge */
+            cursor: default; /* Change cursor to default pointer */
 
             /* Base gradient and some subtle nebula effects */
             background:
@@ -102,6 +107,41 @@
         .sidebar.open {
             transform: translateX(0);
         }
+
+        /* New Upgrade Sidebar */
+        .upgrades-sidebar {
+            width: 300px; /* Slightly wider for upgrades */
+            min-width: 300px;
+            background-color: #2a2a4a; /* Darker sidebar */
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 950; /* Higher than main sidebar, lower than modals */
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            padding: 20px;
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        .upgrades-sidebar.open {
+            transform: translateX(0);
+        }
+        .upgrades-sidebar-content {
+            flex-grow: 1;
+            overflow-y: auto; /* Allow scrolling for upgrade list */
+            padding-right: 10px; /* Space for scrollbar */
+        }
+        .upgrades-sidebar .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+
         .main-content {
             flex-grow: 1;
             padding: 20px;
@@ -228,38 +268,34 @@
             background-color: #4acb4a;
         }
 
-        /* Styles for orbiting planets */
-        #orbiting-planets-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            /* Center the container's origin point */
-            transform: translate(-50%, -50%);
-            width: 1px; /* Acts as the central point for orbits */
-            height: 1px;
-            z-index: 1; /* Below the main star (z-20) */
+        /* Release Notes specific styles */
+        .release-notes-content {
+            text-align: left;
+            max-height: 400px; /* Limit height for scrolling */
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #1a1a2e;
+            border-radius: 10px;
+            margin-top: 20px;
         }
-
-        .planet-orbit-wrapper {
-            position: absolute;
-            width: 1px; /* Acts as the rotation origin */
-            height: 1px;
-            top: 0;
-            left: 0;
-            transform-origin: center center; /* This wrapper rotates around its own center (which is #orbiting-planets-container's center) */
-            /* Animation applied by JS based on duration */
+        .release-notes-item {
+            background-color: #2a2a4a;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
         }
-
-        .planet-visual {
-            position: absolute;
-            font-size: 25px; /* Size of planet emoji */
-            transform: translate(-50%, -50%); /* Center the emoji itself */
-            /* 'left' property will be set by JS to control orbit distance */
+        .release-notes-item:last-child {
+            margin-bottom: 0;
         }
-
-        @keyframes orbit-rotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .release-notes-item h4 {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #93c5fd; /* blue-300 */
+            margin-bottom: 5px;
+        }
+        .release-notes-item p {
+            font-size: 0.9em;
+            color: #cbd5e1; /* slate-300 */
         }
     </style>
 </head>
@@ -271,14 +307,20 @@
         </svg>
     </button>
 
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar Navigation (Left) -->
     <nav id="sidebar" class="sidebar fixed top-0 left-0 w-64 h-full bg-gray-900 shadow-lg text-white p-6 transform -translate-x-full transition-transform duration-300 ease-in-out z-50 rounded-r-lg">
         <ul class="space-y-4 pt-10">
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="upgrades-sidebar-modal" data-scroll-to="regular-upgrades-section">全アップグレード</a>
+            </li>
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="upgrades-sidebar-modal" data-scroll-to="one-time-upgrades-section">特別アップグレード</a>
+            </li>
             <li>
                 <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="settings-modal">設定</a>
             </li>
             <li>
-                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-action="new-game-strong-start">新規ゲーム (強力なスタート)</a>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-action="rebig-bang">リビッグバン</a>
             </li>
         </ul>
     </nav>
@@ -289,13 +331,9 @@
             <!-- Game Section -->
             <section id="game" class="section active flex flex-col items-center justify-center h-full text-center relative">
                 <h1 class="text-4xl md:text-5xl font-bold mb-6 text-blue-300">スタークリック！</h1>
-                <p class="text-2xl mb-4">星からのエネルギー: <span id="energy-display" class="font-bold text-yellow-300">0</span></p>
-
-                <!-- Orbiting Planets Container -->
-                <!-- This container is positioned absolutely and acts as the center for all orbits -->
-                <div id="orbiting-planets-container" class="absolute inset-0 flex justify-center items-center z-10">
-                    <!-- Planets will be dynamically added here by JavaScript -->
-                </div>
+                <p class="text-2xl mb-4">
+                    星からのエネルギー: <br> <span id="energy-display" class="font-bold text-yellow-300">0</span>
+                </p>
 
                 <div id="star-clicker" class="star-clicker flex justify-center items-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 shadow-xl border-4 border-yellow-200 cursor-pointer select-none mx-auto relative z-20">
                     ⭐
@@ -303,23 +341,30 @@
                 <div class="flex flex-wrap justify-center gap-4 mt-8">
                     <p class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md">クリックパワー: <span id="click-power-display">1</span></p>
                     <p class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md">自動クリック: <span id="auto-click-display">0</span>/秒</p>
+                    <!-- Heat Clicker Multiplier Display -->
+                    <p id="heat-clicker-display-wrapper" class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md" style="display: none;">ヒートクリック: <span id="heat-multiplier-display" class="font-bold" style="color: hsl(0, 0%, 100%);">1.0x</span></p>
                 </div>
-                <button id="show-upgrades-button" class="mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
-                    アップグレード
-                </button>
-            </section>
-
-            <!-- Upgrades Section -->
-            <section id="upgrades" class="section p-6">
-                <h2 class="text-3xl md:text-4xl font-bold mb-8 text-purple-300 text-center">アップグレード</h2>
-                <div id="upgrade-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Upgrade items will be dynamically inserted here -->
-                </div>
-                <button id="back-to-game-button" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
-                    ゲームに戻る
-                </button>
             </section>
         </main>
+    </div>
+
+    <!-- Upgrades Sidebar Modal (Right) -->
+    <div id="upgrades-sidebar-modal" class="upgrades-sidebar">
+        <button class="modal-close-button" data-action="close-modal">&times;</button>
+        <h2 class="text-3xl md:text-4xl font-bold mb-8 text-purple-300 text-center">アップグレード</h2>
+        <div class="upgrades-sidebar-content">
+            <h3 id="regular-upgrades-section" class="text-xl font-bold mb-4 mt-6 text-gray-300">惑星アップグレード</h3>
+            <div id="regular-upgrade-list" class="grid grid-cols-1 gap-6">
+                <!-- Regular Upgrade items will be dynamically inserted here -->
+            </div>
+            <h3 id="one-time-upgrades-section" class="text-xl font-bold mb-4 mt-6 text-gray-300">特別アップグレード</h3>
+            <div id="one-time-upgrade-list" class="grid grid-cols-1 gap-6">
+                <!-- One-Time Upgrade items will be dynamically inserted here -->
+            </div>
+        </div>
+        <button id="close-upgrades-sidebar" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
+            閉じる
+        </button>
     </div>
 
     <!-- Generic Confirmation Modal -->
@@ -339,10 +384,27 @@
         <div class="modal-content">
             <button class="modal-close-button" data-action="close-modal">&times;</button>
             <h2 class="text-3xl md:text-4xl font-bold mb-8 text-red-300 text-center">設定</h2>
-            <button id="delete-data-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
+            <button id="release-notes-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
+                リリースノート
+            </button>
+            <button id="delete-data-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
                 データを削除
             </button>
             <button id="close-settings-modal" class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Release Notes Modal -->
+    <div id="release-notes-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 text-center">リリースノート</h2>
+            <div id="release-notes-content" class="release-notes-content">
+                <!-- Release notes will be dynamically inserted here -->
+            </div>
+            <button id="close-release-notes-modal" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
                 閉じる
             </button>
         </div>
@@ -354,13 +416,20 @@
         const STORE_NAME = 'gameState';
         const DB_VERSION = 1;
         const BASE_STRONG_START_ENERGY_REQUIREMENT = 1000000; // 1 million energy base cost
+        const MAX_INACTIVITY_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        const HEAT_CLICKER_RESET_TIME_MS = 2000; // 2 seconds of inactivity to reset heat clicker multiplier
+        const HEAT_CLICKER_INCREMENT = 0.1; // Multiplier increases by this much per click
+        const MAX_HEAT_CLICK_MULTIPLIER = 2.0; // Maximum limit for heat clicker multiplier
 
         let db; // IndexedDB database instance
         let gameState = {
             energy: 0,
             clickPower: 1,
             autoClickPower: 0,
-            strongStartLevel: 0, // New: Tracks how many strong starts have been initiated
+            strongStartLevel: 0, // Tracks how many strong starts have been initiated
+            lastPlayedTime: Date.now(), // Store last active time
+            heatClickMultiplier: 1.0, // Multiplier for heat clicker
+            lastClickTime: Date.now(), // Last time the star was clicked
             upgrades: {
                 mercury: { level: 0, cost: 10, clickBonus: 1, autoBonus: 0, icon: '☿' },
                 venus: { level: 0, cost: 50, clickBonus: 3, autoBonus: 0, icon: '♀' },
@@ -370,24 +439,37 @@
                 saturn: { level: 0, cost: 25000, clickBonus: 0, autoBonus: 200, icon: '♄' },
                 uranus: { level: 0, cost: 100000, clickBonus: 50, autoBonus: 0, icon: '⛢' },
                 neptune: { level: 0, cost: 500000, clickBonus: 0, autoBonus: 1000, icon: '♆' },
-                originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐' } // Original Planet
+                originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐' }, // Original Planet
+                // New one-time upgrades
+                cosmicDrill: { level: 0, initialCost: 1e7, cost: 1e7, clickBonus: 10000, autoBonus: 0, icon: '⛏️', maxLevel: 1 },
+                galacticReactor: { level: 0, initialCost: 5e7, cost: 5e7, clickBonus: 0, autoBonus: 10000, icon: '⚛️', maxLevel: 1 },
+                heatClicker: { level: 0, initialCost: 1e6, cost: 1e6, clickBonus: 0, autoBonus: 0, icon: '🔥', maxLevel: 1 } // Heat Clicker
             }
         };
+
+        // Release Notes Data
+        const releaseNotesData = [
+            { version: "v1.1", date: "2024-06-19", notes: "新しいアップグレードと細かい調整" },
+            { version: "v1.0", date: "2024-06-18", notes: "ゲームがリリースされました" }
+        ];
 
         // DOM Elements
         const energyDisplay = document.getElementById('energy-display');
         const clickPowerDisplay = document.getElementById('click-power-display');
         const autoClickDisplay = document.getElementById('auto-click-display');
         const starClicker = document.getElementById('star-clicker');
-        const upgradeList = document.getElementById('upgrade-list');
+        // Separated upgrade lists
+        const regularUpgradeList = document.getElementById('regular-upgrade-list');
+        const oneTimeUpgradeList = document.getElementById('one-time-upgrade-list');
+        const heatClickerDisplayWrapper = document.getElementById('heat-clicker-display-wrapper'); // Wrapper for heat clicker display
+        const heatMultiplierDisplay = document.getElementById('heat-multiplier-display');
+
         const menuButton = document.getElementById('menu-button');
         const sidebar = document.getElementById('sidebar');
         const navLinks = document.querySelectorAll('#sidebar a');
         const sections = document.querySelectorAll('.section');
-        const showUpgradesButton = document.getElementById('show-upgrades-button');
-        const backToGameButton = document.getElementById('back-to-game-button');
 
-        // Modals
+        // Modals / Sidebars
         const confirmationModal = document.getElementById('confirmation-modal');
         const modalMessage = document.getElementById('modal-message');
         const modalCancelButton = document.getElementById('modal-cancel');
@@ -395,22 +477,17 @@
         const settingsModal = document.getElementById('settings-modal');
         const deleteDataButton = document.getElementById('delete-data-button');
         const closeSettingsModalButton = document.getElementById('close-settings-modal');
-        const modalCloseButtons = document.querySelectorAll('.modal-close-button');
+        const modalCloseButtons = document.querySelectorAll('.modal-close-button'); // Includes new buttons on sidebar modals
 
-        // Orbiting Planets
-        const orbitingPlanetsContainer = document.getElementById('orbiting-planets-container');
-        // Define planet data for rendering orbits
-        const planetOrbitData = {
-            mercury: { icon: '☿', orbitDistance: 80, duration: 10 },
-            venus: { icon: '♀', orbitDistance: 120, duration: 15 },
-            earth: { icon: '🌎', orbitDistance: 160, duration: 20 },
-            mars: { icon: '♂', orbitDistance: 200, duration: 25 },
-            jupiter: { icon: '♃', orbitDistance: 240, duration: 30 },
-            saturn: { icon: '♄', orbitDistance: 280, duration: 35 },
-            uranus: { icon: '⛢', orbitDistance: 320, duration: 40 },
-            neptune: { icon: '♆', orbitDistance: 360, duration: 45 },
-            originalPlanetX: { icon: '🪐', orbitDistance: 400, duration: 50 }
-        };
+        // Upgrades Sidebar Modal elements
+        const upgradesSidebarModal = document.getElementById('upgrades-sidebar-modal');
+        const closeUpgradesSidebarButton = document.getElementById('close-upgrades-sidebar');
+
+        // Release Notes Modal elements
+        const releaseNotesButton = document.getElementById('release-notes-button');
+        const releaseNotesModal = document.getElementById('release-notes-modal');
+        const releaseNotesContent = document.getElementById('release-notes-content');
+        const closeReleaseNotesModalButton = document.getElementById('close-release-notes-modal');
 
         let currentConfirmCallback = null;
         let currentCancelCallback = null;
@@ -447,6 +524,28 @@
         function getStrongStartCurrentCost() {
             // Using Math.pow(2, ...) for a more noticeable exponential increase
             return BASE_STRONG_START_ENERGY_REQUIREMENT * Math.pow(2, gameState.strongStartLevel);
+        }
+
+        /**
+         * Calculates HSL color for the heat multiplier display, from white to red.
+         * @param {number} multiplier - The current heat click multiplier.
+         * @returns {string} HSL color string.
+         */
+        function getHeatColor(multiplier) {
+            const minMultiplier = 1.0;
+            const maxMultiplier = MAX_HEAT_CLICK_MULTIPLIER;
+            // Normalize the multiplier to a 0-1 range based on its min/max
+            const normalized = Math.max(0, Math.min(1, (multiplier - minMultiplier) / (maxMultiplier - minMultiplier)));
+
+            // Interpolate HSL values.
+            // Hue (H) remains 0 for red/white/gray.
+            // Saturation (S) goes from 0% (white) to 100% (red).
+            // Lightness (L) goes from 100% (white) down to 50% (pure red).
+            const h = 0;
+            const s = normalized * 100; // Saturation increases from 0 to 100
+            const l = 100 - (normalized * 50); // Lightness decreases from 100 to 50
+
+            return `hsl(${h}, ${s}%, ${l}%)`;
         }
 
         // --- IndexedDB Functions ---
@@ -487,6 +586,8 @@
                 console.error("IndexedDB not initialized, cannot save.");
                 return;
             }
+            // Update lastPlayedTime before saving
+            gameState.lastPlayedTime = Date.now();
             const transaction = db.transaction([STORE_NAME], 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
             const request = store.put(gameState, 'gameData'); // Use a fixed key 'gameData'
@@ -515,16 +616,52 @@
                 const request = store.get('gameData');
 
                 request.onsuccess = (event) => {
-                    if (event.target.result) {
-                        gameState = event.target.result;
-                        // Ensure strongStartLevel exists for older saves
-                        if (typeof gameState.strongStartLevel === 'undefined') {
-                            gameState.strongStartLevel = 0;
+                    let loadedState = event.target.result;
+                    if (loadedState) {
+                        // Merge loaded state with default to ensure new properties exist
+                        // This handles cases where new upgrades or properties are added to gameState
+                        // but not present in older saved data.
+                        gameState.energy = loadedState.energy || 0;
+                        gameState.clickPower = loadedState.clickPower || 1;
+                        gameState.autoClickPower = loadedState.autoClickPower || 0;
+                        gameState.strongStartLevel = loadedState.strongStartLevel || 0;
+                        gameState.lastPlayedTime = loadedState.lastPlayedTime || Date.now();
+                        gameState.heatClickMultiplier = loadedState.heatClickMultiplier || 1.0;
+                        gameState.lastClickTime = loadedState.lastClickTime || Date.now();
+
+
+                        for (const key in gameState.upgrades) {
+                            if (loadedState.upgrades && loadedState.upgrades[key]) {
+                                // For existing upgrades, load saved level and cost
+                                gameState.upgrades[key].level = loadedState.upgrades[key].level;
+                                gameState.upgrades[key].cost = loadedState.upgrades[key].cost;
+                            } else {
+                                // If a new upgrade was added, initialize it to its default
+                                // initialCost property is used for one-time upgrades to reset
+                                if (gameState.upgrades[key].initialCost) {
+                                    gameState.upgrades[key].cost = gameState.upgrades[key].initialCost;
+                                }
+                                gameState.upgrades[key].level = 0;
+                            }
+                        }
+
+                        // Handle offline earnings
+                        if (gameState.lastPlayedTime) {
+                            const currentTime = Date.now();
+                            let timeAway = currentTime - gameState.lastPlayedTime;
+                            timeAway = Math.min(timeAway, MAX_INACTIVITY_MS); // Cap at 24 hours
+
+                            const offlineEnergy = (gameState.autoClickPower / 1000) * timeAway; // autoClickPower is per second
+                            if (offlineEnergy > 0) {
+                                gameState.energy += offlineEnergy;
+                                showGenericModal(confirmationModal, `オフライン中に ${formatNumber(offlineEnergy)} エネルギーを獲得しました！`, null, () => hideModal(confirmationModal), 'OK', 'bg-green-600 hover:bg-green-700', '閉じる');
+                                modalConfirmButton.style.display = 'none'; // Hide OK button, only '閉じる'
+                            }
                         }
                         console.log('Game loaded.');
                     } else {
                         console.log('No saved game found, starting new game.');
-                        // gameState already defaults to initial state with strongStartLevel: 0
+                        // gameState already defaults to initial state
                     }
                     updateDisplay();
                     resolve();
@@ -566,14 +703,44 @@
         // --- Game Logic ---
 
         /**
+         * Auto-clicks based on auto-click power.
+         */
+        function autoClickLoop() {
+            gameState.energy += gameState.autoClickPower / 10; // Divide by 10 for 100ms interval
+            updateDisplay();
+        }
+
+        /**
+         * Checks if heat clicker multiplier should be reset due to inactivity.
+         */
+        function checkHeatClickerReset() {
+            if (gameState.upgrades.heatClicker && gameState.upgrades.heatClicker.level > 0 &&
+                gameState.heatClickMultiplier > 1.0 && // Only reset if already boosted
+                Date.now() - gameState.lastClickTime >= HEAT_CLICKER_RESET_TIME_MS) {
+                gameState.heatClickMultiplier = 1.0; // Reset to base multiplier
+                updateDisplay(); // Update display to reflect reset
+            }
+        }
+
+        /**
          * Updates the display elements with current game state.
          */
         function updateDisplay() {
             energyDisplay.textContent = formatNumber(gameState.energy);
             clickPowerDisplay.textContent = formatNumber(gameState.clickPower);
             autoClickDisplay.textContent = formatNumber(gameState.autoClickPower);
-            renderUpgrades();
-            renderOrbitingPlanets(); // Call render function for orbiting planets
+            // renderUpgrades() is now called only on upgrade purchase or initial load
+            // to prevent scroll issues.
+
+            // Update heat clicker display visibility and value
+            if (gameState.upgrades.heatClicker && gameState.upgrades.heatClicker.level > 0) {
+                heatClickerDisplayWrapper.style.display = 'block';
+                heatMultiplierDisplay.textContent = `${gameState.heatClickMultiplier.toFixed(1)}x`;
+                heatMultiplierDisplay.style.color = getHeatColor(gameState.heatClickMultiplier);
+            } else {
+                heatClickerDisplayWrapper.style.display = 'none';
+            }
+
             saveGame(); // Save game state whenever display is updated (implies state change)
         }
 
@@ -581,7 +748,22 @@
          * Handles the star click event.
          */
         function clickStar() {
-            gameState.energy += gameState.clickPower;
+            // Apply heat clicker bonus first if active
+            if (gameState.upgrades.heatClicker && gameState.upgrades.heatClicker.level > 0) {
+                const currentTime = Date.now();
+                if (currentTime - gameState.lastClickTime < HEAT_CLICKER_RESET_TIME_MS) {
+                    gameState.heatClickMultiplier = Math.min(MAX_HEAT_CLICK_MULTIPLIER, gameState.heatClickMultiplier + HEAT_CLICKER_INCREMENT);
+                } else {
+                    // Reset and start with first increment
+                    gameState.heatClickMultiplier = Math.min(MAX_HEAT_CLICK_MULTIPLIER, 1.0 + HEAT_CLICKER_INCREMENT);
+                }
+                gameState.lastClickTime = currentTime;
+                // Add base click power, then the bonus from multiplier
+                gameState.energy += gameState.clickPower * gameState.heatClickMultiplier;
+            } else {
+                gameState.energy += gameState.clickPower; // Normal click power
+                gameState.heatClickMultiplier = 1.0; // Ensure reset if not active
+            }
             updateDisplay();
         }
 
@@ -589,41 +771,94 @@
          * Renders the upgrade items in the upgrades section.
          */
         function renderUpgrades() {
-            upgradeList.innerHTML = ''; // Clear previous upgrades
-            for (const key in gameState.upgrades) {
+            // Store current scroll position before clearing
+            const upgradesSidebarContent = upgradesSidebarModal.querySelector('.upgrades-sidebar-content');
+            const upgradesScrollTop = upgradesSidebarContent ? upgradesSidebarContent.scrollTop : 0; // Check if element exists
+
+            regularUpgradeList.innerHTML = ''; // Clear previous regular upgrades
+            oneTimeUpgradeList.innerHTML = ''; // Clear previous one-time upgrades
+
+            const upgradeKeys = Object.keys(gameState.upgrades);
+
+            // Preserve the default order of the upgrade list
+            // No sorting applied.
+
+            upgradeKeys.forEach(key => {
                 const upgrade = gameState.upgrades[key];
-                const upgradeElement = document.createElement('div');
-                upgradeElement.className = 'upgrade-item';
-                upgradeElement.innerHTML = `
-                    <div class="flex items-center">
-                        <span class="upgrade-icon">${upgrade.icon}</span>
-                        <div>
-                            <h3 class="text-xl font-semibold">${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}</h3>
-                            <p class="text-sm text-gray-400">レベル: ${upgrade.level}</p>
-                            ${upgrade.clickBonus > 0 ? `<p class="text-sm text-gray-400">クリックパワー +${formatNumber(upgrade.clickBonus)}</p>` : ''}
-                            ${upgrade.autoBonus > 0 ? `<p class="text-sm text-gray-400">自動クリック +${formatNumber(upgrade.autoBonus)}/秒</p>` : ''}
-                        </div>
-                    </div>
-                    <div>
-                        <p class="text-lg font-bold mb-2">コスト: ${formatNumber(upgrade.cost)}</p>
-                        <button data-upgrade="${key}" class="buy-upgrade px-5 py-2 rounded-lg font-semibold transition duration-200">
-                            購入
-                        </button>
-                    </div>
-                `;
-                const buyButton = upgradeElement.querySelector('.buy-upgrade');
-                if (gameState.energy < upgrade.cost) {
-                    buyButton.disabled = true;
-                    buyButton.classList.add('bg-gray-500'); // Apply disabled style
-                    buyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700'); // Remove active styles
-                } else {
-                    buyButton.disabled = false;
-                    buyButton.classList.add('bg-blue-600', 'hover:bg-blue-700'); // Apply active styles
-                    buyButton.classList.remove('bg-gray-500'); // Remove disabled style
+                // Heat Clicker is now a separate display, so don't render it in the upgrades list if purchased.
+                if (key === 'heatClicker' && upgrade.level > 0) {
+                    return; // Skip rendering heat clicker in the list if it's already purchased
                 }
-                buyButton.addEventListener('click', buyUpgrade);
-                upgradeList.appendChild(upgradeElement);
+
+                const upgradeElement = createUpgradeElement(key, upgrade);
+
+                if (upgrade.maxLevel === 1) {
+                    oneTimeUpgradeList.appendChild(upgradeElement);
+                } else {
+                    regularUpgradeList.appendChild(upgradeElement);
+                }
+            });
+
+            // Restore scroll position after rendering
+            // Added a small delay to ensure DOM is rendered before attempting to scroll
+            if (upgradesSidebarContent) {
+                setTimeout(() => {
+                    upgradesSidebarContent.scrollTop = upgradesScrollTop;
+                }, 50); // Small delay
             }
+        }
+
+        // Helper function to create an individual upgrade element
+        function createUpgradeElement(key, upgrade) {
+            const upgradeElement = document.createElement('div');
+            upgradeElement.className = 'upgrade-item';
+
+            let upgradeStatusText = '';
+            let isPurchasedOneTime = (upgrade.maxLevel === 1 && upgrade.level >= 1);
+
+            if (isPurchasedOneTime) {
+                upgradeStatusText = `<p class="text-sm text-green-400 font-bold">購入済み</p>`;
+            } else {
+                upgradeStatusText = `<p class="text-lg font-bold mb-2">コスト: ${formatNumber(upgrade.cost)}</p>`;
+            }
+
+            upgradeElement.innerHTML = `
+                <div class="flex items-center">
+                    <span class="upgrade-icon">${upgrade.icon}</span>
+                    <div>
+                        <h3 class="text-xl font-semibold">${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}</h3>
+                        <p class="text-sm text-gray-400">レベル: ${upgrade.level}</p>
+                        ${upgrade.clickBonus > 0 ? `<p class="text-sm text-gray-400">クリックパワー +${formatNumber(upgrade.clickBonus)}</p>` : ''}
+                        ${upgrade.autoBonus > 0 ? `<p class="text-sm text-gray-400">自動クリック +${formatNumber(upgrade.autoBonus)}/秒</p>` : ''}
+                    </div>
+                </div>
+                <div>
+                    ${upgradeStatusText}
+                    <button data-upgrade="${key}" class="buy-upgrade px-5 py-2 rounded-lg font-semibold transition duration-200">
+                        購入
+                    </button>
+                </div>
+            `;
+            const buyButton = upgradeElement.querySelector('.buy-upgrade');
+
+            // Bug fix: Ensure button is correctly enabled/disabled based on current energy and purchase status
+            if (isPurchasedOneTime || gameState.energy < upgrade.cost) {
+                buyButton.disabled = true;
+                buyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                buyButton.classList.add('bg-gray-500'); // Apply disabled style
+                if (isPurchasedOneTime) {
+                    buyButton.textContent = '完了';
+                } else {
+                    buyButton.textContent = '購入'; // Set text to '購入' if disabled due to cost
+                }
+            } else {
+                buyButton.disabled = false;
+                buyButton.classList.remove('bg-gray-500'); // Ensure disabled style is removed
+                buyButton.classList.add('bg-blue-600', 'hover:bg-blue-700'); // Apply active styles
+                buyButton.textContent = '購入';
+            }
+            buyButton.addEventListener('click', buyUpgrade);
+            return upgradeElement;
         }
 
         /**
@@ -634,56 +869,25 @@
             const upgradeKey = event.target.dataset.upgrade;
             const upgrade = gameState.upgrades[upgradeKey];
 
+            // Check if it's a one-time upgrade and already purchased
+            if (upgrade.maxLevel === 1 && upgrade.level >= 1) {
+                console.log("This upgrade can only be purchased once.");
+                return;
+            }
+
             if (gameState.energy >= upgrade.cost) {
                 gameState.energy -= upgrade.cost;
                 gameState.clickPower += upgrade.clickBonus;
                 gameState.autoClickPower += upgrade.autoBonus;
                 upgrade.level++;
-                upgrade.cost = Math.floor(upgrade.cost * 1.5); // Increase cost for next level
+                if (upgrade.maxLevel !== 1) { // Only increase cost if not a one-time upgrade
+                    upgrade.cost = Math.floor(upgrade.cost * 1.5); // Increase cost for next level
+                }
                 updateDisplay();
+                renderUpgrades(); // Re-render upgrades after purchase to update button states
             } else {
                 console.log("Not enough energy to buy " + upgradeKey);
             }
-        }
-
-        /**
-         * Renders orbiting planets based on unlocked upgrades.
-         */
-        function renderOrbitingPlanets() {
-            orbitingPlanetsContainer.innerHTML = ''; // Clear existing planets to prevent duplicates
-
-            for (const key in gameState.upgrades) {
-                const upgrade = gameState.upgrades[key];
-                if (upgrade.level > 0) {
-                    const data = planetOrbitData[key];
-                    if (!data) continue; // Skip if no orbit data defined for this upgrade
-
-                    const orbitWrapper = document.createElement('div');
-                    orbitWrapper.className = 'planet-orbit-wrapper';
-                    orbitWrapper.style.animation = `orbit-rotate ${data.duration}s linear infinite`;
-                    // Stagger the starting point of animation for variety
-                    orbitWrapper.style.animationDelay = `${Math.random() * data.duration}s`;
-
-                    const planetVisual = document.createElement('div');
-                    planetVisual.className = 'planet-visual';
-                    planetVisual.textContent = data.icon;
-                    // Position the planet within its rotating wrapper to set orbit radius
-                    planetVisual.style.left = `${data.orbitDistance}px`;
-                    planetVisual.style.top = `0px`; // Initial vertical position on the orbit path
-
-                    orbitWrapper.appendChild(planetVisual);
-                    orbitingPlanetsContainer.appendChild(orbitWrapper);
-                }
-            }
-        }
-
-
-        /**
-         * Auto-clicks based on auto-click power.
-         */
-        function autoClickLoop() {
-            gameState.energy += gameState.autoClickPower / 10; // Divide by 10 for 100ms interval
-            updateDisplay();
         }
 
         /**
@@ -697,45 +901,69 @@
             await clearGameData(); // Clear IndexedDB first
 
             // Reset game state, increment strongStartLevel if it's a strong start
+            let newStrongStartLevel = strongStart ? prevStrongStartLevel + 1 : 0;
+
+            // Deep copy of initial upgrades to ensure a clean reset, especially for costs
+            let initialUpgrades = JSON.parse(JSON.stringify({
+                mercury: { level: 0, cost: 10, clickBonus: 1, autoBonus: 0, icon: '☿' },
+                venus: { level: 0, cost: 50, clickBonus: 3, autoBonus: 0, icon: '♀' },
+                earth: { level: 0, cost: 200, clickBonus: 0, autoBonus: 5, icon: '🌎' },
+                mars: { level: 0, cost: 1000, clickBonus: 10, autoBonus: 0, icon: '♂' },
+                jupiter: { level: 0, cost: 5000, clickBonus: 0, autoBonus: 50, icon: '♃' },
+                saturn: { level: 0, cost: 25000, clickBonus: 0, autoBonus: 200, icon: '♄' },
+                uranus: { level: 0, cost: 100000, clickBonus: 50, autoBonus: 0, icon: '⛢' },
+                neptune: { level: 0, cost: 500000, clickBonus: 0, autoBonus: 1000, icon: '♆' },
+                originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐' },
+                cosmicDrill: { level: 0, initialCost: 1e7, cost: 1e7, clickBonus: 10000, autoBonus: 0, icon: '⛏️', maxLevel: 1 },
+                galacticReactor: { level: 0, initialCost: 5e7, cost: 5e7, clickBonus: 0, autoBonus: 10000, icon: '⚛️', maxLevel: 1 },
+                heatClicker: { level: 0, initialCost: 1e6, cost: 1e6, clickBonus: 0, autoBonus: 0, icon: '🔥', maxLevel: 1 }
+            }));
+
             gameState = {
                 energy: 0,
                 clickPower: 1,
                 autoClickPower: 0,
-                strongStartLevel: strongStart ? prevStrongStartLevel + 1 : 0, // Increment or reset
-                upgrades: {
-                    mercury: { level: 0, cost: 10, clickBonus: 1, autoBonus: 0, icon: '☿' },
-                    venus: { level: 0, cost: 50, clickBonus: 3, autoBonus: 0, icon: '♀' },
-                    earth: { level: 0, cost: 200, clickBonus: 0, autoBonus: 5, icon: '🌎' },
-                    mars: { level: 0, cost: 1000, clickBonus: 10, autoBonus: 0, icon: '♂' },
-                    jupiter: { level: 0, cost: 5000, clickBonus: 0, autoBonus: 50, icon: '♃' },
-                    saturn: { level: 0, cost: 25000, clickBonus: 0, autoBonus: 200, icon: '♄' },
-                    uranus: { level: 0, cost: 100000, clickBonus: 50, autoBonus: 0, icon: '⛢' },
-                    neptune: { level: 0, cost: 500000, clickBonus: 0, autoBonus: 1000, icon: '♆' },
-                    originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐' }
-                }
+                strongStartLevel: newStrongStartLevel,
+                lastPlayedTime: Date.now(), // Reset lastPlayedTime on new game
+                heatClickMultiplier: 1.0, // Reset on new game
+                lastClickTime: Date.now(), // Reset on new game
+                upgrades: initialUpgrades
             };
 
             if (strongStart) {
                 // Bonuses scale with strongStartLevel
-                const bonusMultiplier = 1 + (gameState.strongStartLevel * 0.1); // 10% more per level
+                // Level 0 (first strong start) means multiplier is 1.0
+                // Level 1 means multiplier is 1.1, etc.
+                const bonusMultiplier = 1 + (newStrongStartLevel * 0.1);
 
                 gameState.energy = 1000 * bonusMultiplier;
                 gameState.clickPower = 10 * bonusMultiplier;
                 gameState.autoClickPower = 1 * bonusMultiplier;
 
-                // Apply initial levels to basic upgrades, also scaled by strongStartLevel
-                // Calculate the new level based on bonusMultiplier, then update cost
-                const mercuryNewLevel = Math.floor(5 * bonusMultiplier);
-                gameState.upgrades.mercury.level = mercuryNewLevel;
-                gameState.upgrades.mercury.cost = Math.floor(gameState.upgrades.mercury.cost * Math.pow(1.5, mercuryNewLevel));
+                // Apply initial levels to regular upgrades, also scaled by strongStartLevel
+                for (const key in gameState.upgrades) {
+                    if (gameState.upgrades[key].maxLevel !== 1) { // Apply bonus only to non-one-time upgrades
+                        const initialLevel = key === 'mercury' ? 5 : (key === 'venus' ? 2 : 0); // Base levels for certain upgrades
+                        const calculatedLevel = Math.floor(initialLevel * bonusMultiplier);
 
-                const venusNewLevel = Math.floor(2 * bonusMultiplier);
-                gameState.upgrades.venus.level = venusNewLevel;
-                gameState.upgrades.venus.cost = Math.floor(gameState.upgrades.venus.cost * Math.pow(1.5, venusNewLevel));
+                        if (calculatedLevel > 0) { // Only apply if level is positive
+                            gameState.upgrades[key].level = calculatedLevel;
+                            // Ensure the cost is recalculated based on the new level
+                            // If initialCost exists, use it as a base for calculations, otherwise use current cost.
+                            // This ensures upgrades correctly reset their cost for the *next* level if they were initially 0.
+                            gameState.upgrades[key].cost = Math.floor((gameState.upgrades[key].initialCost || gameState.upgrades[key].cost) * Math.pow(1.5, calculatedLevel));
+                            gameState.clickPower += gameState.upgrades[key].clickBonus * calculatedLevel;
+                            gameState.autoClickPower += gameState.upgrades[key].autoBonus * calculatedLevel;
+                        }
+                    }
+                }
             }
             updateDisplay();
+            renderUpgrades(); // Re-render upgrades after reset
             hideModal(confirmationModal);
             hideModal(settingsModal); // Ensure settings modal is also hidden
+            hideModal(upgradesSidebarModal); // Ensure upgrades sidebar is also hidden
+            hideModal(releaseNotesModal); // Ensure release notes modal is also hidden
             // Switch back to game section after reset
             showSection('game');
         }
@@ -754,7 +982,10 @@
                     section.classList.remove('active');
                 }
             });
-            sidebar.classList.remove('open'); // Close sidebar after selection
+            sidebar.classList.remove('open'); // Close left sidebar after selection
+            hideModal(upgradesSidebarModal); // Also hide upgrades sidebar if a main section is shown
+            hideModal(settingsModal); // Ensure settings modal is also hidden
+            hideModal(releaseNotesModal); // Ensure release notes modal is also hidden
         }
 
         /**
@@ -809,6 +1040,22 @@
         }
 
         /**
+         * Renders the release notes into the release notes modal.
+         */
+        function renderReleaseNotes() {
+            releaseNotesContent.innerHTML = ''; // Clear previous notes
+            releaseNotesData.forEach(release => {
+                const releaseItem = document.createElement('div');
+                releaseItem.className = 'release-notes-item';
+                releaseItem.innerHTML = `
+                    <h4>${release.version} (${release.date})</h4>
+                    <p>${release.notes}</p>
+                `;
+                releaseNotesContent.appendChild(releaseItem);
+            });
+        }
+
+        /**
          * Handles multi-step deletion confirmation logic.
          */
         function confirmDeleteData() {
@@ -833,17 +1080,17 @@
         }
 
         /**
-         * Handles strong start confirmation logic.
+         * Handles Rebig Bang confirmation logic.
          */
-        function confirmStrongStart() {
+        function confirmRebigBang() {
             const requiredEnergy = getStrongStartCurrentCost();
             if (gameState.energy < requiredEnergy) {
-                showGenericModal(confirmationModal, `新規ゲーム (強力なスタート) には ${formatNumber(requiredEnergy)} エネルギーが必要です。現在のエネルギーは ${formatNumber(gameState.energy)} です。`, null, () => hideModal(confirmationModal), 'OK', 'bg-blue-600 hover:bg-blue-700', '閉じる');
+                showGenericModal(confirmationModal, `リビッグバンには ${formatNumber(requiredEnergy)} エネルギーが必要です。現在のエネルギーは ${formatNumber(gameState.energy)} です。`, null, () => hideModal(confirmationModal), 'OK', 'bg-blue-600 hover:bg-blue-700', '閉じる');
                 modalConfirmButton.style.display = 'none'; // Hide the 'OK' button, user only clicks '閉じる'
                 return;
             }
 
-            showGenericModal(confirmationModal, `新規ゲーム (強力なスタート) を開始します。現在のデータはすべて削除され、レベル ${gameState.strongStartLevel + 1} のボーナス付きで開始されます。よろしいですか？`,
+            showGenericModal(confirmationModal, `リビッグバンを開始します。現在のデータはすべて削除され、レベル ${gameState.strongStartLevel + 1} のボーナス付きで開始されます。よろしいですか？`,
                 () => { // Confirm Callback
                     resetGame(true);
                     hideModal(confirmationModal);
@@ -866,33 +1113,55 @@
             sidebar.classList.toggle('open');
         });
 
-        // Navigation links (for modals/actions)
+        // Navigation links (for modals/sections)
         navLinks.forEach(link => {
             link.addEventListener('click', (event) => {
                 event.preventDefault();
+                const sectionId = event.target.dataset.section;
                 const modalId = event.target.dataset.modal;
                 const action = event.target.dataset.action;
+                const scrollToTarget = event.target.dataset.scrollTo; // New attribute
 
-                if (modalId === 'settings-modal') {
+                if (sectionId) {
+                    showSection(sectionId);
+                } else if (modalId === 'settings-modal') {
                     settingsModal.classList.add('open');
-                } else if (action === 'new-game-strong-start') {
-                    confirmStrongStart();
+                } else if (modalId === 'upgrades-sidebar-modal') {
+                    upgradesSidebarModal.classList.add('open');
+                    // Ensure upgrades are rendered before attempting to scroll
+                    renderUpgrades();
+                    if (scrollToTarget) {
+                        // Allow modal to open before scrolling
+                        setTimeout(() => {
+                            const targetElement = document.getElementById(scrollToTarget);
+                            if (targetElement) {
+                                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }, 300); // Match modal transition time
+                    }
+                } else if (action === 'rebig-bang') { // Changed from 'new-game-strong-start'
+                    confirmRebigBang(); // Changed function call
                 }
                 sidebar.classList.remove('open'); // Close sidebar after selection
             });
         });
 
-        // Show Upgrades Button
-        showUpgradesButton.addEventListener('click', () => {
-            showSection('upgrades');
-        });
-
-        // Back to Game Button
-        backToGameButton.addEventListener('click', () => {
-            showSection('game');
+        // Close Upgrades Sidebar
+        closeUpgradesSidebarButton.addEventListener('click', () => {
+            hideModal(upgradesSidebarModal);
         });
 
         // Settings Modal Interactions
+        releaseNotesButton.addEventListener('click', () => {
+            hideModal(settingsModal); // Hide settings modal when opening release notes
+            releaseNotesModal.classList.add('open');
+            renderReleaseNotes(); // Populate and display release notes
+        });
+
+        closeReleaseNotesModalButton.addEventListener('click', () => {
+            hideModal(releaseNotesModal);
+        });
+
         deleteDataButton.addEventListener('click', () => {
             confirmationStep = 0; // Reset confirmation step for deletion
             confirmDeleteData();
@@ -902,10 +1171,10 @@
             hideModal(settingsModal);
         });
 
-        // Generic modal close buttons
+        // Generic modal close buttons (on confirmation and settings modals, and new upgrades sidebar, and release notes modal)
         modalCloseButtons.forEach(button => {
             button.addEventListener('click', () => {
-                hideModal(button.closest('.modal'));
+                hideModal(button.closest('.modal') || button.closest('.upgrades-sidebar'));
             });
         });
 
@@ -928,9 +1197,11 @@
         window.onload = async () => {
             await initDb();
             await loadGame();
+            renderUpgrades(); // Initial render of upgrades list
             setInterval(autoClickLoop, 100); // Auto-click every 100ms
+            setInterval(checkHeatClickerReset, 500); // Check heat clicker reset every 500ms
             // Set initial active section
-            showSection('game');
+            showSection('game'); // Ensure the game section is active on load
         };
     </script>
 </body>
