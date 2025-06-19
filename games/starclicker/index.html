@@ -269,7 +269,7 @@
         }
 
         /* Release Notes specific styles */
-        .release-notes-content {
+        .release-notes-content, .credits-content {
             text-align: left;
             max-height: 400px; /* Limit height for scrolling */
             overflow-y: auto;
@@ -278,22 +278,22 @@
             border-radius: 10px;
             margin-top: 20px;
         }
-        .release-notes-item {
+        .release-notes-item, .credits-item {
             background-color: #2a2a4a;
             padding: 10px;
             border-radius: 8px;
             margin-bottom: 10px;
         }
-        .release-notes-item:last-child {
+        .release-notes-item:last-child, .credits-item:last-child {
             margin-bottom: 0;
         }
-        .release-notes-item h4 {
+        .release-notes-item h4, .credits-item h4 {
             font-size: 1.1em;
             font-weight: bold;
             color: #93c5fd; /* blue-300 */
             margin-bottom: 5px;
         }
-        .release-notes-item p {
+        .release-notes-item p, .credits-item p {
             font-size: 0.9em;
             color: #cbd5e1; /* slate-300 */
         }
@@ -443,6 +443,9 @@
             <button id="release-notes-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
                 リリースノート
             </button>
+            <button id="credits-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
+                クレジット
+            </button>
             <button id="delete-data-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
                 データを削除
             </button>
@@ -461,6 +464,20 @@
                 <!-- Release notes will be dynamically inserted here -->
             </div>
             <button id="close-release-notes-modal" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Credits Modal -->
+    <div id="credits-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-green-300 text-center">クレジット</h2>
+            <div id="credits-content" class="credits-content">
+                <!-- Credits will be dynamically inserted here -->
+            </div>
+            <button id="close-credits-modal" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
                 閉じる
             </button>
         </div>
@@ -509,6 +526,7 @@
 
         // Release Notes Data
         const releaseNotesData = [
+            { version: "v1.3", date: "2024-06-20", notes: "設定にクレジットセクションを追加しました。" },
             { version: "v1.2", date: "2024-06-20", notes: "ゲームにBGMを追加し、設定に音量スライダーとミュート機能を追加しました。" },
             { version: "v1.1", date: "2024-06-19", notes: "新しいアップグレードと細かい調整" },
             { version: "v1.0", date: "2024-06-18", notes: "ゲームがリリースされました" }
@@ -549,6 +567,12 @@
         const releaseNotesModal = document.getElementById('release-notes-modal');
         const releaseNotesContent = document.getElementById('release-notes-content');
         const closeReleaseNotesModalButton = document.getElementById('close-release-notes-modal');
+
+        // Credits Modal elements
+        const creditsButton = document.getElementById('credits-button');
+        const creditsModal = document.getElementById('credits-modal');
+        const creditsContent = document.getElementById('credits-content');
+        const closeCreditsModalButton = document.getElementById('close-credits-modal');
 
         // Audio Elements
         const audioElement = document.getElementById('background-music');
@@ -1066,6 +1090,7 @@
             hideModal(settingsModal); // Ensure settings modal is also hidden
             hideModal(upgradesSidebarModal); // Ensure upgrades sidebar is also hidden
             hideModal(releaseNotesModal); // Ensure release notes modal is also hidden
+            hideModal(creditsModal); // Ensure credits modal is also hidden
             // Switch back to game section after reset
             showSection('game');
         }
@@ -1088,6 +1113,7 @@
             hideModal(upgradesSidebarModal); // Also hide upgrades sidebar if a main section is shown
             hideModal(settingsModal); // Ensure settings modal is also hidden
             hideModal(releaseNotesModal); // Ensure release notes modal is also hidden
+            hideModal(creditsModal); // Ensure credits modal is also hidden
         }
 
         /**
@@ -1155,6 +1181,22 @@
                 `;
                 releaseNotesContent.appendChild(releaseItem);
             });
+        }
+
+        /**
+         * Renders the credits into the credits modal.
+         */
+        function renderCredits() {
+            creditsContent.innerHTML = `
+                <div class="credits-item">
+                    <h4>作者</h4>
+                    <p>Minntelia</p>
+                </div>
+                <div class="credits-item">
+                    <h4>音楽</h4>
+                    <p>“Edgeworth Kuiperveld” by Akira Hata</p>
+                </div>
+            `;
         }
 
         /**
@@ -1260,8 +1302,18 @@
             renderReleaseNotes(); // Populate and display release notes
         });
 
+        creditsButton.addEventListener('click', () => {
+            hideModal(settingsModal); // Hide settings modal when opening credits
+            creditsModal.classList.add('open');
+            renderCredits(); // Populate and display credits
+        });
+
         closeReleaseNotesModalButton.addEventListener('click', () => {
             hideModal(releaseNotesModal);
+        });
+
+        closeCreditsModalButton.addEventListener('click', () => {
+            hideModal(creditsModal);
         });
 
         deleteDataButton.addEventListener('click', () => {
@@ -1312,16 +1364,13 @@
                 // Restore previous volume or default if no previous volume
                 audioElement.volume = lastVolumeBeforeMute > 0 ? lastVolumeBeforeMute : 0.5;
                 volumeSlider.value = audioElement.volume * 100;
+                audioElement.play().catch(e => console.error("Autoplay on unmute failed:", e)); // Attempt to play if it was muted
             } else {
                 lastVolumeBeforeMute = audioElement.volume; // Save current volume before muting
                 audioElement.muted = true;
                 volumeSlider.value = 0; // Move slider to 0 when muted
             }
             updateSpeakerIcon(audioElement.volume, audioElement.muted);
-            // Attempt to play if it was paused and just unmuted
-            if (!audioElement.paused && !audioElement.muted) {
-                audioElement.play().catch(e => console.error("Autoplay on unmute failed:", e));
-            }
         });
 
         // Initialize game on window load
