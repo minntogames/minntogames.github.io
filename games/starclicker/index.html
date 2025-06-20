@@ -436,9 +436,10 @@
             <li>
                 <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="upgrades-sidebar-modal" data-scroll-to="one-time-upgrades-section">特別アップグレード</a>
             </li>
-            <li>
+            <!-- Breakthrough menu link is now hidden as breakthroughs are integrated directly -->
+            <!-- <li>
                 <a href="#" id="breakthrough-menu-link" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="upgrades-sidebar-modal" data-scroll-to="breakthrough-upgrades-section" style="display: none;">限界突破</a>
-            </li>
+            </li> -->
             <li>
                 <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="inventory-modal">インベントリ</a>
             </li>
@@ -498,10 +499,11 @@
             <div id="one-time-upgrade-list" class="grid grid-cols-1 gap-6">
                 <!-- One-Time Upgrade items will be dynamically inserted here -->
             </div>
-            <h3 id="breakthrough-upgrades-section" class="text-xl font-bold mb-4 mt-6 text-gray-300" style="display: none;">限界突破</h3>
-            <div id="breakthrough-upgrade-list" class="grid grid-cols-1 gap-6">
+            <!-- Breakthrough Upgrades section header is now hidden -->
+            <!-- <h3 id="breakthrough-upgrades-section" class="text-xl font-bold mb-4 mt-6 text-gray-300" style="display: none;">限界突破</h3> -->
+            <!-- <div id="breakthrough-upgrade-list" class="grid grid-cols-1 gap-6"> -->
                 <!-- Breakthrough Upgrade items will be dynamically inserted here -->
-            </div>
+            <!-- </div> -->
         </div>
         <button id="close-upgrades-sidebar" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
             閉じる
@@ -681,6 +683,9 @@
 
         // リリースノートデータ
         const releaseNotesData = [
+            { version: "v1.11", date: "2024-06-21", notes: "限界突破アップグレードが、対応する元のアップグレードが購入されるまで表示されないようになりました。" },
+            { version: "v1.10", date: "2024-06-21", notes: "惑星アップグレードの表示順序を固定しました。限界突破アップグレードを、影響を与えるアップグレードの項目内に統合しました。限界突破アップグレードの購入ボタンを赤色にしました。音楽のデフォルト音量を50%に設定しました。オフラインエネルギーポップアップのボタン応答を修正しました。" },
+            { version: "v1.9", date: "2024-06-21", notes: "アップグレード列の表示順を修正しました。オフラインエネルギーポップアップのボタン応答を修正しました。" },
             { version: "v1.8", date: "2024-06-20", notes: "バッチ購入ボタンを単一のボタンに統合し、クリックで購入量が切り替わるようにしました。サイドバーに「限界突破」メニュー項目を追加しました。限界突破アップグレードのコスト表示を改善しました。ヒートクリッカーの倍率表示の色調整を修正しました。" },
             { version: "v1.7", date: "2024-06-20", notes: "新しい特殊アップグレード「限界突破」と「広範囲転送装置」を追加しました。「限界突破」メニュー項目を追加しました。限界突破アップグレードのコスト表示を改善しました。ヒートクリッカーの倍率表示の色調整を修正しました。アップグレードのバッチ購入UIを一元化しました。" },
             { version: "v1.6", date: "2024-06-20", notes: "新しい特殊アップグレード「限界突破」と「広範囲転送装置」を追加しました。アップグレードのバッチ購入UIを改善し、一元化しました。" },
@@ -700,7 +705,8 @@
         // 分割されたアップグレードリスト
         const regularUpgradeList = document.getElementById('regular-upgrade-list');
         const oneTimeUpgradeList = document.getElementById('one-time-upgrade-list');
-        const breakthroughUpgradeList = document.getElementById('breakthrough-upgrade-list'); // 限界突破アップグレードリスト
+        // Breakthrough upgrades are now integrated, so these are commented out
+        // const breakthroughUpgradeList = document.getElementById('breakthrough-upgrade-list');
         const breakthroughUpgradesSectionHeader = document.getElementById('breakthrough-upgrades-section'); // 限界突破ヘッダー
         const heatClickerDisplayWrapper = document.getElementById('heat-clicker-display-wrapper'); // ヒートクリッカー表示のラッパー
         const heatMultiplierDisplay = document.getElementById('heat-multiplier-display');
@@ -819,7 +825,8 @@
          */
         function getHeatColor(multiplier) {
             const minMultiplier = 1.0;
-            const maxMultiplier = gameState.upgrades.heatClicker.currentMaxMultiplier; // 限界突破を考慮
+            // currentMaxMultiplierが未定義の場合のフォールバック
+            const maxMultiplier = gameState.upgrades.heatClicker.currentMaxMultiplier !== undefined ? gameState.upgrades.heatClicker.currentMaxMultiplier : MAX_HEAT_CLICK_MULTIPLIER;
             // 倍率を最小/最大に基づいて0-1の範囲に正規化
             const normalized = Math.max(0, Math.min(1, (multiplier - minMultiplier) / (maxMultiplier - minMultiplier)));
 
@@ -982,7 +989,7 @@
 
                         // 熱クリッカーの最大倍率を限界突破レベルに基づいて更新
                         updateHeatClickerMaxMultiplier();
-                        // 限界突破メニューの表示をチェック
+                        // 限界突破メニューの表示をチェック (現在は統合されているため不要だが、コードとしては残しておく)
                         checkBreakthroughMenuVisibility();
 
                         // オフラインでの獲得を処理
@@ -994,8 +1001,10 @@
                             const offlineEnergy = (gameState.autoClickPower / 1000) * timeAway; // autoClickPowerは1秒あたり
                             if (offlineEnergy > 0) {
                                 gameState.energy += offlineEnergy;
-                                showGenericModal(confirmationModal, `オフライン中に ${formatNumber(offlineEnergy)} エネルギーを獲得しました！`, null, () => hideModal(confirmationModal), 'OK', 'bg-green-600 hover:bg-green-700', '閉じる');
-                                modalConfirmButton.style.display = 'none'; // OKボタンを非表示にし、「閉じる」ボタンのみ表示
+                                // オフラインエネルギーポップアップのボタン応答を修正
+                                showGenericModal(confirmationModal, `オフライン中に ${formatNumber(offlineEnergy)} エネルギーを獲得しました！`, () => hideModal(confirmationModal), null, 'OK', 'bg-green-600 hover:bg-green-700');
+                                modalConfirmButton.style.display = 'block'; // OKボタンを表示
+                                modalCancelButton.style.display = 'none'; // Cancelボタンを非表示
                             }
                         }
                         console.log('ゲームがロードされました。');
@@ -1357,7 +1366,7 @@
                 if (upgradeKey === 'excavationLicense') {
                     excavationMenuLink.style.display = 'block';
                 }
-                checkBreakthroughMenuVisibility(); // 限界突破が購入されたらメニューをチェック
+                // checkBreakthroughMenuVisibility(); // This is no longer needed as breakthrough link is always hidden
             } else {
                 console.log("Not enough resources to buy any levels of " + upgradeKey);
             }
@@ -1374,63 +1383,67 @@
 
             regularUpgradeList.innerHTML = ''; // Clear previous regular upgrades
             oneTimeUpgradeList.innerHTML = ''; // Clear previous one-time upgrades
-            breakthroughUpgradeList.innerHTML = ''; // Clear previous breakthrough upgrades
+            // breakthroughUpgradeList.innerHTML = ''; // Not used directly anymore
 
-            const upgradeKeys = Object.keys(gameState.upgrades);
+            // Hide breakthrough section headers and menu link as breakthroughs are integrated
+            if (breakthroughUpgradesSectionHeader) breakthroughUpgradesSectionHeader.style.display = 'none';
+            if (breakthroughMenuLink) breakthroughMenuLink.style.display = 'none';
 
-            // アップグレードをカテゴリ別にソート
-            const regularUpgradeKeys = [];
-            const oneTimeUpgradeKeys = [];
-            const breakthroughUpgradeKeys = [];
-            for (const key of upgradeKeys) {
+
+            // Define a fixed order for regular planet upgrades
+            const fixedRegularOrder = [
+                'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'originalPlanetX',
+                'cometA', 'dwarfPlanet', 'gasGiantMoon' // Add new planets to fixed order
+            ];
+
+            // Define a fixed order for one-time upgrades
+            const fixedOneTimeOrder = [
+                'cosmicDrill', 'galacticReactor', 'excavationLicense', 'heatClicker', 'wideRangeTransfer'
+            ];
+
+            // Collect all breakthrough upgrades for easy lookup
+            const breakthroughUpgradesMap = {};
+            for (const key in gameState.upgrades) {
                 const upgrade = gameState.upgrades[key];
-                if (upgrade.type === 'breakthrough') { // 限界突破アップグレード
-                    breakthroughUpgradeKeys.push(key);
-                } else if (upgrade.maxLevel === 1) { // 一回限りアップグレード
-                    oneTimeUpgradeKeys.push(key);
-                } else if (!upgrade.itemCost) { // アイテムコストがない通常のアップグレード
-                    regularUpgradeKeys.push(key);
+                if (upgrade.type === 'breakthrough') {
+                    if (upgrade.targetUpgrade) {
+                        if (!breakthroughUpgradesMap[upgrade.targetUpgrade]) {
+                            breakthroughUpgradesMap[upgrade.targetUpgrade] = [];
+                        }
+                        breakthroughUpgradesMap[upgrade.targetUpgrade].push(key);
+                    }
                 }
             }
 
-            // 各カテゴリをコストでソート
-            regularUpgradeKeys.sort((a, b) => gameState.upgrades[a].cost - gameState.upgrades[b].cost);
-            oneTimeUpgradeKeys.sort((a, b) => gameState.upgrades[a].cost - gameState.upgrades[b].cost);
-            breakthroughUpgradeKeys.sort((a, b) => gameState.upgrades[a].cost - gameState.upgrades[b].cost);
-
-
-            regularUpgradeKeys.forEach(key => {
-                const upgrade = gameState.upgrades[key];
-                const upgradeElement = createUpgradeElement(key, upgrade);
-                regularUpgradeList.appendChild(upgradeElement);
-            });
-
-            oneTimeUpgradeKeys.forEach(key => {
-                const upgrade = gameState.upgrades[key];
-                // Heat Clickerは購入済みなら表示しない (これは通常のアップグレードセクションに表示されるため)
-                // wideRangeTransferも同様に、ここでは表示しない
-                if (key === 'heatClicker' && upgrade.level > 0) {
-                    return;
-                }
-                if (key === 'wideRangeTransfer' && upgrade.level > 0) {
-                    return;
-                }
-                const upgradeElement = createUpgradeElement(key, upgrade);
-                oneTimeUpgradeList.appendChild(upgradeElement);
-            });
-
-            // 限界突破アップグレードのレンダリング
-            if (breakthroughUpgradeKeys.length > 0) {
-                breakthroughUpgradesSectionHeader.style.display = 'block'; // ヘッダーを表示
-                breakthroughUpgradeKeys.forEach(key => {
-                    const upgrade = gameState.upgrades[key];
-                    const upgradeElement = createUpgradeElement(key, upgrade);
-                    breakthroughUpgradeList.appendChild(upgradeElement);
-                });
-            } else {
-                breakthroughUpgradesSectionHeader.style.display = 'none'; // ヘッダーを非表示
+            // Sort breakthrough upgrades within their target groups by cost
+            for (const targetKey in breakthroughUpgradesMap) {
+                breakthroughUpgradesMap[targetKey].sort((a, b) => gameState.upgrades[a].cost - gameState.upgrades[b].cost);
             }
 
+            // Render Regular Upgrades + their breakthroughs
+            fixedRegularOrder.forEach(key => {
+                const upgrade = gameState.upgrades[key];
+                // Ensure the upgrade exists and is a regular planet upgrade (no 'type' and no 'maxLevel')
+                if (upgrade && !upgrade.type && upgrade.maxLevel === undefined) {
+                    const upgradeElement = createUpgradeElement(key, upgrade, breakthroughUpgradesMap[key]);
+                    if (upgradeElement) regularUpgradeList.appendChild(upgradeElement);
+                }
+            });
+
+            // Render One-Time Upgrades + their breakthroughs
+            fixedOneTimeOrder.forEach(key => {
+                const upgrade = gameState.upgrades[key];
+                // Ensure the upgrade exists and is a one-time upgrade (maxLevel is 1, and not a breakthrough type)
+                // Only render if not yet purchased, or if it's heatClicker/wideRangeTransfer (which might have associated breakthroughs)
+                if (upgrade && upgrade.maxLevel === 1 && upgrade.type !== 'breakthrough') {
+                    // Only render if the main upgrade itself has level 0 OR if it has associated breakthroughs
+                    // This covers cases where we want to show heatClicker/wideRangeTransfer even if level 0
+                    // because their breakthroughs might become available later.
+                    // The breakthrough section itself will be hidden if upgrade.level is 0.
+                    const upgradeElement = createUpgradeElement(key, upgrade, breakthroughUpgradesMap[key]);
+                    if (upgradeElement) oneTimeUpgradeList.appendChild(upgradeElement);
+                }
+            });
 
             // Restore scroll position after rendering
             // Added a small delay to ensure DOM is rendered before attempting to scroll
@@ -1442,18 +1455,18 @@
         }
 
         // Helper function to create an individual upgrade element
-        function createUpgradeElement(key, upgrade) {
+        function createUpgradeElement(key, upgrade, associatedBreakthroughKeys = []) {
             const upgradeElement = document.createElement('div');
             upgradeElement.className = 'upgrade-item';
 
             let upgradeStatusText = '';
-            let isPurchasedOneTime = (upgrade.maxLevel === 1 && upgrade.level >= 1 && upgrade.type !== 'breakthrough'); // 限界突破は別途判定
+            let isPurchasedOneTime = (upgrade.maxLevel === 1 && upgrade.level >= 1 && upgrade.type !== 'breakthrough');
             let purchaseButtonText = '購入';
 
             if (isPurchasedOneTime) {
                 upgradeStatusText = `<p class="text-sm text-green-400 font-bold">購入済み</p>`;
                 purchaseButtonText = '完了';
-            } else if (upgrade.type === 'breakthrough' && upgrade.level >= upgrade.maxLevel) { // 限界突破の最大レベル達成
+            } else if (upgrade.type === 'breakthrough' && upgrade.level >= upgrade.maxLevel) {
                 upgradeStatusText = `<p class="text-sm text-green-400 font-bold">最大レベル</p>`;
                 purchaseButtonText = '完了';
             }
@@ -1469,7 +1482,7 @@
                     purchaseButtonText = `購入 (x${levelsBought})`;
                 }
 
-
+                // Display cost for the main upgrade
                 let costDetails = `<p class="text-lg font-bold mb-2">エネルギー: ${formatNumber(upgrade.cost)}</p>`;
                 if (upgrade.itemCost) {
                     for (const itemKey in upgrade.itemCost) {
@@ -1480,13 +1493,54 @@
                 upgradeStatusText = costDetails;
             }
 
-            // 限界突破アップグレードの場合、現在の限界突破レベルを表示
-            let breakthroughInfo = '';
-            if (upgrade.breakthroughLevel !== undefined) {
-                breakthroughInfo = `<p class="text-sm text-purple-400">限界突破: ${upgrade.breakthroughLevel}/${upgrade.maxLevel}</p>`;
-                if (upgrade.targetUpgrade === 'heatClicker') {
-                    breakthroughInfo += `<p class="text-sm text-purple-400">最大倍率: ${gameState.upgrades.heatClicker.currentMaxMultiplier.toFixed(1)}x</p>`; // 動的に更新された値を使用
-                }
+            let breakthroughSection = '';
+            // Only render breakthrough section if there are associated breakthroughs AND the main upgrade has been purchased (level > 0)
+            if (associatedBreakthroughKeys.length > 0 && upgrade.level > 0) { // Changed condition here
+                breakthroughSection += `<div class="mt-4 pt-4 border-t border-gray-600 w-full">
+                                    <h4 class="text-md font-semibold text-purple-400 mb-2">限界突破アップグレード:</h4>`;
+                associatedBreakthroughKeys.forEach(btKey => {
+                    const btUpgrade = gameState.upgrades[btKey];
+                    if (!btUpgrade) return; // Skip if breakthrough upgrade not found
+
+                    let btPurchaseButtonText = '購入';
+                    let btCanAfford = true;
+                    const { totalEnergyCost, totalItemCost, levelsBought } = calculateBatchCostAndEffects(btKey, 1); // Breakthroughs are always x1
+
+                    if (btUpgrade.level >= btUpgrade.maxLevel) {
+                        btPurchaseButtonText = '最大レベル';
+                        btCanAfford = false;
+                    } else if (levelsBought === 0) {
+                        btPurchaseButtonText = '不足';
+                        btCanAfford = false;
+                    }
+
+                    let btCostDetails = `<p class="text-sm font-bold mt-1">エネルギー: ${formatNumber(btUpgrade.cost)}</p>`;
+                    if (btUpgrade.itemCost) {
+                        for (const itemKey in btUpgrade.itemCost) {
+                            const item = itemData[itemKey] || { name: itemKey, icon: '❓' };
+                            btCostDetails += `<p class="text-xs text-gray-500">${item.icon} ${item.name}: ${formatNumber(btUpgrade.itemCost[itemKey])}</p>`;
+                        }
+                    }
+
+                    // Apply red color to breakthrough buttons
+                    const buttonClasses = btCanAfford ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-500';
+
+                    breakthroughSection += `
+                        <div class="flex items-center justify-between mt-2 p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <p class="text-base font-medium">${btUpgrade.icon} ${btKey.charAt(0).toUpperCase() + btKey.slice(1).replace(/([A-Z])/g, ' $1').trim()}</p>
+                                <p class="text-sm text-gray-400">レベル: ${btUpgrade.level}/${btUpgrade.maxLevel}</p>
+                                ${btUpgrade.targetUpgrade === 'heatClicker' ? `<p class="text-sm text-gray-400">効果: 最大倍率 +${(btUpgrade.effect * 100).toFixed(0)}%</p>` : ''}
+                                ${btUpgrade.targetUpgrade === 'wideRangeTransfer' ? `<p class="text-sm text-gray-400">効果: 新しい惑星をアンロック</p>` : ''}
+                                ${btCostDetails}
+                            </div>
+                            <button data-upgrade="${btKey}" class="buy-upgrade px-4 py-2 rounded-lg font-semibold transition duration-200 ${buttonClasses}" ${!btCanAfford ? 'disabled' : ''}>
+                                ${btPurchaseButtonText}
+                            </button>
+                        </div>
+                    `;
+                });
+                breakthroughSection += `</div>`;
             }
 
 
@@ -1496,7 +1550,6 @@
                     <div>
                         <h3 class="text-xl font-semibold">${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}</h3>
                         <p class="text-sm text-gray-400">レベル: ${upgrade.level}</p>
-                        ${breakthroughInfo}
                         ${upgrade.clickBonus > 0 ? `<p class="text-sm text-gray-400">クリックパワー +${formatNumber(upgrade.clickBonus)}</p>` : ''}
                         ${upgrade.autoBonus > 0 ? `<p class="text-sm text-gray-400">自動クリック +${formatNumber(upgrade.autoBonus)}/秒</p>` : ''}
                     </div>
@@ -1507,8 +1560,19 @@
                         ${purchaseButtonText}
                     </button>
                 </div>
+                ${breakthroughSection} <!-- Insert breakthrough upgrades here -->
             `;
-            const buyButton = upgradeElement.querySelector('.buy-upgrade');
+
+            // Re-attach event listeners for all new buy-upgrade buttons (both main and breakthrough)
+            upgradeElement.querySelectorAll('.buy-upgrade').forEach(button => {
+                const btnUpgradeKey = button.dataset.upgrade;
+                // For main upgrade buttons, use gameState.selectedBatchAmount
+                // For breakthrough upgrade buttons, always use 1 (as per previous logic)
+                const amountToBuy = gameState.upgrades[btnUpgradeKey].type === 'breakthrough' ? 1 : gameState.selectedBatchAmount;
+                button.addEventListener('click', () => buyUpgradeLogic(btnUpgradeKey, amountToBuy));
+            });
+
+            const buyButton = upgradeElement.querySelector(`.upgrade-actions > button[data-upgrade="${key}"]`); // Get the main upgrade button
 
             const { totalEnergyCost, totalItemCost, levelsBought } = calculateBatchCostAndEffects(key, gameState.selectedBatchAmount);
 
@@ -1521,24 +1585,23 @@
                 }
             }
 
-            // 限界突破アップグレードは、最大レベルに達していたら購入不可
-            if (upgrade.type === 'breakthrough' && upgrade.level >= upgrade.maxLevel) {
-                canAfford = false;
-            } else if (isPurchasedOneTime) { // 一回限りのアップグレード
+            if (isPurchasedOneTime) { // One-time upgrades that are already purchased
                 canAfford = false;
             }
-
 
             if (!canAfford || levelsBought === 0) {
-                buyButton.disabled = true;
-                buyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                buyButton.classList.add('bg-gray-500'); // Apply disabled style
+                if (buyButton) { // Ensure the button exists before trying to modify its properties
+                    buyButton.disabled = true;
+                    buyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    buyButton.classList.add('bg-gray-500'); // Apply disabled style
+                }
             } else {
-                buyButton.disabled = false;
-                buyButton.classList.remove('bg-gray-500'); // Ensure disabled style is removed
-                buyButton.classList.add('bg-blue-600', 'hover:bg-blue-700'); // Apply active styles
+                if (buyButton) {
+                    buyButton.disabled = false;
+                    buyButton.classList.remove('bg-gray-500'); // Ensure disabled style is removed
+                    buyButton.classList.add('bg-blue-600', 'hover:bg-blue-700'); // Apply active styles
+                }
             }
-            buyButton.addEventListener('click', () => buyUpgradeLogic(key, gameState.selectedBatchAmount));
             return upgradeElement;
         }
 
@@ -1776,7 +1839,7 @@
 
                 // 強力なスタートレベルに応じて、通常のアップグレードに初期レベルを適用
                 for (const key in gameState.upgrades) {
-                    if (gameState.upgrades[key].maxLevel !== 1 && gameState.upgrades[key].excavationCooldown) { // 一回限りのアップグレードにのみボーナスを適用
+                    if (gameState.upgrades[key].maxLevel !== 1 && gameState.upgrades[key].excavationCooldown) { // excavationCooldownは惑星アップグレードのマーカーとして使用
                         const initialLevel = key === 'mercury' ? 5 : (key === 'venus' ? 2 : 0); // 特定のアップグレードの基本レベル
                         const calculatedLevel = Math.floor(initialLevel * bonusMultiplier);
 
@@ -1808,12 +1871,14 @@
             hideModal(excavationModal); // 採掘モーダルも非表示にする
             // リセット後にゲームセクションに戻る
             showSection('game');
-            checkBreakthroughMenuVisibility(); // リセット後もメニューの表示をチェック
+            // checkBreakthroughMenuVisibility(); // No longer needed
         }
 
         /**
          * 限界突破メニュー項目の表示/非表示をチェックします。
          * いずれかの限界突破アップグレードが購入済み、または購入可能（エネルギーとアイテムが足りている）であれば表示します。
+         * NOTE: This function is largely vestigial now as breakthrough upgrades are integrated into their target upgrades.
+         * However, the data structure still supports it, and if a future UI needs a global breakthrough list, it could be used.
          */
         function checkBreakthroughMenuVisibility() {
             let shouldShow = false;
@@ -1844,11 +1909,13 @@
                 }
             }
 
-            if (shouldShow) {
-                breakthroughMenuLink.style.display = 'block';
-            } else {
-                breakthroughMenuLink.style.display = 'none';
-            }
+            // The breakthrough menu link is now always hidden in HTML,
+            // so this function effectively does nothing in the current UI.
+            // if (shouldShow) {
+            //     breakthroughMenuLink.style.display = 'block';
+            // } else {
+            //     breakthroughMenuLink.style.display = 'none';
+            // }
         }
 
         // --- UI関数 ---
@@ -1886,15 +1953,24 @@
          */
         function showGenericModal(modalElement, message, confirmCallback, cancelCallback, confirmButtonText = 'はい', confirmButtonClass = 'bg-red-600 hover:bg-red-700', cancelButtonText = 'キャンセル') {
             if (modalElement === confirmationModal) {
-                modalMessage.innerHTML = message; // innerHTMLを使用
-                // ボタンのデフォルト状態をリセット
-                modalConfirmButton.style.display = 'inline-block';
-                modalConfirmButton.disabled = false;
+                modalMessage.innerHTML = message;
                 modalConfirmButton.textContent = confirmButtonText;
                 modalConfirmButton.className = 'modal-button confirm ' + confirmButtonClass;
-
                 modalCancelButton.textContent = cancelButtonText;
-                modalCancelButton.style.display = 'inline-block'; // キャンセルボタンもデフォルトで表示されるようにする
+
+                // Show/hide buttons based on callbacks
+                if (confirmCallback) {
+                    modalConfirmButton.style.display = 'inline-block';
+                    modalConfirmButton.disabled = false; // Ensure it's not disabled
+                } else {
+                    modalConfirmButton.style.display = 'none';
+                }
+
+                if (cancelCallback) {
+                    modalCancelButton.style.display = 'inline-block';
+                } else {
+                    modalCancelButton.style.display = 'none';
+                }
             }
 
             currentConfirmCallback = confirmCallback;
@@ -2191,6 +2267,8 @@
             renderUpgrades(); // アップグレードリストの初期レンダリング
 
             // ロードされたゲーム状態からオーディオ設定を初期化
+            // Music defaults to 50%
+            gameState.volume = 0.5; // Explicitly set default volume
             audioElement.volume = gameState.volume;
             volumeSlider.value = gameState.volume * 100;
             updateSpeakerIcon(audioElement.volume, audioElement.muted);
