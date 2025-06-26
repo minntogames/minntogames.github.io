@@ -10,3 +10,15 @@ h2 {
   /*線の種類（実線） 太さ 色*/
   border-bottom: solid 3px black;
 }
+
+red {
+  color:red
+}
+
+blue {
+  color:blue
+}
+ 
+skyblue {
+  color:skyblue
+}

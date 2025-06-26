@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>キャラ図鑑</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>キャラ図鑑</h1>
+
+  <div class="search-container">
+    <input type="text" id="searchName" placeholder="名前で検索">
+    <button onclick="filterCharacters()">検索</button>
+    <button id="filterButton" onclick="toggleFilterPopup()">フィルター</button>
+    <!-- 言語切り替えボタンを追加 -->
+    <button id="langToggleBtn" onclick="toggleLanguage()">言語切替 (現在: 日本語)</button>
+  </div>
+
+  <div id="filterPopup" class="popup">
+    <div class="popup-content">
+      <span class="close" onclick="toggleFilterPopup()">&times;</span>
+      <h3>フィルターオプション</h3>
+      
+      <div class="filter-section">
+        <h4>種族</h4>
+        <div id="raceFilters" class="filter-options"></div>
+      </div>
+      
+      <div class="filter-section">
+        <h4>戦闘スタイル</h4>
+        <div id="fightingStyleFilters" class="filter-options"></div>
+      </div>
+      
+      <div class="filter-section">
+        <h4>属性</h4>
+        <div id="attributeFilters" class="filter-options"></div>
+      </div>
+      
+      <div class="filter-section">
+        <h4>グループ</h4>
+        <div id="groupFilters" class="filter-options"></div>
+      </div>
+      
+      <button onclick="applyFilters()">適用</button>
+      <button onclick="clearFilters()">クリア</button>
+    </div>
+  </div>
+
+  <!-- キャラクター詳細表示の要素 (ポップアップ型ではない) -->
+  <div id="detailsPopup">
+    <div class="popup-content">
+      <span class="close" onclick="closeDetailsPopup()">&times;</span>
+      <div id="characterDetails">
+        <!-- キャラクターの詳細がここに表示されます -->
+      </div>
+      <hr>
+      <h3>関連キャラクター</h3>
+      <div id="relatedCharacters" class="card-container">
+        <!-- 関連キャラクターのカードがここに表示されます -->
+      </div>
+    </div>
+  </div>
+
+  <div id="characterList" class="card-container"></div>
+  
+  <!-- キャラクターが見つからなかった場合のメッセージ -->
+  <div id="noCharactersMessage" class="no-characters-message" style="display: none;">
+    対象のキャラが見つかりませんでした
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

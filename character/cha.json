@@ -1,0 +1,102 @@
+[
+    {
+        "settings": {
+            "race": {
+                "en": ["Stickman", "Half-Human", "Human", "Beastman", "Demon", "God", "Subhuman", "Devil", "Fairy", "Angel"],
+                "ja": ["棒人間", "半人間", "人間", "獣人", "魔人", "魔神", "亜人", "悪魔", "妖精", "天使"]
+            },
+            "fightingStyle": {
+                "en": ["None", "Sword", "Spear", "Axe", "Bow", "Gun", "Magic", "Martial Arts", "Hammer", "Other"],
+                "ja": ["なし", "剣", "槍", "斧", "弓", "銃", "魔法", "格闘技", "ハンマー", "その他"]
+            },
+            "attribute": {
+                "en": ["Fire", "Water", "Earth", "Wind", "Light", "Darkness", "Holy", "Poison", "Electricity", "Ice", "Psychic", "None", "Spirarl"],
+                "ja": ["火属性", "水属性", "土属性", "風属性", "光属性", "闇属性", "聖属性", "毒属性", "電気属性", "氷属性", "精神属性", "無属性", "螺旋属性"]
+            },
+            "group": {
+                "en": ["Last Line", "Galactic Company", "Main Group", "Space Pirates", "Subspace", "Otherworld", "Underworld", "B.comsHACKER's", "Nibiru", "Stock 'Black'", "Other"],
+                "ja": ["ラストライン", "ギャラクティックカンパニー", "メイン組", "宇宙海賊", "亜空間", "異世界", "冥界", "B.comsHACKER's", "ニビル", "株式「黒」", "その他"]
+            }
+        }
+    },
+    {
+        "id": 1,
+        "name": "Xドクター",
+        "description": "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Sword", "Magic"],
+        "attribute": ["Electricity"],
+        "height": 190,
+        "birthday": {
+            "year": "???",
+            "month": 4,
+            "day": 9
+        },
+        "personality": "意地悪",
+        "group": ["Main Group"],
+        "img": "1.webp",
+        "imgsize": "250%",
+        "imageZoomPosition": "-150px -40px"
+    },
+    {
+        "id": 2,
+        "name": "黒田適当",
+        "description": "めっちゃつよいてすと",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Martial Arts"],
+        "attribute": ["None"],
+        "height": 210,
+        "birthday": {
+            "year": 2000,
+            "month": 1,
+            "day": 1
+        },
+        "personality": "なんか",
+        "group": ["Main Group"],
+        "img": "2.webp",
+        "imgsize": "250%",
+        "imageZoomPosition": "-140px -130px"
+    },
+    {
+        "id": 3,
+        "name": "無敵勇者棒人間",
+        "description": "めっちゃつよいてすと",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Sword"],
+        "attribute": ["Holy"],
+        "height": 170,
+        "birthday": {
+            "year": 2000,
+            "month": 1,
+            "day": 1
+        },
+        "personality": "なんか",
+        "group": ["Main Group"],
+        "img": "3.webp",
+        "imgsize": "250%",
+        "imageZoomPosition": "-150px -110px"
+    },
+    {
+        "id": 4,
+        "name": "カッター",
+        "description": "めっちゃつよいてすと",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Magic"],
+        "attribute": ["Wind"],
+        "height": 170,
+        "birthday": {
+            "year": 2000,
+            "month": 1,
+            "day": 1
+        },
+        "personality": "なんか",
+        "group": ["Main Group"],
+        "img": "4.webp",
+        "imgsize": "250%",
+        "imageZoomPosition": "-150px -80px"
+    }
+]

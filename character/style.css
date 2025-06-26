@@ -1,0 +1,210 @@
+body {
+  font-family: sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.search-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+input[type="text"] {
+  padding: 8px;
+  width: 200px;
+  font-size: 16px;
+}
+
+button {
+  padding: 8px 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.card {
+  width: 200px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease;
+  text-align: center;
+  cursor: pointer; /* カーソルをポインターに変更 */
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+.card .imgframe {
+  width: 200px;
+  height: 200px;
+  /* 固定した幅からはみ出たものは隠してしまう */
+  overflow: hidden;
+}
+
+.imgframe img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card h2 {
+  font-size: 18px;
+  margin: 10px 0;
+  padding: 0 10px;
+}
+
+/* フィルターポップアップスタイル (変更なし) */
+.popup {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  overflow: auto; /* スクロール可能にする */
+}
+
+.popup-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 600px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* キャラクター詳細表示のスタイルを画面全体表示に修正 */
+#detailsPopup {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%; /* 画面幅いっぱいに */
+  height: 100%; /* 画面高さいっぱいに */
+  background-color: #ffffff; /* bodyと同じ背景色にするか、白にする */
+  overflow: auto; /* スクロール可能にする */
+  padding: 0px; /* 全体のパディングを追加 */
+  box-sizing: border-box; /* パディングを幅と高さに含める */
+}
+
+#detailsPopup .popup-content {
+  background-color: #fefefe; /* コンテンツの背景色 */
+  margin: 0 auto; /* 中央寄せ */
+  width: 90%; /* コンテンツの幅を広げる */
+  max-width: 800px; /* 最大幅を調整 */
+  height: auto; /* 高さはコンテンツに合わせる */
+  min-height: calc(100vh - 40px); /* 最小高さをビューポートの高さに合わせる (パディング考慮) */
+  padding: 30px; /* 詳細コンテンツのパディングを増やす */
+  box-sizing: border-box;
+  /* ポップアップの中央配置に関する指定を削除または変更 */
+  top: auto;
+  left: auto;
+  transform: none; /* 中央配置のtransformを削除 */
+  position: relative; /* transformがないのでrelativeでOK */
+  box-shadow: none; /* ポップアップの影を削除 */
+  border: none; /* ポップアップの枠線を削除 */
+  border-radius: 0; /* 角丸を削除 */
+}
+
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: black;
+}
+
+.filter-section {
+  margin-bottom: 15px;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-option {
+  background: #e0e0e0;
+  padding: 5px 10px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-option.selected {
+  background: #4CAF50;
+  color: white;
+}
+
+/* キャラクター詳細のスタイル */
+#characterDetails {
+  text-align: left;
+  line-height: 1.6;
+  margin-bottom: 20px; /* 関連キャラとの区切り */
+}
+
+#characterDetails h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2em; /* タイトルを大きく */
+}
+
+#characterDetails p {
+  margin: 10px 0; /* 行間を広げる */
+  font-size: 1.1em; /* フォントサイズを少し大きく */
+}
+
+/* キャラクター詳細内の画像スタイル */
+.detail-image {
+  max-width: 500px; /* 画像の最大幅 */
+  height: 500px; /* 画像の高さを固定し、object-fitが機能するようにする */
+  display: block; /* 中央寄せのためにブロック要素にする */
+  margin: 0 auto 20px auto; /* 上下にマージン、左右中央寄せ */
+}
+
+#relatedCharacters {
+  margin-top: 30px; /* 関連キャラセクションの上マージン */
+}
+
+#relatedCharacters .card {
+  width: 150px; /* 関連キャラカードのサイズを少し小さく */
+}
+
+/* フィルター結果が0件の場合のメッセージ */
+.no-characters-message {
+  text-align: center;
+  color: #888; /* グレー色 */
+  font-size: 1.2em;
+  padding: 50px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
