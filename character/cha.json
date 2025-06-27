@@ -228,5 +228,215 @@
         "img": "10.webp",
         "imgsize": "300%",
         "imageZoomPosition": "-190px -70px"
+    },
+    {
+        "id": 11,
+        "name": "棒NS",
+        "name_en": "Bouness",
+        "description": "骨の棒人間。重力を操る特殊能力を持つ。頭が取れやすい。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": [""],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "11.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 12,
+        "name": "空苦理神田",
+        "name_en": "Karakuri shinta",
+        "description": "機械好きな棒人間。よく機械を開発をしている。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["None"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "12.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 13,
+        "name": "黒田田黒",
+        "name_en": "Kuroda Taguro",
+        "description": "黒田適当の息子。帽子についている剣は使える。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Sword"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "13.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 14,
+        "name": "キング",
+        "name_en": "King",
+        "description": "基本的には国民を見守っているがいざとなったときは国民を守るために出向くとても民想いな棒人間の王様。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Spear"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "14.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 15,
+        "name": "神さま",
+        "name_en": "God",
+        "description": "棒人間の神様。なんかたまにちょっかいをかけてくる。暇なのだろうか",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Other"],
+        "attribute": ["Holy"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "15.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 16,
+        "name": "スタッフ",
+        "name_en": "Staff",
+        "description": "スタッフ。翻訳の資料などを担当していてスタッフ無しでは私たちの言葉は読めないだろう",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["None"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "16.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 17,
+        "name": "ナレーター",
+        "name_en": "Narrator",
+        "description": "ナレーター。リアルタイムで翻訳してくれる超万能棒人間。この人がいなかったら棒人間何言ってるかわからないからね",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["None"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "17.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 18,
+        "name": "カメラマン",
+        "name_en": "Cameraman",
+        "description": "カメラマン。リアルタイムで状況を配信していてカメラマンなしでは何が起こってるか見ることはできないだろう。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["None"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["メイン組"],
+        "img": "18.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 19,
+        "name": "B.01.coms",
+        "name_en": "B.01.coms",
+        "description": "B.comsHACKER'sのリーダー。この世界を支配しようとたくらんでいる。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Other"],
+        "attribute": ["Electricity"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "19.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
+    },
+    {
+        "id": 20,
+        "name": "B.16.coms",
+        "name_en": "B.16.coms",
+        "description": "B.01.comsの兄。ブラコンで弟の計画に加担している。",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Other"],
+        "attribute": ["Electricity"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "20.webp",
+        "imgsize": "",
+        "imageZoomPosition": ""
     }
 ]
