@@ -362,10 +362,10 @@ button {
     margin-top: 10px;
   }
   .card {
-    width: 120px;
+    width: 110px;
   }
   .card .imgframe {
-    width: 170px;
+    width: 160px;
     height: 120px;
   }
   .card h2 {
@@ -380,8 +380,8 @@ button {
     min-height: unset;
   }
   .detail-image {
-    max-width: 98vw;
-    height: 220px;
+    max-width: 500px;
+    height: 500px;
   }
   #characterDetails h2 {
     font-size: 1.2em;
