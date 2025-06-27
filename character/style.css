@@ -15,18 +15,101 @@ h1 {
   justify-content: center;
   margin-bottom: 20px;
   gap: 10px;
+  background: #fff;
+  border-radius: 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 16px 24px;
+  align-items: center;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 input[type="text"] {
-  padding: 8px;
-  width: 200px;
-  font-size: 16px;
+  padding: 12px 18px;
+  width: 240px;
+  font-size: 17px;
+  border: 1.5px solid #00ffa6;
+  border-radius: 24px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+  background: #f9f9f9;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+input[type="text"]:focus {
+  border: 1.5px solid #15a1cc;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(21,161,204,0.08);
 }
 
 button {
-  padding: 8px 12px;
-  font-size: 16px;
+  padding: 0;
+  font-family: inherit;
+  appearance: none;
   cursor: pointer;
+  background-color: transparent;
+  border: none;
+}
+
+/* ボタンのスタイル */
+.buttonOutlineGradient {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  height: 48px;
+  padding: 2px;
+  font-family: sans-serif;
+  font-size: 16px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  background: linear-gradient(135deg, #00ffa6, #15a1cc);
+  border-radius: 32px; /* (buttonの高さ / 2) の値 */
+  min-width: 110px;
+  max-width: 160px;
+  height: 44px;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.buttonOutlineGradient::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background: linear-gradient(135deg, #4a9ea2, #15cc6a);
+  border-radius: 32px; /* (buttonの高さ / 2) の値 */
+  opacity: 0;
+  filter: blur(8px);
+}
+
+.buttonOutlineGradient_item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+  background-color: #222;
+  border-radius: 32px; /* (buttonの高さ / 2) の値 */
+  font-size: 1em;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+@media (any-hover: hover) {
+  .buttonOutlineGradient::before {
+    transition: opacity 0.2s;
+  }
+
+  .buttonOutlineGradient:hover::before {
+    opacity: 1;
+  }
 }
 
 .card-container {

@@ -10,10 +10,10 @@
 
   <div class="search-container">
     <input type="text" id="searchName" placeholder="名前で検索">
-    <button onclick="filterCharacters()">検索</button>
-    <button id="filterButton" onclick="toggleFilterPopup()">フィルター</button>
+    <button onclick="filterCharacters()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">検索</div></button>
+    <button id="filterButton" onclick="toggleFilterPopup()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">フィルター</div></button>
     <!-- 言語切り替えボタンを追加 -->
-    <button id="langToggleBtn" onclick="toggleLanguage()">言語切替 (現在: 日本語)</button>
+    <button onclick="toggleLanguage()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item" id="langToggleBtn">言語切替 (現在: 日本語)</div></button>
   </div>
 
   <div id="filterPopup" class="popup">

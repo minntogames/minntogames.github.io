@@ -94,13 +94,15 @@ function renderCharacter(char) {
   // 画像の拡大位置を設定 (cha.jsonにimageZoomPositionプロパティがある場合)
   const objectPosition = char.imageZoomPosition || 'center';
   const imgWidth = char.imgsize || '100%'; // imgsizeがない場合は100%
+  // 言語によって表示名を切り替え
+  const displayName = currentDisplayLanguage === 'en' && char.name_en ? char.name_en : char.name;
 
   return `
     <div class="card" onclick="showCharacterDetails(${char.id})">
       <div class="imgframe">
         <img src="img/${char.img}" alt="${char.name}の画像" onerror="this.src='img/placeholder.png';" style="width:${imgWidth};object-position:${objectPosition};">
       </div>
-      <h2>${char.name}</h2>
+      <h2>${displayName}</h2>
     </div>
   `;
 }
@@ -325,11 +327,14 @@ function showCharacterDetails(charId) {
     // キャラクターIDを要素のデータ属性に保存（言語切り替え時に再利用するため）
     detailsContainer.dataset.charId = charId;
 
+    // 表示名を言語によって切り替え
+    const displayName = currentDisplayLanguage === 'en' && character.name_en ? character.name_en : character.name;
+
     // キャラクターの詳細情報をHTMLとして生成（言語切り替えを適用）
     detailsContainer.innerHTML = `
       <div class="character-detail-content">
         <img src="img/${character.img}" alt="${character.name}の画像" onerror="this.src='img/placeholder.png';" class="detail-image">
-        <h2>${character.name}</h2>
+        <h2>${displayName}</h2>
         <p><strong>${getTranslatedLabel('description')}:</strong> ${character.description || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('race')}:</strong> ${character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
