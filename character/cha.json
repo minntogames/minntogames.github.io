@@ -37,8 +37,8 @@
         "personality": "意地悪",
         "group": ["Main Group"],
         "img": "1.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -40px"
+        "imgsize": "100%",
+        "imageZoomPosition": "0px 30px"
     },
     {
         "id": 2,
@@ -58,8 +58,8 @@
         "personality": "慎重に行動するタイプ",
         "group": ["Main Group"],
         "img": "2.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-140px -130px"
+        "imgsize": "140%",
+        "imageZoomPosition": "-40px -80px"
     },
     {
         "id": 3,
@@ -100,8 +100,8 @@
         "personality": "なんか",
         "group": ["Main Group"],
         "img": "4.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -80px"
+        "imgsize": "170%",
+        "imageZoomPosition": "-60px -0px"
     },
     {
         "id": 5,
@@ -121,8 +121,8 @@
         "personality": "自信家",
         "group": ["Main Group"],
         "img": "5.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -130px"
+        "imgsize": "150%",
+        "imageZoomPosition": "-60px -20px"
     },
     {
         "id": 6,
@@ -135,15 +135,15 @@
         "attribute": ["None"],
         "height": 171,
         "birthday": {
-            "year": 2000,
+            "year": "???",
             "month": 9,
             "day": 23
         },
         "personality": "サイコパスもどき",
         "group": ["Main Group"],
         "img": "6.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -200px"
+        "imgsize": "130%",
+        "imageZoomPosition": "-50px -100px"
     },
     {
         "id": 7,
@@ -156,15 +156,15 @@
         "attribute": ["None"],
         "height": 171,
         "birthday": {
-            "year": 2000,
+            "year": "???",
             "month": 5,
             "day": 2
         },
         "personality": "努力家",
         "group": ["Main Group"],
         "img": "7.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -130px"
+        "imgsize": "230%",
+        "imageZoomPosition": "-130px -140px"
     },
     {
         "id": 8,
@@ -177,15 +177,15 @@
         "attribute": ["None"],
         "height": 170,
         "birthday": {
-            "year": 2000,
+            "year": "???",
             "month": 1,
             "day": 1
         },
         "personality": "なんか",
         "group": ["Main Group"],
         "img": "8.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -130px"
+        "imgsize": "170%",
+        "imageZoomPosition": "-60px -10px"
     },
     {
         "id": 9,
@@ -198,15 +198,15 @@
         "attribute": ["None"],
         "height": 179,
         "birthday": {
-            "year": 2000,
+            "year": "???",
             "month": 1,
             "day": 1
         },
         "personality": "なんか",
         "group": ["Main Group"],
         "img": "9.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -130px"
+        "imgsize": "180%",
+        "imageZoomPosition": "-80px -50px"
     },
     {
         "id": 10,
@@ -219,14 +219,14 @@
         "attribute": ["None"],
         "height": 185,
         "birthday": {
-            "year": 2000,
+            "year": "???",
             "month": 1,
             "day": 1
         },
         "personality": "なんか",
         "group": ["Main Group"],
         "img": "10.webp",
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -100px"
+        "imgsize": "300%",
+        "imageZoomPosition": "-190px -70px"
     }
 ]
