@@ -340,7 +340,7 @@ button {
   }
 }
 
-@media (max-width: 668px) {
+@media (max-width: 900px) {
   body {
     padding: 6px;
   }
