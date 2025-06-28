@@ -38,7 +38,9 @@
         "group": ["Main Group"],
         "img": "1.webp",
         "imgsize": "100%",
-        "imageZoomPosition": "0px 30px"
+        "imageZoomPosition": "0px 30px",
+        "imgsize_mobile": "120%",
+        "imageZoomPosition_mobile": "-15px 0px"
     },
     {
         "id": 2,
@@ -59,7 +61,9 @@
         "group": ["Main Group"],
         "img": "2.webp",
         "imgsize": "140%",
-        "imageZoomPosition": "-40px -80px"
+        "imageZoomPosition": "-40px -80px",
+        "imgsize_mobile": "150%",
+        "imageZoomPosition_mobile": "-35px -65px"
     },
     {
         "id": 3,
@@ -80,7 +84,9 @@
         "group": ["Main Group"],
         "img": "3.webp",
         "imgsize": "250%",
-        "imageZoomPosition": "-150px -110px"
+        "imageZoomPosition": "-150px -110px",
+        "imgsize_mobile": "320%",
+        "imageZoomPosition_mobile": "-140px -100px"
     },
     {
         "id": 4,
@@ -101,7 +107,9 @@
         "group": ["Main Group"],
         "img": "4.webp",
         "imgsize": "170%",
-        "imageZoomPosition": "-60px -0px"
+        "imageZoomPosition": "-60px -0px",
+        "imgsize_mobile": "200%",
+        "imageZoomPosition_mobile": "-60px -10px"
     },
     {
         "id": 5,
@@ -122,7 +130,9 @@
         "group": ["Main Group"],
         "img": "5.webp",
         "imgsize": "150%",
-        "imageZoomPosition": "-60px -20px"
+        "imageZoomPosition": "-60px -20px",
+        "imgsize_mobile": "190%",
+        "imageZoomPosition_mobile": "-65px -30px"
     },
     {
         "id": 6,
@@ -143,7 +153,9 @@
         "group": ["Main Group"],
         "img": "6.webp",
         "imgsize": "130%",
-        "imageZoomPosition": "-50px -100px"
+        "imageZoomPosition": "-50px -100px",
+        "imgsize_mobile": "150%",
+        "imageZoomPosition_mobile": "-40px -80px"
     },
     {
         "id": 7,
@@ -164,7 +176,9 @@
         "group": ["Main Group"],
         "img": "7.webp",
         "imgsize": "230%",
-        "imageZoomPosition": "-130px -140px"
+        "imageZoomPosition": "-130px -140px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-95px -100px"
     },
     {
         "id": 8,
@@ -185,7 +199,9 @@
         "group": ["Main Group"],
         "img": "8.webp",
         "imgsize": "170%",
-        "imageZoomPosition": "-60px -10px"
+        "imageZoomPosition": "-60px -10px",
+        "imgsize_mobile": "190%",
+        "imageZoomPosition_mobile": "-55px -10px"
     },
     {
         "id": 9,
@@ -206,7 +222,9 @@
         "group": ["Main Group"],
         "img": "9.webp",
         "imgsize": "180%",
-        "imageZoomPosition": "-80px -50px"
+        "imageZoomPosition": "-80px -50px",
+        "imgsize_mobile": "190%",
+        "imageZoomPosition_mobile": "-60px -30px"
     },
     {
         "id": 10,
@@ -227,7 +245,9 @@
         "group": ["Main Group"],
         "img": "10.webp",
         "imgsize": "300%",
-        "imageZoomPosition": "-190px -70px"
+        "imageZoomPosition": "-190px -70px",
+        "imgsize_mobile": "320%",
+        "imageZoomPosition_mobile": "-130px -40px"
     },
     {
         "id": 11,
@@ -248,7 +268,9 @@
         "group": ["メイン組"],
         "img": "11.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 12,
@@ -269,7 +291,9 @@
         "group": ["メイン組"],
         "img": "12.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 13,
@@ -290,7 +314,9 @@
         "group": ["メイン組"],
         "img": "13.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 14,
@@ -311,7 +337,9 @@
         "group": ["メイン組"],
         "img": "14.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 15,
@@ -332,7 +360,9 @@
         "group": ["メイン組"],
         "img": "15.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 16,
@@ -353,7 +383,9 @@
         "group": ["メイン組"],
         "img": "16.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 17,
@@ -374,7 +406,9 @@
         "group": ["メイン組"],
         "img": "17.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 18,
@@ -395,7 +429,9 @@
         "group": ["メイン組"],
         "img": "18.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 19,
@@ -416,7 +452,9 @@
         "group": ["B.comsHACKER's"],
         "img": "19.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     },
     {
         "id": 20,
@@ -437,6 +475,8 @@
         "group": ["B.comsHACKER's"],
         "img": "20.webp",
         "imgsize": "",
-        "imageZoomPosition": ""
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
     }
 ]

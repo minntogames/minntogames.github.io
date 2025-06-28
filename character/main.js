@@ -91,9 +91,14 @@ function createLanguageMaps() {
  * @returns {string} - キャラクターカードのHTML文字列
  */
 function renderCharacter(char) {
-  // 画像の拡大位置を設定 (cha.jsonにimageZoomPositionプロパティがある場合)
-  const objectPosition = char.imageZoomPosition || 'center';
-  const imgWidth = char.imgsize || '100%'; // imgsizeがない場合は100%
+  // 画面幅によってimgsizeとobjectPositionを切り替え
+  const mobile = isMobileWidth();
+  const objectPosition = mobile
+    ? (char.imageZoomPosition_mobile || char.imageZoomPosition || 'center')
+    : (char.imageZoomPosition || 'center');
+  const imgWidth = mobile
+    ? (char.imgsize_mobile || char.imgsize || '100%')
+    : (char.imgsize || '100%');
   // 言語によって表示名を切り替え
   const displayName = currentDisplayLanguage === 'en' && char.name_en ? char.name_en : char.name;
 
@@ -390,6 +395,19 @@ function renderRelatedCharacters(groups, currentId) {
     relatedContainer.innerHTML = '<p>関連キャラクターは見つかりませんでした。</p>';
   }
 }
+
+/**
+ * 画面幅がモバイル（900px以下）かどうかを判定
+ * @returns {boolean}
+ */
+function isMobileWidth() {
+  return window.innerWidth <= 900;
+}
+
+// ウィンドウリサイズ時にカードを再描画
+window.addEventListener('resize', () => {
+  filterCharacters();
+});
 
 // グローバルスコープに関数を公開 (HTMLから直接呼び出すため)
 window.filterCharacters = filterCharacters;
