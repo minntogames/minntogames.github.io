@@ -176,6 +176,7 @@ button,
   gap: 20px;
   margin-top: 20px;
   justify-content: center;
+  user-select: none;
 }
 
 .card {
@@ -188,6 +189,7 @@ button,
   text-align: center;
   cursor: pointer; /* カーソルをポインターに変更 */
   position: relative; /* 下端バー用 */
+  user-select: none;
 }
 
 .card:hover {
