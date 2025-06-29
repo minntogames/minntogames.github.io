@@ -608,6 +608,6 @@ button,
 /* 画像の右クリック・長押し禁止 */
 img, .imgframe img, .detail-image, .thumbnail-circle img {
   -webkit-user-drag: none;
-  pointer-events: auto;
+  pointer-events: none;
   /* 既存のuser-select: none;があればそのまま */
 }
