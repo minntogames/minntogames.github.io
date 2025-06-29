@@ -818,9 +818,23 @@ window.onload = () => {
     showCharacterDetails(Number(id), img && !isNaN(Number(img)) ? Number(img) : 0);
     document.getElementById('detailsPopup').style.display = 'block';
   }
+  preventImageContextMenuAndDrag();
 };
 
-// グローバルスコープに関数を公開 (HTMLから直接呼び出すため)
+// 画像の右クリック・長押し禁止
+function preventImageContextMenuAndDrag() {
+  document.querySelectorAll('img').forEach(img => {
+    img.addEventListener('contextmenu', e => e.preventDefault());
+    img.addEventListener('dragstart', e => e.preventDefault());
+    // Safari長押し防止
+    img.addEventListener('touchstart', function(e) {
+      if (e.touches && e.touches.length === 1) {
+        e.preventDefault();
+      }
+    }, {passive: false});
+  });
+}
+
 window.filterCharacters = filterCharacters;
 window.toggleFilterPopup = toggleFilterPopup;
 window.applyFilters = applyFilters;
