@@ -122,37 +122,64 @@ function filterCharacters() {
   const keyword = document.getElementById('searchName').value.trim().toLowerCase();
   const characterListContainer = document.getElementById('characterList');
   const noCharactersMessage = document.getElementById('noCharactersMessage');
-  
+
   const filtered = characters.filter(c => {
     // 名前検索
-    const nameMatch = keyword === '' || c.name.toLowerCase().includes(keyword);
-    
-    // フィルター検索
-    // activeFiltersには英語の正規名が格納されていることを想定
-    // キャラクターのプロパティ値は、言語マッピングを通じて英語の正規名に変換して比較する
-    
-    const raceMatch = activeFilters.race.length === 0 || 
-                      c.race.some(r => {
-                          const canonicalRace = languageMaps.race[r.toLowerCase()] || r.toLowerCase();
-                          return activeFilters.race.includes(canonicalRace);
-                      });
-    const styleMatch = activeFilters.fightingStyle.length === 0 || 
-                       c.fightingStyle.some(s => {
-                           const canonicalStyle = languageMaps.fightingStyle[s.toLowerCase()] || s.toLowerCase();
-                           return activeFilters.fightingStyle.includes(canonicalStyle);
-                       });
-    const attrMatch = activeFilters.attribute.length === 0 || 
-                      c.attribute.some(a => {
-                          const canonicalAttr = languageMaps.attribute[a.toLowerCase()] || a.toLowerCase();
-                          return activeFilters.attribute.includes(canonicalAttr);
-                      });
-    const groupMatch = activeFilters.group.length === 0 || 
-                       c.group.some(g => {
-                           const canonicalGroup = languageMaps.group[g.toLowerCase()] || g.toLowerCase();
-                           return activeFilters.group.includes(canonicalGroup);
-                       });
-    
-    return nameMatch && raceMatch && styleMatch && attrMatch && groupMatch;
+    const nameArr = Array.isArray(c.name) ? c.name : [c.name];
+    const nameMatch = keyword === '' || nameArr.some(n => (n || '').toLowerCase().includes(keyword));
+
+    // 複数バリエーション対応
+    const imgCount =
+      Math.max(
+        Array.isArray(c.img) ? c.img.length : 1,
+        Array.isArray(c.name) ? c.name.length : 1,
+        Array.isArray(c.description) ? c.description.length : 1,
+        Array.isArray(c.fightingStyle) && Array.isArray(c.fightingStyle[0]) ? c.fightingStyle.length : 1,
+        Array.isArray(c.attribute) && Array.isArray(c.attribute[0]) ? c.attribute.length : 1
+      );
+
+    // どれかのバリエーションがフィルター条件を満たせばOK
+    let filterMatch = false;
+    for (let i = 0; i < imgCount; i++) {
+      // fightingStyle/attributeは配列の配列対応
+      const fightingStyleArr = Array.isArray(c.fightingStyle) && Array.isArray(c.fightingStyle[0]) ? c.fightingStyle : [c.fightingStyle];
+      const attributeArr = Array.isArray(c.attribute) && Array.isArray(c.attribute[0]) ? c.attribute : [c.attribute];
+
+      const raceMatch = activeFilters.race.length === 0 ||
+        c.race.some(r => {
+          const canonicalRace = languageMaps.race[r.toLowerCase()] || r.toLowerCase();
+          return activeFilters.race.includes(canonicalRace);
+        });
+
+      const styleMatch = activeFilters.fightingStyle.length === 0 ||
+        (Array.isArray(fightingStyleArr[i] || fightingStyleArr[0])
+          ? (fightingStyleArr[i] || fightingStyleArr[0]).some(s => {
+              const canonicalStyle = languageMaps.fightingStyle[(s || '').toLowerCase()] || (s || '').toLowerCase();
+              return activeFilters.fightingStyle.includes(canonicalStyle);
+            })
+          : false);
+
+      const attrMatch = activeFilters.attribute.length === 0 ||
+        (Array.isArray(attributeArr[i] || attributeArr[0])
+          ? (attributeArr[i] || attributeArr[0]).some(a => {
+              const canonicalAttr = languageMaps.attribute[(a || '').toLowerCase()] || (a || '').toLowerCase();
+              return activeFilters.attribute.includes(canonicalAttr);
+            })
+          : false);
+
+      const groupMatch = activeFilters.group.length === 0 ||
+        c.group.some(g => {
+          const canonicalGroup = languageMaps.group[g.toLowerCase()] || g.toLowerCase();
+          return activeFilters.group.includes(canonicalGroup);
+        });
+
+      if (raceMatch && styleMatch && attrMatch && groupMatch) {
+        filterMatch = true;
+        break;
+      }
+    }
+
+    return nameMatch && filterMatch;
   });
   
   // フィルターされたキャラクターをリストに表示
