@@ -4,7 +4,8 @@ let activeFilters = {
   race: [],
   fightingStyle: [],
   attribute: [],
-  group: []
+  group: [],
+  world: [] // 追加
 };
 
 // 現在の表示言語 (ja: 日本語, en: 英語)
@@ -90,6 +91,21 @@ function createLanguageMaps() {
 }
 
 /**
+ * 名前を省略表示する（日本語は6文字、英字は9文字以上で...）
+ * @param {string} name
+ * @returns {string}
+ */
+function truncateName(name) {
+  if (!name) return '';
+  // 英字が多い場合は9文字、それ以外は6文字
+  // 英字率が半分以上なら英字扱い
+  const asciiCount = (name.match(/[A-Za-z0-9]/g) || []).length;
+  const isMostlyAscii = asciiCount >= Math.ceil(name.length / 2);
+  const limit = isMostlyAscii ? 9 : 6;
+  return name.length > limit ? name.slice(0, limit) + '…' : name;
+}
+
+/**
  * キャラクターカードをHTML文字列としてレンダリングする
  * @param {object} char - キャラクターデータオブジェクト
  * @returns {string} - キャラクターカードのHTML文字列
@@ -108,15 +124,116 @@ function renderCharacter(char) {
     ? (char.imgsize_mobile || char.imgsize || '100%')
     : (char.imgsize || '100%');
   const displayName = currentDisplayLanguage === 'en' && nameEnArr[0] ? nameEnArr[0] : nameArr[0];
+  // ▼省略表示
+  const displayNameShort = truncateName(displayName);
+
+  const world = char.world ? String(char.world) : "1";
+  let worldClass = "";
+  if (world === "1") worldClass = "card-world-1";
+  else if (world === "2") worldClass = "card-world-2";
+  else if (world === "3") worldClass = "card-world-3";
 
   return `
-    <div class="card" onclick="showCharacterDetails(${char.id})">
+    <div class="card ${worldClass}" onclick="showCharacterDetails(${char.id})"
+      onmouseenter="onCardHover(this, ${char.id})"
+      onmouseleave="onCardLeave()"
+      ontouchstart="onCardHover(this, ${char.id})"
+      ontouchend="onCardLeave()"
+    >
       <div class="imgframe">
         <img src="img/${imgArr[0]}" alt="${nameArr[0]}の画像" onerror="this.src='img/placeholder.png';" style="width:${imgWidth};object-position:${objectPosition};">
       </div>
-      <h2>${displayName}</h2>
+      <h2 title="${displayName}">${displayNameShort}</h2>
     </div>
   `;
+}
+
+// ミニポップアップ管理用
+let miniPopupTimer = null;
+let currentMiniPopup = null;
+
+/**
+ * ミニポップアップを表示
+ * @param {HTMLElement} cardEl - カード要素
+ * @param {object} char - キャラクターデータ
+ */
+function showMiniPopup(cardEl, char) {
+  hideMiniPopup(); // 既存を消す
+
+  // ポップアップ要素生成
+  const popup = document.createElement('div');
+  popup.className = 'mini-popup';
+
+  // 世界線色バー
+  let worldBar = '';
+  if (char.world === "1") worldBar = '<div style="height:6px;width:100%;margin-bottom:7px;border-radius:6px;background:linear-gradient(90deg,#00c3ff,#ffff1c);"></div>';
+  else if (char.world === "2") worldBar = '<div style="height:6px;width:100%;margin-bottom:7px;border-radius:6px;background:linear-gradient(90deg,#ff7e5f,#feb47b);"></div>';
+  else if (char.world === "3") worldBar = '<div style="height:6px;width:100%;margin-bottom:7px;border-radius:6px;background:linear-gradient(90deg,#43e97b,#38f9d7);"></div>';
+
+  // 言語対応
+  let name = Array.isArray(char.name) ? char.name[0] : char.name;
+  let nameEn = Array.isArray(char.name_en) ? char.name_en[0] : char.name_en;
+  let displayName = currentDisplayLanguage === 'en' && nameEn ? nameEn : name;
+  let worldLabel = currentDisplayLanguage === 'en' ? 'Worldline' : '世界線';
+
+  popup.innerHTML =
+    worldBar +
+    `<div style="font-weight:bold;font-size:1.13em;margin-bottom:2px;">${displayName}</div>` +
+    `<div style="color:#008080;font-size:0.98em;">${worldLabel}${char.world || 'N/A'}</div>`;
+
+  // カードの親（.card-container）に追加
+  cardEl.parentNode.appendChild(popup);
+
+  // 位置調整
+  const cardRect = cardEl.getBoundingClientRect();
+  const parentRect = cardEl.parentNode.getBoundingClientRect();
+  const popupWidth = 240; // 推定最大幅
+  const margin = 18;
+  let left, top;
+
+  if (window.innerWidth > 900) {
+    // 右側に十分なスペースがある場合は右、なければ左
+    const rightSpace = window.innerWidth - (cardRect.right + margin + popupWidth);
+    if (rightSpace > 0) {
+      left = cardEl.offsetLeft + cardEl.offsetWidth + margin;
+    } else {
+      left = cardEl.offsetLeft - popupWidth - margin;
+      if (left < 0) left = 0;
+    }
+    top = cardEl.offsetTop;
+  } else {
+    left = cardEl.offsetLeft;
+    top = cardEl.offsetTop + cardEl.offsetHeight + 10;
+  }
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+
+  // フェードイン
+  setTimeout(() => {
+    popup.classList.add('visible');
+  }, 10);
+
+  currentMiniPopup = popup;
+}
+
+/**
+ * ミニポップアップを非表示
+ */
+function hideMiniPopup() {
+  if (miniPopupTimer) {
+    clearTimeout(miniPopupTimer);
+    miniPopupTimer = null;
+  }
+  if (currentMiniPopup) {
+    currentMiniPopup.classList.remove('visible');
+    // 完全に消してからDOM削除
+    setTimeout(() => {
+      if (currentMiniPopup && currentMiniPopup.parentNode) {
+        currentMiniPopup.parentNode.removeChild(currentMiniPopup);
+      }
+      currentMiniPopup = null;
+    }, 180);
+  }
 }
 
 /**
@@ -177,7 +294,11 @@ function filterCharacters() {
           return activeFilters.group.includes(canonicalGroup);
         });
 
-      if (raceMatch && styleMatch && attrMatch && groupMatch) {
+      // ▼追加：worldフィルター
+      const worldMatch = activeFilters.world.length === 0 ||
+        activeFilters.world.includes(String(c.world));
+
+      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch) {
         filterMatch = true;
         break;
       }
@@ -239,6 +360,15 @@ function setupFilterOptions() {
     option.onclick = () => toggleFilterOption('group', group, option); // UIは日本語
     groupContainer.appendChild(option);
   });
+  // ▼追加：世界線フィルター
+  const worldContainer = document.getElementById('worldFilters');
+  [1, 2, 3].forEach(world => {
+    const option = document.createElement('div');
+    option.className = 'filter-option';
+    option.textContent = `世界線${world}`;
+    option.onclick = () => toggleFilterOption('world', String(world), option);
+    worldContainer.appendChild(option);
+  });
 }
 
 /**
@@ -251,8 +381,7 @@ function toggleFilterOption(type, value, element) {
   element.classList.toggle('selected');
   
   // フィルターの表示値(日本語)を正規の英語名に変換してactiveFiltersに格納
-  const canonicalValue = languageMaps[type][value.toLowerCase()] || value.toLowerCase();
-  
+  const canonicalValue = type === 'world' ? value : (languageMaps[type][value.toLowerCase()] || value.toLowerCase());
   const index = activeFilters[type].indexOf(canonicalValue);
   if (index === -1) {
     activeFilters[type].push(canonicalValue);
@@ -286,7 +415,8 @@ function clearFilters() {
     race: [],
     fightingStyle: [],
     attribute: [],
-    group: []
+    group: [],
+    world: []
   };
   
   // 選択状態をクリア
@@ -527,6 +657,153 @@ function isMobileWidth() {
   return window.innerWidth <= 900;
 }
 
+/**
+ * 文字列をひらがなに変換する（カタカナ→ひらがな、全角→半角、英数字は小文字化）
+ * @param {string} str
+ * @returns {string}
+ */
+function toHiragana(str) {
+  if (!str) return '';
+  // カタカナ→ひらがな
+  str = str.replace(/[\u30a1-\u30f6]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+  // 全角英数字→半角
+  str = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s =>
+    String.fromCharCode(s.charCodeAt(0) - 0xFEE0)
+  );
+  // 小文字化
+  return str.toLowerCase();
+}
+
+/**
+ * 名前予測候補を表示する
+ */
+let suggestionActiveIndex = -1;
+function showNameSuggestions() {
+  const input = document.getElementById('searchName');
+  const suggestionsDiv = document.getElementById('nameSuggestions');
+  const keywordRaw = input.value.trim();
+  const keyword = keywordRaw.toLowerCase();
+  const keywordHira = toHiragana(keywordRaw);
+
+  if (!keyword) {
+    suggestionsDiv.style.display = 'none';
+    suggestionsDiv.innerHTML = '';
+    suggestionActiveIndex = -1;
+    return;
+  }
+
+  // 候補リスト作成
+  let candidates = [];
+  characters.forEach(c => {
+    // name, name_en, name_Kana対応
+    const nameArr = Array.isArray(c.name) ? c.name : [c.name];
+    const nameEnArr = Array.isArray(c.name_en) ? c.name_en : [c.name_en];
+    const nameKana = c.name_Kana || '';
+    // 候補名（日本語・英語・カナ）をすべてひらがな化・小文字化して比較
+    let match = false;
+    for (const n of nameArr) {
+      if ((n || '').toLowerCase().includes(keyword) || toHiragana(n || '').includes(keywordHira)) match = true;
+    }
+    for (const n of nameEnArr) {
+      if ((n || '').toLowerCase().includes(keyword) || toHiragana(n || '').includes(keywordHira)) match = true;
+    }
+    if (nameKana && (nameKana.includes(keywordHira) || nameKana.includes(keyword))) match = true;
+    if (match) {
+      // 表示用候補（日本語名＋英語名）
+      candidates.push({
+        id: c.id,
+        name: nameArr[0] || '',
+        name_en: nameEnArr[0] || '',
+        name_kana: nameKana || ''
+      });
+    }
+  });
+
+  // 重複除去
+  candidates = candidates.filter((v, i, arr) =>
+    arr.findIndex(x => x.id === v.id) === i
+  );
+
+  // 最大10件まで
+  candidates = candidates.slice(0, 10);
+
+  if (candidates.length === 0) {
+    suggestionsDiv.style.display = 'none';
+    suggestionsDiv.innerHTML = '';
+    suggestionActiveIndex = -1;
+    return;
+  }
+
+  // 候補リスト描画
+  suggestionsDiv.innerHTML = candidates.map((c, idx) =>
+    `<div class="suggestion-item${idx === suggestionActiveIndex ? ' active' : ''}" 
+      onclick="selectNameSuggestion(${c.id})">${c.name} <span style="color:#888;font-size:0.95em;">${c.name_en ? ' / ' + c.name_en : ''}${c.name_kana ? ' / ' + c.name_kana : ''}</span></div>`
+  ).join('');
+  suggestionsDiv.style.display = 'block';
+}
+
+/**
+ * 予測候補クリック時の処理
+ */
+function selectNameSuggestion(charId) {
+  const char = characters.find(c => c.id === charId);
+  if (!char) return;
+  // 入力欄に日本語名をセット
+  const nameArr = Array.isArray(char.name) ? char.name : [char.name];
+  document.getElementById('searchName').value = nameArr[0] || '';
+  document.getElementById('nameSuggestions').style.display = 'none';
+  suggestionActiveIndex = -1;
+  filterCharacters();
+}
+
+/**
+ * 予測候補のキーボード操作
+ */
+function handleSuggestionKey(e) {
+  const suggestionsDiv = document.getElementById('nameSuggestions');
+  const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    suggestionActiveIndex = (suggestionActiveIndex + 1) % items.length;
+    updateSuggestionActive();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    suggestionActiveIndex = (suggestionActiveIndex - 1 + items.length) % items.length;
+    updateSuggestionActive();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (suggestionActiveIndex >= 0 && suggestionActiveIndex < items.length) {
+      items[suggestionActiveIndex].click();
+    }
+  }
+}
+
+/**
+ * 予測候補のアクティブ状態を更新
+ */
+function updateSuggestionActive() {
+  const suggestionsDiv = document.getElementById('nameSuggestions');
+  const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+  items.forEach((item, idx) => {
+    if (idx === suggestionActiveIndex) item.classList.add('active');
+    else item.classList.remove('active');
+  });
+}
+
+// 入力欄外クリックで候補を閉じる
+document.addEventListener('click', function(e) {
+  const input = document.getElementById('searchName');
+  const suggestionsDiv = document.getElementById('nameSuggestions');
+  if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+    suggestionsDiv.style.display = 'none';
+    suggestionActiveIndex = -1;
+  }
+});
+
 // ウィンドウリサイズ時にカードを再描画
 window.addEventListener('resize', () => {
   filterCharacters();
@@ -569,3 +846,16 @@ function copyCharacterUrl() {
     alert('URLをコピーしました');
   });
 }
+
+// カードホバー時
+window.onCardHover = function(cardEl, charId) {
+  if (miniPopupTimer) clearTimeout(miniPopupTimer);
+  miniPopupTimer = setTimeout(() => {
+    const char = characters.find(c => c.id === charId);
+    if (char) showMiniPopup(cardEl, char);
+  }, 600); // 600msホバーで表示
+};
+// カードから外れた時
+window.onCardLeave = function() {
+  hideMiniPopup();
+};

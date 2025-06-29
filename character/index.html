@@ -10,7 +10,10 @@
   <h1>キャラ図鑑</h1>
 
   <div class="search-container">
-    <input type="text" id="searchName" placeholder="名前で検索">
+    <div class="search-input-wrapper">
+      <input type="text" id="searchName" placeholder="名前で検索" autocomplete="off" oninput="showNameSuggestions()" onkeydown="handleSuggestionKey(event)">
+      <div id="nameSuggestions" class="name-suggestions"></div>
+    </div>
     <button onclick="filterCharacters()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">検索</div></button>
     <button id="filterButton" onclick="toggleFilterPopup()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">フィルター</div></button>
     <!-- 言語切り替えボタンを追加 -->
@@ -21,6 +24,13 @@
     <div class="popup-content">
       <span class="close" onclick="toggleFilterPopup()">&times;</span>
       <h3>フィルターオプション</h3>
+      
+      <!-- ▼追加：世界線フィルター -->
+      <div class="filter-section">
+        <h4>世界線</h4>
+        <div id="worldFilters" class="filter-options"></div>
+      </div>
+      <!-- ▲追加ここまで -->
       
       <div class="filter-section">
         <h4>種族</h4>

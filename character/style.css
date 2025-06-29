@@ -12,22 +12,32 @@ h1 {
 
 .search-container {
   display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: center;
   margin-bottom: 20px;
-  gap: 10px;
   background: #fff;
   border-radius: 32px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.07);
   padding: 16px 24px;
-  align-items: center;
+  position: relative;
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+  gap: 10px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 240px;
+  margin-bottom: 0;
+  display: block;
+  vertical-align: top;
 }
 
 input[type="text"] {
   padding: 12px 18px;
-  width: 240px;
+  width: 100%;
   font-size: 17px;
   border: 1.5px solid #00ffa6;
   border-radius: 24px;
@@ -35,6 +45,18 @@ input[type="text"] {
   transition: border 0.2s, box-shadow 0.2s;
   background: #f9f9f9;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+/* placeholderも選択不可 */
+input[type="text"]::placeholder {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  color: #bbb;
+  opacity: 1;
 }
 
 input[type="text"]:focus {
@@ -102,6 +124,14 @@ button {
   letter-spacing: 0.03em;
 }
 
+/* ボタン選択不可 */
+button,
+.buttonOutlineGradient,
+.buttonOutlineGradient_item,
+.buttonRound {
+  user-select: none;
+}
+
 @media (any-hover: hover) {
   .buttonOutlineGradient::before {
     transition: opacity 0.2s;
@@ -157,6 +187,7 @@ button {
   transition: transform 0.2s ease;
   text-align: center;
   cursor: pointer; /* カーソルをポインターに変更 */
+  position: relative; /* 下端バー用 */
 }
 
 .card:hover {
@@ -176,11 +207,33 @@ button {
   object-fit: cover;
 }
 
+/* カード画像・カード名選択不可 */
+.card .imgframe,
+.card .imgframe img,
+.card h2 {
+  user-select: none;
+}
+
 .card h2 {
   font-size: 18px;
   margin: 10px 0;
   padding: 0 10px;
 }
+
+/* 世界線ごとの下端バー */
+.card-world-1::after,
+.card-world-2::after,
+.card-world-3::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 8px;
+  border-radius: 0 0 8px 8px;
+}
+.card-world-1::after { background: linear-gradient(90deg, #00c3ff, #ffff1c); }
+.card-world-2::after { background: linear-gradient(90deg, #ff7e5f, #feb47b); }
+.card-world-3::after { background: linear-gradient(90deg, #43e97b, #38f9d7); }
 
 /* フィルターポップアップスタイル (変更なし) */
 .popup {
@@ -305,6 +358,7 @@ button {
   height: 500px; /* 画像の高さを固定し、object-fitが機能するようにする */
   display: block; /* 中央寄せのためにブロック要素にする */
   margin: 0 auto 20px auto; /* 上下にマージン、左右中央寄せ */
+  user-select: none;
 }
 
 .character-detail-content .detail-image {
@@ -359,6 +413,46 @@ button {
   height: 100%;
   object-fit: cover;
   /* display: block; */
+  user-select: none;
+}
+
+/* 予測候補リストのスタイル */
+.name-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #00ffa6;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  z-index: 10;
+  width: 240px;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+  /* 検索ボックスの下に重ならず表示されるように */
+  /* pointer-events: auto; */
+}
+@media (max-width: 900px) {
+  .name-suggestions {
+    width: 100%;
+    left: 0;
+    top: 44px;
+  }
+}
+.name-suggestions .suggestion-item {
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 1em;
+  color: #222;
+}
+.name-suggestions .suggestion-item:hover,
+.name-suggestions .suggestion-item.active {
+  background: #e0f7fa;
+  color: #00796b;
 }
 
 /* レスポンシブ対応 */
@@ -368,6 +462,9 @@ button {
     gap: 12px;
     padding: 14px 10px;
     max-width: 98vw;
+  }
+  .search-input-wrapper {
+    width: 100%;
   }
   input[type="text"] {
     width: 100%;
@@ -470,4 +567,40 @@ button {
   display: block;
   width: 26px;
   height: 26px;
+}
+
+/* ミニポップアップ */
+.mini-popup {
+  position: absolute;
+  min-width: 160px;
+  max-width: 240px;
+  background: #fff;
+  color: #222;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  border: 1.5px solid #00ffa6;
+  padding: 14px 18px 12px 18px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s cubic-bezier(.4,0,.2,1);
+  font-size: 1.08em;
+  left: 100%;
+  top: 0;
+  margin-left: 18px;
+  margin-top: 0;
+  box-sizing: border-box;
+  white-space: pre-line;
+}
+.mini-popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (max-width: 900px) {
+  .mini-popup {
+    left: 0;
+    top: 100%;
+    margin-left: 0;
+    margin-top: 10px;
+  }
 }
