@@ -17,7 +17,12 @@
                 "en": ["Last Line", "Galactic Company", "Main Group", "Space Pirates", "Subspace", "Otherworld", "Underworld", "B.comsHACKER's", "Nibiru", "Stock 'Black'", "Other"],
                 "ja": ["ラストライン", "ギャラクティックカンパニー", "メイン組", "宇宙海賊組", "亜空間組", "異世界組", "冥界組", "B.comsHACKER's", "ニビル", "株式「黒」", "その他"]
             }
-        }
+        },
+        "relation": [
+            [2, 13],
+            [19, 20],
+            [16, 17, 18]
+        ]
     },
     {
         "id": 1,
@@ -272,10 +277,10 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "11.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
+        "imgsize": "180%",
+        "imageZoomPosition": "-90px -30px",
         "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imageZoomPosition_mobile": "-60px -10px"
     },
     {
         "id": 12,
@@ -295,16 +300,16 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "12.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
+        "imgsize": "250%",
+        "imageZoomPosition": "-130px -160px",
         "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imageZoomPosition_mobile": "-80px -100px"
     },
     {
         "id": 13,
         "name": "黒田田黒",
         "name_en": "Kuroda Taguro",
-        "description": "黒田適当の息子。帽子についている剣は使える。",
+        "description": "黒田適当の息子。帽子についている突起物は引き抜くと剣になる。使える。",
         "world": "1",
         "race": ["棒人間"],
         "fightingStyle": ["Sword"],
@@ -318,10 +323,10 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "13.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
+        "imgsize": "180%",
+        "imageZoomPosition": "-80px -70px",
         "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imageZoomPosition_mobile": "-50px -60px"
     },
     {
         "id": 14,
@@ -330,8 +335,8 @@
         "description": "基本的には国民を見守っているがいざとなったときは国民を守るために出向くとても民想いな棒人間の王様。",
         "world": "1",
         "race": ["棒人間"],
-        "fightingStyle": ["Spear"],
-        "attribute": ["None"],
+        "fightingStyle": ["Spear", "Magic"],
+        "attribute": ["Fire", "Light"],
         "height": null,
         "birthday": {
             "year": "",
@@ -341,10 +346,10 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "14.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "250%",
+        "imageZoomPosition": "-140px -40px",
+        "imgsize_mobile": "290%",
+        "imageZoomPosition_mobile": "-115px -40px"
     },
     {
         "id": 15,
@@ -364,10 +369,10 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "15.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "250%",
+        "imageZoomPosition": "-140px -130px",
+        "imgsize_mobile": "290%",
+        "imageZoomPosition_mobile": "-115px -100px"
     },
     {
         "id": 16,

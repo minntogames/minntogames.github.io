@@ -43,11 +43,15 @@ const labels = {
 };
 
 // cha.json を読み込み、キャラクターデータと設定を初期化
+let relationGroups = []; // relationデータ保持用
+
 fetch('cha.json')
   .then(res => res.json())
   .then(data => {
     characters = data.slice(1); // 設定は先頭にある
     settings = data[0].settings;
+    // relationデータも保持
+    relationGroups = data[0].relation || [];
     
     // 言語マッピングを作成
     createLanguageMaps();
@@ -428,6 +432,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
       </div>
     `;
     renderRelatedCharacters(character.group, character.id);
+    renderRelationCharacters(character.id); // ←追加
     detailsPopup.style.display = 'block';
   }
 }
@@ -465,6 +470,52 @@ function renderRelatedCharacters(groups, currentId) {
     relatedContainer.innerHTML = related.map(renderCharacter).join('');
   } else {
     relatedContainer.innerHTML = '<p>関連キャラクターは見つかりませんでした。</p>';
+  }
+}
+
+/**
+ * 関係関連キャラクターのカードをレンダリングする
+ * @param {number} currentId - 現在表示中のキャラクターのID
+ */
+function renderRelationCharacters(currentId) {
+  // relationGroupsは[[2,13],[19,20],[16,17,18]]のような配列
+  // 各グループ内にcurrentIdが含まれていれば、そのグループの他のキャラを表示
+  const relationContainerId = 'relationCharacters';
+  let relationContainer = document.getElementById(relationContainerId);
+  if (!relationContainer) {
+    // 詳細ポップアップのpopup-content内のcharacterDetailsの直後に挿入
+    const details = document.getElementById('characterDetails');
+    relationContainer = document.createElement('div');
+    relationContainer.id = relationContainerId;
+    relationContainer.style.marginTop = '30px';
+    details.parentNode.insertBefore(relationContainer, details.nextSibling);
+  }
+  relationContainer.innerHTML = ''; // クリア
+
+  let found = false;
+  relationGroups.forEach((group, idx) => {
+    if (group.includes(currentId)) {
+      // このグループの他のキャラを取得
+      const others = group.filter(id => id !== currentId);
+      if (others.length > 0) {
+        found = true;
+        // グループ見出し
+        const groupTitle = document.createElement('h3');
+        groupTitle.textContent = `関係関連${relationGroups.length > 1 ? ` (${idx + 1})` : ''}`;
+        relationContainer.appendChild(groupTitle);
+        // カードリスト
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card-container';
+        cardDiv.innerHTML = others.map(id => {
+          const char = characters.find(c => c.id === id);
+          return char ? renderCharacter(char) : '';
+        }).join('');
+        relationContainer.appendChild(cardDiv);
+      }
+    }
+  });
+  if (!found) {
+    relationContainer.innerHTML = '<p style="text-align:center;color:#888;">関係関連キャラクターは見つかりませんでした。</p>';
   }
 }
 
