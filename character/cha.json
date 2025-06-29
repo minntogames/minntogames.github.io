@@ -21,13 +21,16 @@
     },
     {
         "id": 1,
-        "name": "Xドクター",
-        "name_en": "X Doctor",
-        "description": "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている。",
+        "name": ["Xドクター", "W.D.ドクター"],
+        "name_en": ["X Doctor", "W.D.Doctor"],
+        "description": [
+            "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている。",
+            "自身の悪が抑えきれず悪が放出されてしまった姿。彼が言っていることは理解不能(言語的に)で近くにあるものを破壊し尽くす。体のどこからでも鎖が出てくる。"
+        ],
         "world": "1",
         "race": ["棒人間"],
-        "fightingStyle": ["Sword", "Magic"],
-        "attribute": ["Electricity"],
+        "fightingStyle": [["Sword", "Magic"], ["Magic"]],
+        "attribute": [["Electricity"], ["Darkness"]],
         "height": 190,
         "birthday": {
             "year": "???",
@@ -36,9 +39,11 @@
         },
         "personality": "意地悪",
         "group": ["Main Group"],
-        "img": "1.webp",
+        "img": ["1-0.webp", "1-1.webp"],
         "imgsize": "100%",
+        "imgThumbsize": ["150%", "200%"],
         "imageZoomPosition": "0px 30px",
+        "imageThumbPosition": ["0px 0px", "0px 0px"],
         "imgsize_mobile": "120%",
         "imageZoomPosition_mobile": "-15px 0px"
     },

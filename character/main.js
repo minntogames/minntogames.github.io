@@ -91,7 +91,11 @@ function createLanguageMaps() {
  * @returns {string} - キャラクターカードのHTML文字列
  */
 function renderCharacter(char) {
-  // 画面幅によってimgsizeとobjectPositionを切り替え
+  // 画像・名前が配列の場合は最初の要素を使う
+  const imgArr = Array.isArray(char.img) ? char.img : [char.img];
+  const nameArr = Array.isArray(char.name) ? char.name : [char.name];
+  const nameEnArr = Array.isArray(char.name_en) ? char.name_en : [char.name_en];
+
   const mobile = isMobileWidth();
   const objectPosition = mobile
     ? (char.imageZoomPosition_mobile || char.imageZoomPosition || 'center')
@@ -99,13 +103,12 @@ function renderCharacter(char) {
   const imgWidth = mobile
     ? (char.imgsize_mobile || char.imgsize || '100%')
     : (char.imgsize || '100%');
-  // 言語によって表示名を切り替え
-  const displayName = currentDisplayLanguage === 'en' && char.name_en ? char.name_en : char.name;
+  const displayName = currentDisplayLanguage === 'en' && nameEnArr[0] ? nameEnArr[0] : nameArr[0];
 
   return `
     <div class="card" onclick="showCharacterDetails(${char.id})">
       <div class="imgframe">
-        <img src="img/${char.img}" alt="${char.name}の画像" onerror="this.src='img/placeholder.png';" style="width:${imgWidth};object-position:${objectPosition};">
+        <img src="img/${imgArr[0]}" alt="${nameArr[0]}の画像" onerror="this.src='img/placeholder.png';" style="width:${imgWidth};object-position:${objectPosition};">
       </div>
       <h2>${displayName}</h2>
     </div>
@@ -322,40 +325,82 @@ function toggleLanguage() {
 /**
  * キャラクターの詳細を表示する
  * @param {number} charId - 表示するキャラクターのID
+ * @param {number} [imgIndex=0] - 表示する画像・名前・説明のインデックス
  */
-function showCharacterDetails(charId) {
+function showCharacterDetails(charId, imgIndex = 0) {
   const character = characters.find(c => c.id === charId);
   const detailsContainer = document.getElementById('characterDetails');
   const detailsPopup = document.getElementById('detailsPopup');
 
   if (character) {
-    // キャラクターIDを要素のデータ属性に保存（言語切り替え時に再利用するため）
     detailsContainer.dataset.charId = charId;
+    detailsContainer.dataset.imgIndex = imgIndex;
 
-    // 表示名を言語によって切り替え
-    const displayName = currentDisplayLanguage === 'en' && character.name_en ? character.name_en : character.name;
+    const imgArr = Array.isArray(character.img) ? character.img : [character.img];
+    const nameArr = Array.isArray(character.name) ? character.name : [character.name];
+    const nameEnArr = Array.isArray(character.name_en) ? character.name_en : [character.name_en];
+    const descArr = Array.isArray(character.description) ? character.description : [character.description];
 
-    // キャラクターの詳細情報をHTMLとして生成（言語切り替えを適用）
+    // fightingStyle/attributeもname/imgと同じように配列の配列対応
+    const fightingStyleArr = Array.isArray(character.fightingStyle && character.fightingStyle[0]) && Array.isArray(character.fightingStyle[0])
+      ? character.fightingStyle
+      : [character.fightingStyle];
+    const attributeArr = Array.isArray(character.attribute && character.attribute[0]) && Array.isArray(character.attribute[0])
+      ? character.attribute
+      : [character.attribute];
+
+    // 画像位置情報も配列対応
+    const imageZoomArr = Array.isArray(character.imageThumbPosition) ? character.imageThumbPosition : (character.imageThumbPosition ? [character.imageThumbPosition] : []);
+    const imgThumbsizeArr = Array.isArray(character.imgThumbsize) ? character.imgThumbsize : (character.imgThumbsize ? [character.imgThumbsize] : []);
+
+    // サムネイルHTML
+    let thumbnailsHtml = '';
+    if (imgArr.length > 1) {
+      thumbnailsHtml = `
+        <div class="thumbnail-list">
+          ${imgArr.map((img, idx) => {
+            // サムネイル用object-position
+            let objectPosition = isMobileWidth()
+              ? (imageZoomArr[idx] || imageZoomArr[0] || 'center')
+              : (imageZoomArr[idx] || imageZoomArr[0]  || 'center');
+            let objectSize = isMobileWidth()
+              ? (imgThumbsizeArr[idx] || imgThumbsizeArr[0] || '100%')
+              : (imgThumbsizeArr[idx] || imgThumbsizeArr[0]  || '100%');
+            return `
+              <div class="thumbnail-circle${idx === imgIndex ? ' selected' : ''}" onclick="showCharacterDetails(${charId}, ${idx})">
+                <img src="img/${img}" alt="thumb" onerror="this.src='img/placeholder.png';" style="width:${objectSize};object-position:${objectPosition};">
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    // 選択中の画像・名前・説明・fightingStyle・attribute
+    const img = imgArr[imgIndex] || imgArr[0];
+    const name = nameArr[imgIndex] || nameArr[0];
+    const nameEn = nameEnArr[imgIndex] || nameEnArr[0];
+    const desc = descArr[imgIndex] || descArr[0];
+    const fightingStyle = fightingStyleArr[imgIndex] || fightingStyleArr[0] || [];
+    const attribute = attributeArr[imgIndex] || attributeArr[0] || [];
+
     detailsContainer.innerHTML = `
       <div class="character-detail-content">
-        <img src="img/${character.img}" alt="${character.name}の画像" onerror="this.src='img/placeholder.png';" class="detail-image">
-        <h2>${displayName}</h2>
-        <p><strong>${getTranslatedLabel('description')}:</strong> ${character.description || 'N/A'}</p>
+        <img src="img/${img}" alt="${name}の画像" onerror="this.src='img/placeholder.png';" class="detail-image">
+        ${thumbnailsHtml}
+        <div><h2>${currentDisplayLanguage === 'en' && nameEn ? nameEn : name}</h2></div>
+        <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('race')}:</strong> ${character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${character.fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('attribute')}:</strong> ${character.attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
+        <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
+        <p><strong>${getTranslatedLabel('attribute')}:</strong> ${attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
         <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${character.birthday.year}${getTranslatedLabel('year')}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
         <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('group')}:</strong> ${character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
       </div>
     `;
-    
-    // 関連キャラクターを表示
     renderRelatedCharacters(character.group, character.id);
-    
-    // 詳細画面を表示
     detailsPopup.style.display = 'block';
   }
 }
@@ -409,6 +454,17 @@ window.addEventListener('resize', () => {
   filterCharacters();
 });
 
+// ページロード時にURLパラメータからキャラ詳細を自動表示
+window.onload = () => {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  const img = params.get('img');
+  if (id && !isNaN(Number(id))) {
+    showCharacterDetails(Number(id), img && !isNaN(Number(img)) ? Number(img) : 0);
+    document.getElementById('detailsPopup').style.display = 'block';
+  }
+};
+
 // グローバルスコープに関数を公開 (HTMLから直接呼び出すため)
 window.filterCharacters = filterCharacters;
 window.toggleFilterPopup = toggleFilterPopup;
@@ -417,3 +473,21 @@ window.clearFilters = clearFilters;
 window.showCharacterDetails = showCharacterDetails;
 window.closeDetailsPopup = closeDetailsPopup;
 window.toggleLanguage = toggleLanguage; // 新しい言語切り替え関数を公開
+window.copyCharacterUrl = copyCharacterUrl;
+
+/**
+ * キャラ詳細URLをクリップボードにコピー
+ */
+function copyCharacterUrl() {
+  const charId = document.getElementById('characterDetails').dataset.charId;
+  const imgIndex = document.getElementById('characterDetails').dataset.imgIndex || 0;
+  if (!charId) return;
+  let url = `${location.origin}${location.pathname}?id=${charId}`;
+  // 画像インデックスが0以外ならパラメータを付与
+  if (parseInt(imgIndex) > 0) {
+    url += `&img=${imgIndex}`;
+  }
+  navigator.clipboard.writeText(url).then(() => {
+    alert('URLをコピーしました');
+  });
+}
