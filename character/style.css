@@ -213,6 +213,9 @@ button,
 .card .imgframe,
 .card .imgframe img,
 .card h2 {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   user-select: none;
 }
 
