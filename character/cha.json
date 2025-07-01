@@ -6,16 +6,22 @@
                 "ja": ["棒人間", "半人間", "人間", "獣人", "魔人", "魔神", "亜人", "悪魔", "妖精", "天使"]
             },
             "fightingStyle": {
-                "en": ["None", "Sword", "Spear", "Axe", "Bow", "Gun", "Magic", "Martial Arts", "Hammer", "Other"],
-                "ja": ["なし", "剣", "槍", "斧", "弓", "銃", "魔法", "格闘技", "ハンマー", "その他"]
+                "en": ["None", "Sword", "Spear", "Axe", "Bow", "Gun", "Magic", "Martial Arts", "Hammer", "drill", "claw","Other"],
+                "ja": ["なし", "剣", "槍", "斧", "弓", "銃", "魔法", "格闘技", "ハンマー", "ドリル", "爪","その他"]
             },
             "attribute": {
-                "en": ["Fire", "Water", "Earth", "Wind", "Light", "Darkness", "Holy", "Poison", "Electricity", "Ice", "Psychic", "None", "Spirarl"],
-                "ja": ["火属性", "水属性", "土属性", "風属性", "光属性", "闇属性", "聖属性", "毒属性", "電気属性", "氷属性", "精神属性", "無属性", "螺旋属性"]
+                "en": ["Fire", "Water", "Earth", "Wind", "Light", 
+                       "Darkness", "Holy", "Poison", "Electricity", "Ice", 
+                       "Psychic", "None", "Spirarl"],
+                "ja": ["火属性", "水属性", "土属性", "風属性", "光属性", 
+                       "闇属性", "聖属性", "毒属性", "電気属性", "氷属性", 
+                       "サイコ属性", "無属性", "螺旋属性"]
             },
             "group": {
-                "en": ["Last Line", "Galactic Company", "Main Group", "Space Pirates", "Subspace", "Otherworld", "Underworld", "B.comsHACKER's", "Nibiru", "Stock 'Black'", "Other"],
-                "ja": ["ラストライン", "ギャラクティックカンパニー", "メイン組", "宇宙海賊組", "亜空間組", "異世界組", "冥界組", "B.comsHACKER's", "ニビル", "株式「黒」", "その他"]
+                "en": ["Last Line", "Galactic Company", "Main Group", "Space Pirates", "Subspace", 
+                    "Otherworld", "Underworld", "B.comsHACKER's", "Nibiru", "Stock 'Black'", "Other"],
+                "ja": ["ラストライン", "ギャラクティックカンパニー", "メイン組", "宇宙海賊組", "亜空間組", 
+                    "異世界組", "冥界組", "B.comsHACKER's", "ニビル", "株式「黒」", "その他"]
             }
         },
         "relation": [
@@ -408,10 +414,10 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "16.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -140px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 17,
@@ -432,10 +438,10 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "17.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -140px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 18,
@@ -456,16 +462,16 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "18.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -140px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 19,
         "name": "B.01.coms",
         "name_en": "B.01.coms",
-        "name_Kana": "びーぜろいちこむえす",
+        "name_Kana": "びーぜろいちこむず",
         "description": "B.comsHACKER'sのリーダー。この世界を支配しようとたくらんでいる。",
         "world": "1",
         "race": ["棒人間"],
@@ -480,16 +486,16 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "19.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -140px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 20,
         "name": "B.16.coms",
         "name_en": "B.16.coms",
-        "name_Kana": "びーいちろくこむえす",
+        "name_Kana": "びーいちろくこむず",
         "description": "B.01.comsの兄。ブラコンで弟の計画に加担している。",
         "world": "1",
         "race": ["棒人間"],
@@ -504,6 +510,246 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "20.webp",
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -140px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
+    },
+    {
+        "id": 21,
+        "name": "B.404.coms",
+        "name_en": "B.404.coms",
+        "name_Kana": "びーよんまるよんこむず",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Magic","Martial Arts"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "21.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 22,
+        "name": "B.www.coms",
+        "name_en": "B.www.coms",
+        "name_Kana": "びーだぶりゅーこむず",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["drill"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "22.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 23,
+        "name": "B.303.coms",
+        "name_en": "B.303.coms",
+        "name_Kana": "びーさんまるさんこむず",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Magic"],
+        "attribute": ["Darkness"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "23.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 24,
+        "name": "B.666.coms",
+        "name_en": "B.666.coms",
+        "name_Kana": "びーろくこむず",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["claw"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "24.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 25,
+        "name": "ガッツァ",
+        "name_en": "Gatza",
+        "name_Kana": "がっつぁ",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["claw"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["Other"],
+        "img": "25.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 26,
+        "name": "大斧さん",
+        "name_en": "Oono-san",
+        "name_Kana": "おおおのさん",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Axe"],
+        "attribute": ["None"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["Other"],
+        "img": "26.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 27,
+        "name": "B.444.coms",
+        "name_en": "B.444.coms",
+        "name_Kana": "びーよんこむず",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Gun", "Magic"],
+        "attribute": ["Electricity"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "27.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 28,
+        "name": "B.NNN.coms",
+        "name_en": "B.NNN.coms",
+        "name_Kana": "びーえぬこむず",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間"],
+        "fightingStyle": ["Sword"],
+        "attribute": ["Fire"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["B.comsHACKER's"],
+        "img": "28.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 29,
+        "name": "デビラ・ゲロス",
+        "name_en": "Debira Geros",
+        "name_Kana": "でびらげろす",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間", "悪魔"],
+        "fightingStyle": ["Spear"],
+        "attribute": ["Darkness"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["Underworld"],
+        "img": "29.webp",
+        "imgsize": "",
+        "imageZoomPosition": "",
+        "imgsize_mobile": "",
+        "imageZoomPosition_mobile": ""
+    },
+    {
+        "id": 30,
+        "name": "ハンドウ・ウロス",
+        "name_en": "Handou Uros",
+        "name_Kana": "はんどううろす",
+        "description": "",
+        "world": "1",
+        "race": ["棒人間", "悪魔"],
+        "fightingStyle": ["Other"],
+        "attribute": ["Darkness"],
+        "height": null,
+        "birthday": {
+            "year": "",
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": ["Underworld"],
+        "img": "30.webp",
         "imgsize": "",
         "imageZoomPosition": "",
         "imgsize_mobile": "",
