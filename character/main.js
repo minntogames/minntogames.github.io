@@ -40,7 +40,8 @@ const labels = {
     'group': { 'ja': 'グループ', 'en': 'Group' },
     'year': { 'ja': '年', 'en': '' }, // 日付の単位は日本語と英語で異なるため、空文字列で対応
     'month': { 'ja': '月', 'en': '' },
-    'day': { 'ja': '日', 'en': '' }
+    'day': { 'ja': '日', 'en': '' },
+    'age': { 'ja': '歳', 'en': 'Age' } // 追加
 };
 
 // cha.json を読み込み、キャラクターデータと設定を初期化
@@ -479,9 +480,57 @@ function toggleLanguage() {
       showCharacterDetails(currentCharId);
   }
 
-  // 言語切り替えボタンのテキストを更新
+  // 言語切り替えボタンのテキストを更新（ハンバーガーメニュー内）
   document.getElementById('langToggleBtn').textContent = currentDisplayLanguage === 'ja' ? '言語切替 (現在: 日本語)' : '言語 Toggle (Current: English)';
 }
+
+// ▼テーマ切替（3テーマ対応・cookie保存）
+let currentTheme = 'light';
+const themeOrder = ['light', 'dark', 'modern'];
+
+function setThemeCookie(theme) {
+  document.cookie = `theme=${theme}; path=/; max-age=31536000; samesite=lax`;
+}
+function getThemeCookie() {
+  const m = document.cookie.match(/(?:^|;\s*)theme=([^;]+)/);
+  return m ? m[1] : null;
+}
+
+function applyTheme(theme) {
+  const body = document.body;
+  body.classList.remove('theme-dark', 'theme-modern');
+  if (theme === 'dark') body.classList.add('theme-dark');
+  if (theme === 'modern') body.classList.add('theme-modern');
+  currentTheme = theme;
+  updateThemeButtonText();
+  setThemeCookie(theme);
+}
+
+function toggleTheme() {
+  let idx = themeOrder.indexOf(currentTheme);
+  idx = (idx + 1) % themeOrder.length;
+  applyTheme(themeOrder[idx]);
+}
+
+function updateThemeButtonText() {
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) {
+    let label = 'テーマ切替 (現在: ライト)';
+    if (currentTheme === 'dark') label = 'テーマ切替 (現在: ダーク)';
+    if (currentTheme === 'modern') label = 'テーマ切替 (現在: モダン)';
+    btn.textContent = label;
+  }
+}
+
+// ページロード時にテーマを初期化（cookie対応）
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = getThemeCookie();
+  if (themeOrder.includes(saved)) {
+    applyTheme(saved);
+  } else {
+    applyTheme('light');
+  }
+});
 
 /**
  * キャラクターの詳細を表示する
@@ -556,6 +605,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
         <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('attribute')}:</strong> ${attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
+        ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
         <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${character.birthday.year}${getTranslatedLabel('year')}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
         <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('group')}:</strong> ${character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
@@ -564,6 +614,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
     renderRelatedCharacters(character.group, character.id);
     renderRelationCharacters(character.id); // ←追加
     detailsPopup.style.display = 'block';
+    updateHamburgerMenuVisibility(); // ▼詳細表示時はメニュー非表示
   }
 }
 
@@ -572,6 +623,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
  */
 function closeDetailsPopup() {
   document.getElementById('detailsPopup').style.display = 'none';
+  updateHamburgerMenuVisibility(); // ▼詳細閉じたらメニュー再表示
 }
 
 /**
@@ -649,10 +701,42 @@ function renderRelationCharacters(currentId) {
   }
 }
 
-/**
- * 画面幅がモバイル（900px以下）かどうかを判定
- * @returns {boolean}
- */
+// ▼ハンバーガーメニュー制御
+function toggleHamburgerMenu() {
+  const drawer = document.getElementById('hamburgerDrawer');
+  if (drawer) {
+    const isOpen = drawer.classList.toggle('open');
+    if (isOpen) {
+      // 背景クリックで閉じる
+      setTimeout(() => {
+        document.addEventListener('click', closeHamburgerOnOutside, { capture: true });
+      }, 0);
+    } else {
+      document.removeEventListener('click', closeHamburgerOnOutside, true);
+    }
+  }
+}
+function closeHamburgerOnOutside(e) {
+  const drawer = document.getElementById('hamburgerDrawer');
+  const btn = document.getElementById('hamburgerBtn');
+  if (!drawer.contains(e.target) && (!btn || !btn.contains(e.target))) {
+    drawer.classList.remove('open');
+    document.removeEventListener('click', closeHamburgerOnOutside, true);
+  }
+}
+// キャラ詳細表示時はハンバーガーメニューを非表示
+function updateHamburgerMenuVisibility() {
+  const detailsPopup = document.getElementById('detailsPopup');
+  const menu = document.getElementById('hamburgerMenu');
+  if (!detailsPopup || !menu) return;
+  if (detailsPopup.style.display === 'block') {
+    menu.style.display = 'none';
+  } else {
+    menu.style.display = '';
+  }
+}
+
+// 画面幅がモバイル（900px以下）かどうかを判定
 function isMobileWidth() {
   return window.innerWidth <= 900;
 }
@@ -794,11 +878,45 @@ function updateSuggestionActive() {
   });
 }
 
+// 検索ボックスのクリアボタン表示制御
+const searchInput = document.getElementById('searchName');
+const clearBtn = document.getElementById('clearSearchBtn');
+if (searchInput && clearBtn) {
+  searchInput.addEventListener('input', function() {
+    clearBtn.style.display = this.value ? 'flex' : 'none';
+  });
+  // 初期化時も
+  clearBtn.style.display = searchInput.value ? 'flex' : 'none';
+
+  // ▼追加: フォーカス時にキーワードがあれば予測候補を再表示
+  searchInput.addEventListener('focus', function() {
+    if (this.value && this.value.trim()) {
+      showNameSuggestions();
+    }
+  });
+}
+
+/**
+ * 検索ボックスをクリアする
+ */
+function clearSearchInput() {
+  const input = document.getElementById('searchName');
+  input.value = '';
+  showNameSuggestions();
+  filterCharacters();
+  // フォーカスを戻す
+  input.focus();
+  // ボタン非表示
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+
 // 入力欄外クリックで候補を閉じる
 document.addEventListener('click', function(e) {
   const input = document.getElementById('searchName');
   const suggestionsDiv = document.getElementById('nameSuggestions');
-  if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (!input.contains(e.target) && !suggestionsDiv.contains(e.target) && (!clearBtn || !clearBtn.contains(e.target))) {
     suggestionsDiv.style.display = 'none';
     suggestionActiveIndex = -1;
   }
@@ -818,6 +936,7 @@ window.onload = () => {
     showCharacterDetails(Number(id), img && !isNaN(Number(img)) ? Number(img) : 0);
     document.getElementById('detailsPopup').style.display = 'block';
   }
+  updateHamburgerMenuVisibility();
   preventImageContextMenuAndDrag();
 };
 
@@ -842,7 +961,8 @@ window.clearFilters = clearFilters;
 window.showCharacterDetails = showCharacterDetails;
 window.closeDetailsPopup = closeDetailsPopup;
 window.toggleLanguage = toggleLanguage; // 新しい言語切り替え関数を公開
-window.copyCharacterUrl = copyCharacterUrl;
+window.toggleHamburgerMenu = toggleHamburgerMenu;
+window.toggleTheme = toggleTheme;
 
 /**
  * キャラ詳細URLをクリップボードにコピー

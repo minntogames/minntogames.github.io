@@ -35,6 +35,34 @@ h1 {
   vertical-align: top;
 }
 
+/* ▼追加: 検索クリアボタン */
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+.search-clear-btn:hover {
+  background: #e0f7fa;
+}
+.search-clear-btn svg {
+  pointer-events: none;
+  display: block;
+}
+
 input[type="text"] {
   padding: 12px 18px;
   width: 100%;
@@ -615,4 +643,407 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   -webkit-user-drag: none;
   pointer-events: none;
   /* 既存のuser-select: none;があればそのまま */
+}
+
+/* ▼ハンバーガーメニュー */
+.hamburger-menu {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 200;
+  display: block;
+}
+.hamburger-btn {
+  width: 38px;
+  height: 38px;
+  background: #fff;
+  border: 1.5px solid #00ffa6;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 0;
+  margin: 0;
+  transition: background 0.18s;
+}
+.hamburger-btn:hover {
+  background: #e0f7fa;
+}
+.hamburger-btn span {
+  display: block;
+  width: 20px;
+  height: 3px;
+  background: #4a88a2;
+  margin: 2.5px 0;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+.hamburger-drawer {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 100vh;
+  background: #fff;
+  border-radius: 0 16px 16px 0;
+  box-shadow: 2px 0 16px rgba(0,0,0,0.13);
+  padding: 32px 18px 18px 18px;
+  z-index: 210;
+  transform: translateX(-110%);
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  /* スクロール対応 */
+  overflow-y: auto;
+}
+.hamburger-drawer.open {
+  transform: translateX(0);
+}
+.hamburger-drawer:not(.open) {
+  pointer-events: none;
+}
+.hamburger-lang-btn {
+  width: 100%;
+  padding: 10px 0;
+  background: linear-gradient(135deg, #00ffa6, #15a1cc);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-family: inherit;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-weight: 500;
+  transition: background 0.18s;
+}
+.hamburger-lang-btn:hover {
+  background: linear-gradient(135deg, #4a50a2, #156acc);
+}
+
+/* キャラ詳細表示時はハンバーガーメニュー非表示 */
+#detailsPopup[style*="block"] ~ .hamburger-menu,
+#detailsPopup[style*="block"] + .hamburger-menu {
+  display: none !important;
+}
+
+/* ハンバーガーメニュー内閉じるボタンスタイル */
+.hamburger-close-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: auto;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+  border-radius: 50%;
+  transition: background 0.15s;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hamburger-close-btn:hover {
+  background: #e0f7fa;
+}
+.hamburger-close-btn svg {
+  display: block;
+  pointer-events: none;
+}
+
+/* ▼紺色基調のダークテーマ */
+body.theme-dark {
+  background: #14213d;
+  color: #e9eaf6;
+}
+body.theme-dark h1,
+body.theme-dark #characterDetails h2 {
+  color: #e9eaf6;
+}
+body.theme-dark .search-container {
+  background: #1a2540;
+  box-shadow: 0 2px 12px rgba(20,33,61,0.18);
+}
+body.theme-dark .card {
+  background: #1a2540;
+  color: #e9eaf6;
+  box-shadow: 0 4px 10px rgba(20,33,61,0.18);
+}
+body.theme-dark .card h2 {
+  color: #e9eaf6;
+}
+body.theme-dark .card-world-1::after { background: linear-gradient(90deg, #1e3a5c, #3a86ff); }
+body.theme-dark .card-world-2::after { background: linear-gradient(90deg, #2d3142, #ef476f); }
+body.theme-dark .card-world-3::after { background: linear-gradient(90deg, #20639b, #00b4d8); }
+body.theme-dark .popup-content,
+body.theme-dark #detailsPopup .popup-content {
+  background: #1a2540;
+  color: #e9eaf6;
+  border: 1px solid #22305c;
+  box-shadow: 0 4px 8px rgba(20,33,61,0.18);
+}
+body.theme-dark .filter-option {
+  background: #22305c;
+  color: #e9eaf6;
+}
+body.theme-dark .filter-option.selected {
+  background: #3a86ff;
+  color: #fff;
+}
+body.theme-dark .buttonOutlineGradient_item,
+body.theme-dark .buttonRound {
+  background-color: #22305c;
+  color: #fff;
+}
+body.theme-dark .buttonOutlineGradient {
+  background: linear-gradient(135deg, #22305c, #3a86ff);
+}
+body.theme-dark .buttonOutlineGradient::before {
+  background: linear-gradient(135deg, #14213d, #22305c);
+}
+body.theme-dark .buttonOutlineGradient_item {
+  color: #fff;
+}
+body.theme-dark .buttonOutlineGradient:hover::before {
+  opacity: 1;
+}
+body.theme-dark .buttonRound:hover {
+  background-color: #14213d;
+}
+body.theme-dark .search-clear-btn:hover,
+body.theme-dark .buttonCopyIcon:hover,
+body.theme-dark .hamburger-close-btn:hover {
+  background: #22305c;
+}
+body.theme-dark .search-clear-btn svg,
+body.theme-dark .buttonCopyIcon svg,
+body.theme-dark .hamburger-close-btn svg {
+  /* 既存の色でOK */
+}
+body.theme-dark .name-suggestions {
+  background: #1a2540;
+  color: #e9eaf6;
+  border: 1px solid #3a86ff;
+}
+body.theme-dark .name-suggestions .suggestion-item {
+  color: #e9eaf6;
+}
+body.theme-dark .name-suggestions .suggestion-item:hover,
+body.theme-dark .name-suggestions .suggestion-item.active {
+  background: #22305c;
+  color: #3a86ff;
+}
+body.theme-dark .thumbnail-circle {
+  background: #22305c;
+  border: 2px solid #3a86ff;
+}
+body.theme-dark .thumbnail-circle.selected {
+  border: 3px solid #fff;
+}
+body.theme-dark .mini-popup {
+  background: #22305c;
+  color: #e9eaf6;
+  border: 1.5px solid #3a86ff;
+}
+body.theme-dark .hamburger-menu {
+  /* 既存のまま */
+}
+body.theme-dark .hamburger-drawer {
+  background: #1a2540;
+  color: #e9eaf6;
+  box-shadow: 2px 0 16px rgba(20,33,61,0.18);
+}
+body.theme-dark .hamburger-lang-btn,
+body.theme-dark .hamburger-theme-btn {
+  background: linear-gradient(135deg, #22305c, #3a86ff);
+  color: #fff;
+}
+body.theme-dark .hamburger-lang-btn:hover,
+body.theme-dark .hamburger-theme-btn:hover {
+  background: linear-gradient(135deg, #14213d, #22305c);
+}
+body.theme-dark .hamburger-close-btn {
+  background: none;
+}
+body.theme-dark .hamburger-close-btn:hover {
+  background: #22305c;
+}
+body.theme-dark .no-characters-message {
+  color: #bfc8e6;
+}
+body.theme-dark input[type="text"] {
+  background: #22305c;
+  color: #e9eaf6;
+  border: 1.5px solid #3a86ff;
+}
+body.theme-dark input[type="text"]:focus {
+  border: 1.5px solid #fff;
+  background: #1a2540;
+}
+body.theme-dark input[type="text"]::placeholder {
+  color: #bfc8e6;
+}
+body.theme-dark .filter-section h4 {
+  color: #e9eaf6;
+}
+
+/* ▼テーマ切替ボタン */
+.hamburger-theme-btn {
+  width: 100%;
+  padding: 10px 0;
+  background: linear-gradient(135deg, #00ffa6, #156acc);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-family: inherit;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-weight: 500;
+  transition: background 0.18s;
+}
+.hamburger-theme-btn:hover {
+  background: linear-gradient(135deg, #22305c, #3a86ff);
+}
+
+/* ▼モダン(斜め水色ストライプ)テーマ */
+body.theme-modern {
+  background: repeating-linear-gradient(
+    135deg,
+    #e0faff 0px,
+    #e0faff 32px,
+    #b2eaff 32px,
+    #b2eaff 64px
+  );
+  color: #1a2540;
+}
+body.theme-modern h1,
+body.theme-modern #characterDetails h2 {
+  color: #156acc;
+}
+body.theme-modern .search-container {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 2px 12px rgba(21,106,204,0.10);
+}
+body.theme-modern .card {
+  background: rgba(255,255,255,0.98);
+  color: #156acc;
+  box-shadow: 0 4px 10px rgba(21,106,204,0.10);
+  border: 1.5px solid #b2eaff;
+}
+body.theme-modern .card h2 {
+  color: #156acc;
+}
+body.theme-modern .card-world-1::after { background: linear-gradient(90deg, #00c3ff, #b2eaff); }
+body.theme-modern .card-world-2::after { background: linear-gradient(90deg, #00ffa6, #b2eaff); }
+body.theme-modern .card-world-3::after { background: linear-gradient(90deg, #43e97b, #b2eaff); }
+body.theme-modern .popup-content,
+body.theme-modern #detailsPopup .popup-content {
+  background: rgba(255,255,255,0.98);
+  color: #156acc;
+  border: 1.5px solid #b2eaff;
+  box-shadow: 0 4px 8px rgba(21,106,204,0.10);
+}
+body.theme-modern .filter-option {
+  background: #e0faff;
+  color: #156acc;
+  border: 1px solid #b2eaff;
+}
+body.theme-modern .filter-option.selected {
+  background: #00c3ff;
+  color: #fff;
+}
+body.theme-modern .buttonOutlineGradient_item,
+body.theme-modern .buttonRound {
+  background-color: #b2eaff;
+  color: #156acc;
+}
+body.theme-modern .buttonOutlineGradient {
+  background: linear-gradient(135deg, #00c3ff, #b2eaff);
+}
+body.theme-modern .buttonOutlineGradient::before {
+  background: linear-gradient(135deg, #e0faff, #b2eaff);
+}
+body.theme-modern .buttonOutlineGradient_item {
+  color: #156acc;
+}
+body.theme-modern .buttonOutlineGradient:hover::before {
+  opacity: 1;
+}
+body.theme-modern .buttonRound:hover {
+  background-color: #00c3ff;
+  color: #fff;
+}
+body.theme-modern .search-clear-btn:hover,
+body.theme-modern .buttonCopyIcon:hover,
+body.theme-modern .hamburger-close-btn:hover {
+  background: #b2eaff;
+}
+body.theme-modern .name-suggestions {
+  background: #e0faff;
+  color: #156acc;
+  border: 1px solid #00c3ff;
+}
+body.theme-modern .name-suggestions .suggestion-item {
+  color: #156acc;
+}
+body.theme-modern .name-suggestions .suggestion-item:hover,
+body.theme-modern .name-suggestions .suggestion-item.active {
+  background: #b2eaff;
+  color: #00c3ff;
+}
+body.theme-modern .thumbnail-circle {
+  background: #e0faff;
+  border: 2px solid #b2eaff;
+}
+body.theme-modern .thumbnail-circle.selected {
+  border: 3px solid #00c3ff;
+}
+body.theme-modern .mini-popup {
+  background: #e0faff;
+  color: #156acc;
+  border: 1.5px solid #00c3ff;
+}
+body.theme-modern .hamburger-drawer {
+  background: rgba(255,255,255,0.98);
+  color: #156acc;
+  box-shadow: 2px 0 16px rgba(21,106,204,0.10);
+}
+body.theme-modern .hamburger-lang-btn,
+body.theme-modern .hamburger-theme-btn {
+  background: linear-gradient(135deg, #00c3ff, #b2eaff);
+  color: #156acc;
+}
+body.theme-modern .hamburger-lang-btn:hover,
+body.theme-modern .hamburger-theme-btn:hover {
+  background: linear-gradient(135deg, #b2eaff, #00c3ff);
+  color: #fff;
+}
+body.theme-modern .hamburger-close-btn {
+  background: none;
+}
+body.theme-modern .hamburger-close-btn:hover {
+  background: #b2eaff;
+}
+body.theme-modern .no-characters-message {
+  color: #156acc;
+}
+body.theme-modern input[type="text"] {
+  background: #e0faff;
+  color: #156acc;
+  border: 1.5px solid #00c3ff;
+}
+body.theme-modern input[type="text"]:focus {
+  border: 1.5px solid #156acc;
+  background: #fff;
+}
+body.theme-modern input[type="text"]::placeholder {
+  color: #7ec9e6;
+}
+body.theme-modern .filter-section h4 {
+  color: #156acc;
 }

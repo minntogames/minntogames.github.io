@@ -7,17 +7,47 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- ▼ハンバーガーメニュー追加 -->
+  <div id="hamburgerMenu" class="hamburger-menu">
+    <button id="hamburgerBtn" class="hamburger-btn" aria-label="メニュー" onclick="toggleHamburgerMenu()">
+      <span></span><span></span><span></span>
+    </button>
+    <div id="hamburgerDrawer" class="hamburger-drawer">
+      <!-- ▼バツボタンを左上に移動 -->
+      <button class="hamburger-close-btn" onclick="toggleHamburgerMenu()" aria-label="閉じる" type="button">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="13" fill="#fff" stroke="#bbb" stroke-width="1.5"/>
+          <path d="M9 9l10 10M19 9l-10 10" stroke="#888" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <!-- ▼バツボタンと被らないように下に余白を追加 -->
+      <div style="height:38px;"></div>
+      <button onclick="toggleLanguage()" class="hamburger-lang-btn" id="langToggleBtn">言語切替 (現在: 日本語)</button>
+      <!-- ▼テーマ切替ボタン（3テーマ対応） -->
+      <button onclick="toggleTheme()" class="hamburger-theme-btn" id="themeToggleBtn">テーマ切替 (現在: ライト)</button>
+      <!-- 必要なら他のメニュー項目をここに追加 -->
+    </div>
+  </div>
+
   <h1>キャラ図鑑</h1>
 
   <div class="search-container">
     <div class="search-input-wrapper">
       <input type="text" id="searchName" placeholder="名前で検索" autocomplete="off" oninput="showNameSuggestions()" onkeydown="handleSuggestionKey(event)">
+      <!-- ▼追加: クリアボタン -->
+      <button type="button" id="clearSearchBtn" class="search-clear-btn" onclick="clearSearchInput()" tabindex="-1" style="display:none;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="9" fill="#fff" stroke="#bbb" stroke-width="1.5"/>
+          <path d="M7 7l6 6M13 7l-6 6" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
       <div id="nameSuggestions" class="name-suggestions"></div>
     </div>
     <button onclick="filterCharacters()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">検索</div></button>
     <button id="filterButton" onclick="toggleFilterPopup()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">フィルター</div></button>
-    <!-- 言語切り替えボタンを追加 -->
+    <!-- ▼言語切り替えボタン削除
     <button onclick="toggleLanguage()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item" id="langToggleBtn">言語切替 (現在: 日本語)</div></button>
+    -->
   </div>
 
   <div id="filterPopup" class="popup">
@@ -60,6 +90,7 @@
   <!-- キャラクター詳細表示の要素 (ポップアップ型ではない) -->
   <div id="detailsPopup">
     <div class="popup-content">
+      <!-- ▼ハンバーガーメニューはキャラ詳細には表示しないのでここには追加しない -->
       <span class="close" onclick="closeDetailsPopup()">&times;</span>
       <button onclick="copyCharacterUrl()" class="buttonCopyIcon" title="URLをコピー" style="float:right;margin-bottom:10px;">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
