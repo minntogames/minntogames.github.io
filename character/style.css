@@ -387,7 +387,7 @@ button,
 
 /* キャラクター詳細内の画像スタイル */
 .detail-image {
-  max-width: 100%; /* 画像の最大幅 */
+  width: auto; /* 画像の最大幅 */
   max-height: 500px; /* 画像の高さを固定し、object-fitが機能するようにする */
   display: block; /* 中央寄せのためにブロック要素にする */
   margin: 0 auto 20px auto; /* 上下にマージン、左右中央寄せ */
