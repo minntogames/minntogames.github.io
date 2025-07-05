@@ -387,8 +387,8 @@ button,
 
 /* キャラクター詳細内の画像スタイル */
 .detail-image {
-  max-width: 100%; /* 画像の最大幅 */
-  height: 500px; /* 画像の高さを固定し、object-fitが機能するようにする */
+  max-width: 500px; /* 画像の最大幅 */
+  max-height: 500px; /* 画像の高さを固定し、object-fitが機能するようにする */
   display: block; /* 中央寄せのためにブロック要素にする */
   margin: 0 auto 20px auto; /* 上下にマージン、左右中央寄せ */
   user-select: none;
@@ -550,9 +550,9 @@ button,
     padding: 10px;
     min-height: unset;
   }
-  .detail-image {
+  .character-detail-content .detail-image {
     width: auto;
-    height: 100%;
+    height: 50%;
   }
   #characterDetails h2 {
     font-size: 1.2em;
