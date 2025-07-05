@@ -66,6 +66,16 @@ fetch('cha.json')
 
     // 言語切り替えボタンのテキストを初期設定
     document.getElementById('langToggleBtn').textContent = currentDisplayLanguage === 'ja' ? '言語切替 (現在: 日本語)' : '言語 Toggle (Current: English)';
+
+    // ▼JSONロード後にURLパラメータで詳細表示
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    const img = params.get('img');
+    if (id && !isNaN(Number(id))) {
+      showCharacterDetails(Number(id), img && !isNaN(Number(img)) ? Number(img) : 0);
+      document.getElementById('detailsPopup').style.display = 'block';
+      updateHamburgerMenuVisibility();
+    }
 });
 
 /**
@@ -594,11 +604,25 @@ function showCharacterDetails(charId, imgIndex = 0) {
     const fightingStyle = fightingStyleArr[imgIndex] || fightingStyleArr[0] || [];
     const attribute = attributeArr[imgIndex] || attributeArr[0] || [];
 
+    // ▼キャラ名＋コピーボタン横並び
+    const displayName = currentDisplayLanguage === 'en' && nameEn ? nameEn : name;
+    const titleRowHtml = `
+      <div class="character-title-row">
+        <h2 style="margin:0;">${displayName}</h2>
+        <button onclick="copyCharacterUrl()" class="buttonCopyIcon" title="URLをコピー">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" fill="none"/>
+            <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          </svg>
+        </button>
+      </div>
+    `;
+
     detailsContainer.innerHTML = `
       <div class="character-detail-content">
         <img src="img/${img}" alt="${name}の画像" onerror="this.src='img/placeholder.png';" class="detail-image">
         ${thumbnailsHtml}
-        <div><h2>${currentDisplayLanguage === 'en' && nameEn ? nameEn : name}</h2></div>
+        ${titleRowHtml}
         <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('race')}:</strong> ${character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
@@ -927,19 +951,6 @@ window.addEventListener('resize', () => {
   filterCharacters();
 });
 
-// ページロード時にURLパラメータからキャラ詳細を自動表示
-window.onload = () => {
-  const params = new URLSearchParams(location.search);
-  const id = params.get('id');
-  const img = params.get('img');
-  if (id && !isNaN(Number(id))) {
-    showCharacterDetails(Number(id), img && !isNaN(Number(img)) ? Number(img) : 0);
-    document.getElementById('detailsPopup').style.display = 'block';
-  }
-  updateHamburgerMenuVisibility();
-  preventImageContextMenuAndDrag();
-};
-
 // 画像の右クリック・長押し禁止
 function preventImageContextMenuAndDrag() {
   document.querySelectorAll('img').forEach(img => {
@@ -965,7 +976,7 @@ window.toggleHamburgerMenu = toggleHamburgerMenu;
 window.toggleTheme = toggleTheme;
 
 /**
- * キャラ詳細URLをクリップボードにコピー
+ * キャラ詳細URLをクリップボードにコピーし、ミニポップアップで通知
  */
 function copyCharacterUrl() {
   const charId = document.getElementById('characterDetails').dataset.charId;
@@ -977,8 +988,26 @@ function copyCharacterUrl() {
     url += `&img=${imgIndex}`;
   }
   navigator.clipboard.writeText(url).then(() => {
-    alert('URLをコピーしました');
+    showCopyPopup('URLをコピーしました！');
   });
+}
+
+/**
+ * コピー通知ミニポップアップを表示
+ */
+function showCopyPopup(msg) {
+  let popup = document.getElementById('copyPopup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'copyPopup';
+    popup.className = 'copy-popup';
+    document.body.appendChild(popup);
+  }
+  popup.textContent = msg;
+  popup.classList.add('visible');
+  setTimeout(() => {
+    popup.classList.remove('visible');
+  }, 1600);
 }
 
 // カードホバー時
@@ -990,6 +1019,9 @@ window.onCardHover = function(cardEl, charId) {
   }, 600); // 600msホバーで表示
 };
 // カードから外れた時
+window.onCardLeave = function() {
+  hideMiniPopup();
+};
 window.onCardLeave = function() {
   hideMiniPopup();
 };
