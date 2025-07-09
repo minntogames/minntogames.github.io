@@ -536,10 +536,10 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "21.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 22,
@@ -560,17 +560,17 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "22.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 23,
         "name": "B.303.coms",
         "name_en": "B.303.coms",
         "name_Kana": "びーさんまるさんこむず",
-        "description": "B.comsHACKER'sのメンバー。吸血鬼みたいな恰好をしている",
+        "description": "B.comsHACKER'sのメンバー。ドラキュラの能力を持っている。",
         "world": "1",
         "race": ["棒人間"],
         "fightingStyle": ["Magic"],
@@ -584,10 +584,10 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "23.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 24,
@@ -608,10 +608,10 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "24.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 25,
@@ -632,10 +632,10 @@
         "personality": "",
         "group": ["Other"],
         "img": "25.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 26,
@@ -656,10 +656,10 @@
         "personality": "",
         "group": ["Other"],
         "img": "26.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 27,
@@ -680,10 +680,10 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "27.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 28,
@@ -704,10 +704,10 @@
         "personality": "",
         "group": ["B.comsHACKER's"],
         "img": "28.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 29,
@@ -728,10 +728,10 @@
         "personality": "正義感がある",
         "group": ["Underworld"],
         "img": "29.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     },
     {
         "id": 30,
@@ -752,9 +752,9 @@
         "personality": "怠惰",
         "group": ["Underworld"],
         "img": "30.webp",
-        "imgsize": "",
-        "imageZoomPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize": "290%",
+        "imageZoomPosition": "-180px -160px",
+        "imgsize_mobile": "250%",
+        "imageZoomPosition_mobile": "-90px -80px"
     }
 ]
