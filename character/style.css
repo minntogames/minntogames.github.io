@@ -51,7 +51,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: 0; /* ←下げる */
   border-radius: 50%;
   transition: background 0.15s;
 }
@@ -61,6 +61,34 @@ h1 {
 .search-clear-btn svg {
   pointer-events: none;
   display: block;
+}
+
+/* 検索ボックス内の虫メガネアイコン用ボタン */
+.search-icon-btn {
+  position: absolute;
+  right: 38px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0; /* ←下げる */
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+.search-icon-btn:hover {
+  background: #e0f7fa;
+}
+.search-icon-btn svg {
+  display: block;
+  pointer-events: none;
 }
 
 input[type="text"] {
@@ -272,7 +300,7 @@ button,
 .popup {
   display: none;
   position: fixed;
-  z-index: 1;
+  z-index: 20; /* ←上げる */
   left: 0;
   top: 0;
   width: 100%;
@@ -650,7 +678,7 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   position: fixed;
   top: 18px;
   left: 18px;
-  z-index: 200;
+  z-index: 0; /* ←下げる */
   display: block;
 }
 .hamburger-btn {

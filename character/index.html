@@ -34,6 +34,13 @@
   <div class="search-container">
     <div class="search-input-wrapper">
       <input type="text" id="searchName" placeholder="名前で検索" autocomplete="off" oninput="showNameSuggestions()" onkeydown="handleSuggestionKey(event)">
+      <!-- ▼虫メガネアイコン追加 -->
+      <button type="button" id="searchIconBtn" class="search-icon-btn" onclick="filterCharacters()" tabindex="-1" aria-label="検索">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="10" cy="10" r="7" stroke="#4a88a2" stroke-width="2"/>
+          <line x1="16" y1="16" x2="21" y2="21" stroke="#4a88a2" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
       <!-- ▼追加: クリアボタン -->
       <button type="button" id="clearSearchBtn" class="search-clear-btn" onclick="clearSearchInput()" tabindex="-1" style="display:none;">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -105,13 +112,6 @@
   <div id="characterList" class="card-container"></div>
   
   <!-- キャラクターが見つからなかった場合のメッセージ -->
-  <div id="noCharactersMessage" class="no-characters-message" style="display: none;">
-    対象のキャラが見つかりませんでした
-  </div>
-
-  <script src="main.js"></script>
-</body>
-</html>
   <div id="noCharactersMessage" class="no-characters-message" style="display: none;">
     対象のキャラが見つかりませんでした
   </div>

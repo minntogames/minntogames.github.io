@@ -255,11 +255,29 @@ function filterCharacters() {
   const characterListContainer = document.getElementById('characterList');
   const noCharactersMessage = document.getElementById('noCharactersMessage');
 
-  const filtered = characters.filter(c => {
-    // 名前検索
+  // ▼完全一致・部分一致両方を抽出
+  let exactMatches = [];
+  let partialMatches = [];
+  characters.forEach(c => {
     const nameArr = Array.isArray(c.name) ? c.name : [c.name];
-    const nameMatch = keyword === '' || nameArr.some(n => (n || '').toLowerCase().includes(keyword));
+    const nameEnArr = Array.isArray(c.name_en) ? c.name_en : [c.name_en];
+    let matchType = null;
+    // 完全一致
+    if (keyword !== '') {
+      if (nameArr.some(n => (n || '').toLowerCase() === keyword) ||
+          nameEnArr.some(n => (n || '').toLowerCase() === keyword)) {
+        matchType = 'exact';
+      } else if (
+        nameArr.some(n => (n || '').toLowerCase().includes(keyword)) ||
+        nameEnArr.some(n => (n || '').toLowerCase().includes(keyword))
+      ) {
+        matchType = 'partial';
+      }
+    } else {
+      matchType = 'partial'; // 空欄時は全件
+    }
 
+    // フィルター条件
     // 複数バリエーション対応
     const imgCount =
       Math.max(
@@ -269,20 +287,15 @@ function filterCharacters() {
         Array.isArray(c.fightingStyle) && Array.isArray(c.fightingStyle[0]) ? c.fightingStyle.length : 1,
         Array.isArray(c.attribute) && Array.isArray(c.attribute[0]) ? c.attribute.length : 1
       );
-
-    // どれかのバリエーションがフィルター条件を満たせばOK
     let filterMatch = false;
     for (let i = 0; i < imgCount; i++) {
-      // fightingStyle/attributeは配列の配列対応
       const fightingStyleArr = Array.isArray(c.fightingStyle) && Array.isArray(c.fightingStyle[0]) ? c.fightingStyle : [c.fightingStyle];
       const attributeArr = Array.isArray(c.attribute) && Array.isArray(c.attribute[0]) ? c.attribute : [c.attribute];
-
       const raceMatch = activeFilters.race.length === 0 ||
         c.race.some(r => {
           const canonicalRace = languageMaps.race[r.toLowerCase()] || r.toLowerCase();
           return activeFilters.race.includes(canonicalRace);
         });
-
       const styleMatch = activeFilters.fightingStyle.length === 0 ||
         (Array.isArray(fightingStyleArr[i] || fightingStyleArr[0])
           ? (fightingStyleArr[i] || fightingStyleArr[0]).some(s => {
@@ -290,7 +303,6 @@ function filterCharacters() {
               return activeFilters.fightingStyle.includes(canonicalStyle);
             })
           : false);
-
       const attrMatch = activeFilters.attribute.length === 0 ||
         (Array.isArray(attributeArr[i] || attributeArr[0])
           ? (attributeArr[i] || attributeArr[0]).some(a => {
@@ -298,33 +310,33 @@ function filterCharacters() {
               return activeFilters.attribute.includes(canonicalAttr);
             })
           : false);
-
       const groupMatch = activeFilters.group.length === 0 ||
         c.group.some(g => {
           const canonicalGroup = languageMaps.group[g.toLowerCase()] || g.toLowerCase();
           return activeFilters.group.includes(canonicalGroup);
         });
-
-      // ▼追加：worldフィルター
       const worldMatch = activeFilters.world.length === 0 ||
         activeFilters.world.includes(String(c.world));
-
       if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch) {
         filterMatch = true;
         break;
       }
     }
 
-    return nameMatch && filterMatch;
+    if (filterMatch && matchType === 'exact') exactMatches.push(c);
+    else if (filterMatch && matchType === 'partial') partialMatches.push(c);
   });
-  
-  // フィルターされたキャラクターをリストに表示
+
+  // 重複除去（完全一致が優先)
+  partialMatches = partialMatches.filter(c => !exactMatches.includes(c));
+  const filtered = [...exactMatches, ...partialMatches];
+
   if (filtered.length > 0) {
     characterListContainer.innerHTML = filtered.map(renderCharacter).join("");
-    noCharactersMessage.style.display = 'none'; // メッセージを非表示にする
+    noCharactersMessage.style.display = 'none';
   } else {
-    characterListContainer.innerHTML = ''; // キャラクターリストを空にする
-    noCharactersMessage.style.display = 'block'; // メッセージを表示する
+    characterListContainer.innerHTML = '';
+    noCharactersMessage.style.display = 'block';
   }
 }
 
@@ -635,10 +647,10 @@ function showCharacterDetails(charId, imgIndex = 0) {
         <p><strong>${getTranslatedLabel('group')}:</strong> ${character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
       </div>
     `;
-    renderRelatedCharacters(character.group, character.id);
-    renderRelationCharacters(character.id); // ←追加
+    renderRelatedCharacters(character.group, character.id, false); // ←showAll=falseで初回5件
+    renderRelationCharacters(character.id);
     detailsPopup.style.display = 'block';
-    updateHamburgerMenuVisibility(); // ▼詳細表示時はメニュー非表示
+    updateHamburgerMenuVisibility();
   }
 }
 
@@ -655,25 +667,40 @@ function closeDetailsPopup() {
  * @param {string[]} groups - 関連キャラクターを検索するグループの配列
  * @param {number} currentId - 現在表示中のキャラクターのID
  */
-function renderRelatedCharacters(groups, currentId) {
+function renderRelatedCharacters(groups, currentId, showAll = false) {
   const relatedContainer = document.getElementById('relatedCharacters');
-  
   // 現在のキャラクターと同じグループに属するキャラクターをフィルタリング
   let related = characters.filter(c => 
-    c.id !== currentId && // 現在のキャラクター自身を除外
+    c.id !== currentId &&
     c.group.some(g => {
-        // 関連キャラクターのグループも英語の正規名に変換して比較
-        const canonicalGroups = groups.map(gName => languageMaps.group[gName.toLowerCase()] || gName.toLowerCase());
-        const characterGroups = c.group.map(cName => languageMaps.group[cName.toLowerCase()] || cName.toLowerCase());
-        return canonicalGroups.some(cg => characterGroups.includes(cg));
+      const canonicalGroups = groups.map(gName => languageMaps.group[gName.toLowerCase()] || gName.toLowerCase());
+      const characterGroups = c.group.map(cName => languageMaps.group[cName.toLowerCase()] || cName.toLowerCase());
+      return canonicalGroups.some(cg => characterGroups.includes(cg));
     })
   );
-  
-  // 関連キャラクターを最大5個に制限
-  related = related.slice(0, 5);
+
+  // 初回は5件、showAll=trueなら全件
+  let initialCount = 5;
+  let showMore = false;
+  if (!showAll && related.length > initialCount) {
+    showMore = true;
+    related = related.slice(0, initialCount);
+  }
 
   if (related.length > 0) {
     relatedContainer.innerHTML = related.map(renderCharacter).join('');
+    if (showMore) {
+      // 「更に表示」ボタン追加
+      const btn = document.createElement('button');
+      btn.className = 'buttonRound';
+      btn.textContent = '更に表示';
+      btn.style.display = 'block';
+      btn.style.margin = '18px auto 0 auto';
+      btn.onclick = function() {
+        renderRelatedCharacters(groups, currentId, true);
+      };
+      relatedContainer.appendChild(btn);
+    }
   } else {
     relatedContainer.innerHTML = '<p>関連キャラクターは見つかりませんでした。</p>';
   }
