@@ -25,6 +25,7 @@ h1 {
   margin-left: auto;
   margin-right: auto;
   gap: 10px;
+  z-index: 1;
 }
 
 .search-input-wrapper {
@@ -233,6 +234,7 @@ button,
   margin-top: 20px;
   justify-content: center;
   user-select: none;
+  z-index: auto;
 }
 
 .card {
@@ -678,7 +680,7 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   position: fixed;
   top: 18px;
   left: 18px;
-  z-index: 0; /* ←下げる */
+  z-index: 2; /* ←下げる */
   display: block;
 }
 .hamburger-btn {
@@ -720,7 +722,7 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   border-radius: 0 16px 16px 0;
   box-shadow: 2px 0 16px rgba(0,0,0,0.13);
   padding: 32px 18px 18px 18px;
-  z-index: 210;
+  z-index: 3;
   transform: translateX(-110%);
   transition: transform 0.28s cubic-bezier(.4,0,.2,1);
   /* スクロール対応 */
