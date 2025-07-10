@@ -707,7 +707,7 @@ function renderRelationCharacters(currentId) {
         found = true;
         // グループ見出し
         const groupTitle = document.createElement('h3');
-        groupTitle.textContent = `関係関連${relationGroups.length > 1 ? ` (${idx + 1})` : ''}`;
+        groupTitle.textContent = `関係関連`;
         relationContainer.appendChild(groupTitle);
         // カードリスト
         const cardDiv = document.createElement('div');
