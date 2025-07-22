@@ -2,9 +2,38 @@
 <html>
     <head>
         <title>ばうんすばうんす</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #87ceeb;
+        }
+        #bg-canvas {
+            display: block;
+            margin: 0 auto;
+            background: #87ceeb;
+            /* デフォルトサイズ */
+            width: 600px;
+            height: 800px;
+            max-width: 100vw;
+            max-height: 100vh;
+            touch-action: none;
+        }
+        @media (max-width: 700px), (max-height: 900px) {
+            #bg-canvas {
+                /* スマホや小さい画面では画面いっぱいに拡大 */
+                width: 100vw;
+                height: 100vh;
+            }
+        }
+        </style>
     </head>
     <body>
-        <canvas id="bg-canvas" width="600" height="800" style="display:block; margin:0 auto; background:#87ceeb;"></canvas>
+        <canvas id="bg-canvas" width="600" height="800"></canvas>
         <script src="anime.js"></script>
     </body>
 </html>
