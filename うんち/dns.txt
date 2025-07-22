@@ -1,0 +1,5 @@
+a @ 185.199.108.153
+a @ 185.199.109.153
+a @ 185.199.110.153
+a @ 185.199.111.153
+cname youtube.minntelia.com. minntogames.github.io.
