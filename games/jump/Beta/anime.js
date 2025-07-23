@@ -181,7 +181,7 @@ function drawPlanets(planets) {
                 let dx = Math.cos(angle) * r;
                 let dy = Math.sin(angle) * r;
                 ctx.beginPath();
-                ctx.arc(p.x + dx, p.y + dy, Math.max(2, p.radius * 0.08 * Math.random()), 0, Math.PI * 2);
+                ctx.arc(p.x + dx, p.y + dy, Math.max(3, p.radius * 0.13 * Math.random()), 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -1201,9 +1201,9 @@ function animate() {
 // Google Sheetにスコアを送信する関数
 function sendScoreToGoogleSheet(altitude, userId) {
     // TODO: ここにデプロイしたGoogle Apps ScriptのウェブアプリのURLを設定してください
-    const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbyLK9bbDIDSs-xK3Ma2X2aXUzH3gxAp9mauqzuwEQVCdJC9YgVYnIYOFhKJbzsRCNE/exec';
+    const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbz8OltihXlUhZ6JhEN2C7ijtEyHQ1UPZyJ_CWs1UNbpbqCuJxiE9z2jhDr3v4J2ptin/exec'; // ここをデプロイしたGASウェブアプリのURLに置き換えてください！
 
-    if (gasWebAppUrl == null || gasWebAppUrl === '') {
+    if (gasWebAppUrl === 'YOUR_DEPLOYED_GAS_WEB_APP_URL_HERE') {
         console.warn("Google Apps ScriptのウェブアプリURLが設定されていません。データを送信できません。");
         return;
     }
