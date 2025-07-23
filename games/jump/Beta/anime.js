@@ -1201,7 +1201,7 @@ function animate() {
 // Google Sheetにスコアを送信する関数
 function sendScoreToGoogleSheet(altitude, userId) {
     // TODO: ここにデプロイしたGoogle Apps ScriptのウェブアプリのURLを設定してください
-    const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbwL4iio-mGRRQRcIcHmtPuPvN1O_Kho2m_Nhm_QsWn-Y3oVyOWzIrPfYuYkSSD20iXV/exec'; // ここをデプロイしたGASウェブアプリのURLに置き換えてください！
+    const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbz_G_AXV5enLCBFh1oI6gFPYP_3pNSNN3cG6t1CwkRh-tadL0ZS8JsK-8m06UOhBhso/exec'; // ここをデプロイしたGASウェブアプリのURLに置き換えてください！
 
     if (gasWebAppUrl === 'YOUR_DEPLOYED_GAS_WEB_APP_URL_HERE') {
         console.warn("Google Apps ScriptのウェブアプリURLが設定されていません。データを送信できません。");
