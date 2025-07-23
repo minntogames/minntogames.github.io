@@ -181,7 +181,7 @@ function drawPlanets(planets) {
                 let dx = Math.cos(angle) * r;
                 let dy = Math.sin(angle) * r;
                 ctx.beginPath();
-                ctx.arc(p.x + dx, p.y + dy, Math.max(2, p.radius * 0.08 * Math.random()), 0, Math.PI * 2);
+                ctx.arc(p.x + dx, p.y + dy, Math.max(3, p.radius * 0.13 * Math.random()), 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -420,6 +420,17 @@ let redBullets = [];
 const RED_BULLET_RADIUS = 10;
 const RED_BULLET_SPEED = 5;
 
+// 新しい障害物タイプ: 緑の三角（衝撃波を放つ）
+const TRIANGLE_OBSTACLE_SIZE = 40;
+const TRIANGLE_OBSTACLE_COLOR = "#00a000";
+const SHOCKWAVE_INITIAL_RADIUS = 40;
+const SHOCKWAVE_SPEED = 5; // 衝撃波の拡大速度
+const SHOCKWAVE_FADE_SPEED = 0.01; // 衝撃波の透明度減少速度（調整）
+const SHOCKWAVE_ARC_ANGLE = Math.PI / 6; // 衝撃波の扇の角度 (60度)
+const TRIANGLE_SHOOT_INTERVAL = 120; // 三角が衝撃波を放つ間隔（フレーム）
+const SHOCKWAVE_MIN_ALPHA_FOR_COLLISION = 0.3; // 衝撃波が当たり判定を持つ最低不透明度
+
+
 // キー操作
 let keyLeft = false, keyRight = false;
 window.addEventListener("keydown", e => {
@@ -437,51 +448,162 @@ window.addEventListener("keyup", e => {
     if (e.key === "ArrowRight") keyRight = false;
 });
 
-// タッチ操作対応
-canvas.addEventListener("touchstart", handleTouch, { passive: false });
-canvas.addEventListener("touchmove", handleTouch, { passive: false });
-canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+// タッチ操作対応 (既存のcanvasタッチイベントは残しつつ、ボタン操作を優先)
+canvas.addEventListener("touchstart", handleCanvasTouch, { passive: false });
+canvas.addEventListener("touchmove", handleCanvasTouch, { passive: false });
+canvas.addEventListener("touchend", handleCanvasTouchEnd, { passive: false });
 
-function handleTouch(e) {
+function handleCanvasTouch(e) {
     e.preventDefault();
     if (gameState === "title" || gameState === "gameover") {
         startGame();
         return;
     }
-    if (e.touches.length > 0) {
-        let touch = e.touches[0];
-        let rect = canvas.getBoundingClientRect();
-        let x = touch.clientX - rect.left;
-        // 画面の左半分なら左、右半分なら右
-        if (x < canvas.width / 2) {
-            keyLeft = true;
-            keyRight = false;
-        } else {
-            keyLeft = false;
-            keyRight = true;
+    // ボタンが押されていない場合のみキャンバスタッチを処理
+    if (!isButtonActive) {
+        if (e.touches.length > 0) {
+            let touch = e.touches[0];
+            let rect = canvas.getBoundingClientRect();
+            let x = touch.clientX - rect.left;
+            // 画面の左半分なら左、右半分なら右
+            if (x < canvas.width / 2) {
+                keyLeft = true;
+                keyRight = false;
+            } else {
+                keyLeft = false;
+                keyRight = true;
+            }
         }
     }
 }
 
-function handleTouchEnd(e) {
+function handleCanvasTouchEnd(e) {
     e.preventDefault();
     // 指が離れたら両方false
-    keyLeft = false;
-    keyRight = false;
+    if (!isButtonActive) { // ボタンがアクティブでない場合のみリセット
+        keyLeft = false;
+        keyRight = false;
+    }
 }
+
+// ボタン操作の追加
+let isButtonActive = false; // ボタンがアクティブかどうかを追跡
+
+const leftButton = document.getElementById('left-button');
+const rightButton = document.getElementById('right-button');
+
+if (leftButton) {
+    leftButton.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        keyLeft = true;
+        keyRight = false;
+        isButtonActive = true;
+        if (gameState === "title" || gameState === "gameover") {
+            startGame();
+        }
+    }, { passive: false });
+    leftButton.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        keyLeft = false;
+        isButtonActive = false;
+    }, { passive: false });
+    // マウスイベントも追加（PCでのデバッグ用）
+    leftButton.addEventListener('mousedown', () => {
+        keyLeft = true;
+        keyRight = false;
+        isButtonActive = true;
+        if (gameState === "title" || gameState === "gameover") {
+            startGame();
+        }
+    });
+    leftButton.addEventListener('mouseup', () => {
+        keyLeft = false;
+        isButtonActive = false;
+    });
+    leftButton.addEventListener('mouseleave', () => { // ボタンからマウスが離れた時
+        keyLeft = false;
+        isButtonActive = false;
+    });
+}
+
+if (rightButton) {
+    rightButton.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        keyRight = true;
+        keyLeft = false;
+        isButtonActive = true;
+        if (gameState === "title" || gameState === "gameover") {
+            startGame();
+        }
+    }, { passive: false });
+    rightButton.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        keyRight = false;
+        isButtonActive = false;
+    }, { passive: false });
+    // マウスイベントも追加（PCでのデバッグ用）
+    rightButton.addEventListener('mousedown', () => {
+        keyRight = true;
+        keyLeft = false;
+        isButtonActive = true;
+        if (gameState === "title" || gameState === "gameover") {
+            startGame();
+        }
+    });
+    rightButton.addEventListener('mouseup', () => {
+        keyRight = false;
+        isButtonActive = false;
+    });
+    rightButton.addEventListener('mouseleave', () => { // ボタンからマウスが離れた時
+        keyRight = false;
+        isButtonActive = false;
+    });
+}
+
 
 let gameState = "title"; // "title", "playing", "gameover"
+let initialMaxAltitude = 0; // ゲーム開始時の最高到達点を保存する変数
+let currentReachedAltitude = 0; // ゲームオーバー時に到達した高度を保存する変数
+let userId; // ユーザーIDはinitGameで初期化
+let userName = "匿名さん"; // ユーザー名を保存する変数
+let newuser = false
 
-// 最高到達点の保存・読込（localStorage使用）
-function loadMaxAltitude() {
-    let v = localStorage.getItem("jump_max_altitude");
-    return v ? parseFloat(v) : 0;
-}
-function saveMaxAltitude(val) {
-    localStorage.setItem("jump_max_altitude", String(val));
+let maxAltitude = 0; // スプレッドシートから読み込むため、初期値は0
+
+// ユーザーIDの取得または生成
+function getOrCreateUserId() {
+    let id = localStorage.getItem('game_user_id');
+    if (!id) {
+        id = crypto.randomUUID(); // ユニークなIDを生成
+        localStorage.setItem('game_user_id', id);
+        newuser = true
+    }
+    return id;
 }
 
-let maxAltitude = loadMaxAltitude();
+// ユーザー名の取得または初期化
+function getOrCreateUserName() {
+    let name = localStorage.getItem('game_user_name');
+    if (!name) {
+        name = "匿名さん"; // 初期値
+        localStorage.setItem('game_user_name', name);
+    }
+    return name;
+}
+
+// 最高到達点の読込（スプレッドシートDB使用）
+async function loadMaxAltitudeFromSheet(userId) {
+    try {
+        const data = await fetchUData(userId);
+        if (data && data.altitude !== undefined) {
+            return parseFloat(data.altitude); // プロパティ名を修正
+        }
+        return 0; // データがない場合は0を返す
+    } catch (error) {
+        console.error("Failed to load max altitude from sheet:", error);
+        return 0; // エラー時も0を返す
+    }
+}
 
 function startGame() {
     // 初期化
@@ -498,11 +620,13 @@ function startGame() {
     planets = [];
     meteors = [];
     obstacles = [];
+    redBullets = []; // 赤玉の小玉もリセット
     player.x = canvas.width / 2;
     player.vx = 0;
     isGameOver = false;
     frameCount = 0;
     gameState = "playing";
+    initialMaxAltitude = maxAltitude; // ゲーム開始時に現在の最高到達点を記録（スプレッドシートからロードされた値）
 }
 
 // プレイヤー描画
@@ -528,7 +652,7 @@ function drawObstacles() {
             ctx.shadowColor = "#a00";
             ctx.shadowBlur = 8;
             ctx.fill();
-        } else {
+        } else if (obs.type === "rect") {
             // 左右に伸び縮みする青棒
             ctx.beginPath();
             ctx.rect(
@@ -541,6 +665,29 @@ function drawObstacles() {
             ctx.shadowColor = "#06f";
             ctx.shadowBlur = 8;
             ctx.fill();
+        } else if (obs.type === "triangle") {
+            // 緑の三角
+            ctx.beginPath();
+            ctx.moveTo(obs.x, obs.y - obs.size); // Top point
+            ctx.lineTo(obs.x + obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2); // Bottom right
+            ctx.lineTo(obs.x - obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2); // Bottom left
+            ctx.closePath();
+            ctx.fillStyle = TRIANGLE_OBSTACLE_COLOR;
+            ctx.shadowColor = TRIANGLE_OBSTACLE_COLOR;
+            ctx.shadowBlur = 8;
+            ctx.fill();
+
+            // 衝撃波を描画
+            for (let sw of obs.shockwaves) {
+                ctx.save();
+                ctx.globalAlpha = sw.alpha;
+                ctx.strokeStyle = "#fff"; // 白い衝撃波
+                ctx.lineWidth = 5; // 衝撃波の太さ
+                ctx.beginPath();
+                ctx.arc(sw.x, sw.y, sw.currentRadius, sw.startAngle, sw.endAngle);
+                ctx.stroke();
+                ctx.restore();
+            }
         }
         ctx.restore();
     }
@@ -557,6 +704,37 @@ function drawObstacles() {
     }
 }
 
+// 線分(p1, p2)から点(px, py)への最も近い点を求めるヘルパー関数
+function closestPointOnSegment(px, py, p1x, p1y, p2x, p2y) {
+    const dx = p2x - p1x;
+    const dy = p2y - p1y;
+    const lengthSq = dx * dx + dy * dy;
+
+    if (lengthSq === 0) { // p1 と p2 が同じ点の場合
+        return { x: p1x, y: p1y };
+    }
+
+    // 距離を最小化する t を計算
+    const t = ((px - p1x) * dx + (py - p1y) * dy) / lengthSq;
+
+    // 線分の端点、または線分内の点を表すかを確認
+    if (t < 0) {
+        return { x: p1x, y: p1y }; // 最も近い点は p1
+    }
+    if (t > 1) {
+        return { x: p2x, y: p2y }; // 最も近い点は p2
+    }
+
+    // 最も近い点は線分上にある
+    return { x: p1x + t * dx, y: p1y + t * dy };
+}
+
+// 点 p3 が線分 (p1, p2) のどちら側にあるかを判断する関数
+// 点が凸多角形の内側にあるかを判定するために使用
+function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
+    return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+}
+
 // 衝突判定
 function checkCollision(player, obs) {
     if (obs.type === "circle") {
@@ -564,15 +742,64 @@ function checkCollision(player, obs) {
         let dy = player.y - obs.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
         return dist < player.radius + obs.radius;
-    } else {
-        // 四角
+    } else if (obs.type === "rect") {
+        // 四角形との衝突判定
         let closestX = Math.max(obs.x - obs.width/2, Math.min(player.x, obs.x + obs.width/2));
         let closestY = Math.max(obs.y - obs.height/2, Math.min(player.y, obs.y + obs.height/2));
         let dx = player.x - closestX;
         let dy = player.y - closestY;
         return (dx*dx + dy*dy) < (player.radius * player.radius);
+    } else if (obs.type === "triangle") {
+        const pX = player.x;
+        const pY = player.y;
+        const pR = player.radius;
+
+        // 三角形の頂点 (描画ロジックに基づく)
+        // 上の頂点: (obs.x, obs.y - obs.size)
+        // 右下の頂点: (obs.x + obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2)
+        // 左下の頂点: (obs.x - obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2)
+        const v1x = obs.x;
+        const v1y = obs.y - obs.size;
+
+        const v2x = obs.x + obs.size * Math.sqrt(3) / 2;
+        const v2y = obs.y + obs.size / 2;
+
+        const v3x = obs.x - obs.size * Math.sqrt(3) / 2;
+        const v3y = obs.y + obs.size / 2;
+
+        // 1. プレイヤーの中心が三角形の内側にあるかチェック
+        // 全てのクロス積の符号が同じ（またはゼロ）であれば、点が凸多角形の内側にある
+        const s1 = sign(v1x, v1y, v2x, v2y, pX, pY);
+        const s2 = sign(v2x, v2y, v3x, v3y, pX, pY);
+        const s3 = sign(v3x, v3y, v1x, v1y, pX, pY);
+
+        const hasNeg = (s1 < 0) || (s2 < 0) || (s3 < 0);
+        const hasPos = (s1 > 0) || (s2 > 0) || (s3 > 0);
+
+        // プレイヤーの中心が三角形の内側または辺上にあれば衝突
+        if (!(hasNeg && hasPos)) {
+            return true;
+        }
+
+        // 2. プレイヤーの中心が外側にある場合、各辺との衝突をチェック
+        const edges = [
+            { p1x: v1x, p1y: v1y, p2x: v2x, p2y: v2y }, // 右上の辺
+            { p1x: v2x, p1y: v2y, p2x: v3x, p2y: v3y }, // 下の辺
+            { p1x: v3x, p1y: v3y, p2x: v1x, p1y: v1y }  // 左下の辺
+        ];
+
+        for (const edge of edges) {
+            const closest = closestPointOnSegment(pX, pY, edge.p1x, edge.p1y, edge.p2x, edge.p2y);
+            const distSq = (pX - closest.x) * (pX - closest.x) + (pY - closest.y) * (pY - closest.y);
+            if (distSq < pR * pR) {
+                return true; // 辺との衝突を検出
+            }
+        }
+        return false; // 衝突なし
     }
+    return false; // その他の障害物タイプ（全て処理済みだが念のため）
 }
+
 
 function animate() {
     // ゲーム状態による分岐
@@ -590,13 +817,15 @@ function animate() {
         ctx.strokeText("ばうんすばうんす", canvas.width/2, 260);
         ctx.fillText("ばうんすばうんす", canvas.width/2, 260);
         ctx.font = "bold 32px sans-serif";
-        ctx.strokeText("スペースキーでスタート", canvas.width/2, 400);
-        ctx.fillText("スペースキーでスタート", canvas.width/2, 400);
+        ctx.strokeText("スペースキーまたは画面をタップでスタート", canvas.width/2, 400);
+        ctx.fillText("スペースキーまたは画面をタップでスタート", canvas.width/2, 400);
         // 最高到達点
         ctx.font = "bold 24px sans-serif";
         ctx.strokeText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, 460);
         ctx.fillText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, 460);
         ctx.restore();
+        if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
+        if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
         requestAnimationFrame(animate);
         return;
     }
@@ -613,31 +842,46 @@ function animate() {
         ctx.strokeStyle = "#222";
         ctx.lineWidth = 8;
         ctx.textAlign = "center";
-        ctx.strokeText("GAME OVER", canvas.width/2, canvas.height/2);
-        ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2);
+        ctx.strokeText("GAME OVER", canvas.width/2, canvas.height/2 - 40); // Y位置調整
+        ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 40);
         ctx.font = "bold 28px sans-serif";
-        ctx.strokeText("スペースキーでリトライ", canvas.width/2, canvas.height/2 + 60);
-        ctx.fillText("スペースキーでリトライ", canvas.width/2, canvas.height/2 + 60);
-        // 最高到達点
+        ctx.strokeText("スペースキーまたは画面をタップでリトライ", canvas.width/2, canvas.height/2 + 20); // Y位置調整
+        ctx.fillText("スペースキーまたは画面をタップでリトライ", canvas.width/2, canvas.height/2 + 20);
+
+        // 到達高度表示
         ctx.font = "bold 24px sans-serif";
-        ctx.strokeText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, canvas.height/2 + 120);
+        ctx.fillStyle = "#fff";
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 3;
+        ctx.strokeText(`到達高度: ${Math.floor(currentReachedAltitude)} m`, canvas.width/2, canvas.height/2 + 80); // Y位置調整
+        ctx.fillText(`到達高度: ${Math.floor(currentReachedAltitude)} m`, canvas.width/2, canvas.height/2 + 80);
+
+        // 最高到達点表示
+        ctx.font = "bold 24px sans-serif"; // フォントサイズを統一
+        ctx.strokeText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, canvas.height/2 + 120); // Y位置調整
         ctx.fillText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, canvas.height/2 + 120);
-        // 新記録表示
-        if (Math.floor(offsetSky) >= Math.floor(maxAltitude)) {
+
+        // 新記録表示: ゲーム開始時の最高到達点より今回の到達高度が高ければ新記録
+        if (Math.floor(currentReachedAltitude) > Math.floor(initialMaxAltitude)) {
             ctx.font = "bold 32px sans-serif";
             ctx.fillStyle = "#ff0";
             ctx.strokeStyle = "#c90";
             ctx.lineWidth = 6;
-            ctx.strokeText("新記録！", canvas.width/2, canvas.height/2 + 170);
-            ctx.fillText("新記録！", canvas.width/2, canvas.height/2 + 170);
+            ctx.strokeText("新記録！", canvas.width/2, canvas.height/2 + 180); // Y位置調整
+            ctx.fillText("新記録！", canvas.width/2, canvas.height/2 + 180);
         }
         ctx.restore();
+        if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
+        if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
         requestAnimationFrame(animate);
         return;
     }
 
     // プレイ中のみ高度・背景・障害物を動かす
     if (gameState === "playing") {
+        if (gearIconHtml) gearIconHtml.style.display = 'none'; // 歯車アイコンを非表示
+        if (rankingIconHtml) rankingIconHtml.style.display = 'none'; // ランキングアイコンを非表示
+
         offsetSky += 1 * speedMultiplier;
         offsetMountFar += 0.03 * speedMultiplier;
         offsetMount += 0.1 * speedMultiplier;
@@ -680,7 +924,6 @@ function animate() {
             }
             cloud.y += cloud.speedY * speedMultiplier;
             if (cloud.x - cloud.size > canvas.width) cloud.x = -cloud.size;
-            if (cloud.y < 10) cloud.y = 300 + Math.random() * 100;
             if (cloud.y > 800) cloud.y = 30 + Math.random() * 100;
         }
 
@@ -764,7 +1007,16 @@ function animate() {
 
         // 障害物生成
         if (frameCount % OBSTACLE_INTERVAL === 0) {
-            let type = Math.random() < 0.5 ? "circle" : "rect";
+            let rand = Math.random();
+            let type;
+            if (rand < 0.4) { // Circle (red)
+                type = "circle";
+            } else if (rand < 0.8) { // Rect (blue)
+                type = "rect";
+            } else { // Triangle (green)
+                type = "triangle";
+            }
+
             if (type === "circle") {
                 obstacles.push({
                     type: "circle",
@@ -773,7 +1025,7 @@ function animate() {
                     radius: OBSTACLE_RADIUS,
                     vy: OBSTACLE_SPEED + Math.random() * 2
                 });
-            } else {
+            } else if (type === "rect") {
                 obstacles.push({
                     type: "rect",
                     x: Math.random() * (canvas.width - OBSTACLE_WIDTH) + OBSTACLE_WIDTH/2,
@@ -782,6 +1034,17 @@ function animate() {
                     height: OBSTACLE_HEIGHT,
                     vy: OBSTACLE_SPEED + Math.random() * 2
                 });
+            } else if (type === "triangle") {
+                obstacles.push({
+                    type: "triangle",
+                    x: Math.random() * (canvas.width - TRIANGLE_OBSTACLE_SIZE * 2) + TRIANGLE_OBSTACLE_SIZE,
+                    y: -TRIANGLE_OBSTACLE_SIZE,
+                    size: TRIANGLE_OBSTACLE_SIZE,
+                    vy: OBSTACLE_SPEED + Math.random() * 2,
+                    shootTimer: 0,
+                    hasShotShockwave: false, // 衝撃波を一度だけ放つためのフラグ
+                    shockwaves: [] // 各三角は自身の衝撃波を持つ
+                });
             }
         }
 
@@ -789,7 +1052,8 @@ function animate() {
         for (let obs of obstacles) {
             obs.y += obs.vy * speedMultiplier;
         }
-        obstacles = obstacles.filter(obs => obs.y - (obs.radius || obs.height/2) < canvas.height + 50);
+        // 障害物の画面外削除フィルターを更新 (三角のサイズも考慮)
+        obstacles = obstacles.filter(obs => obs.y - (obs.radius || obs.height/2 || obs.size) < canvas.height + 50);
 
         // --- 障害物の特性処理 ---
         // 赤玉: 一定時間後に4方向に小玉を1回だけ発射
@@ -814,7 +1078,7 @@ function animate() {
                 }
             }
             // 青棒: 一定間隔で左右に伸び縮み
-            if (obs.type === "rect") {
+            else if (obs.type === "rect") {
                 if (obs.stretchTimer === undefined) {
                     obs.stretchTimer = Math.random() * 60;
                     obs.stretchDir = 1;
@@ -827,6 +1091,43 @@ function animate() {
                 let stretch = Math.sin(obs.stretchTimer / 30 * Math.PI) * 0.5 + 1;
                 obs.width = OBSTACLE_WIDTH * stretch;
                 obs.height = OBSTACLE_HEIGHT; // 高さは固定
+            }
+            // 緑の三角: 自機に向かって衝撃波を放つ
+            else if (obs.type === "triangle") {
+                obs.shootTimer++;
+                // hasShotShockwave フラグを追加し、一度だけ発射するように変更
+                if (!obs.hasShotShockwave && obs.shootTimer >= TRIANGLE_SHOOT_INTERVAL) {
+                    obs.shootTimer = 0; // タイマーをリセット
+                    obs.hasShotShockwave = true; // 衝撃波を放ったことを記録
+
+                    // プレイヤーへの角度を計算
+                    let angleToPlayer = Math.atan2(player.y - obs.y, player.x - obs.x);
+                    let startAngle = angleToPlayer - SHOCKWAVE_ARC_ANGLE / 2;
+                    let endAngle = angleToPlayer + SHOCKWAVE_ARC_ANGLE / 2;
+
+                    obs.shockwaves.push({
+                        x: obs.x,
+                        y: obs.y,
+                        currentRadius: SHOCKWAVE_INITIAL_RADIUS,
+                        startAngle: startAngle,
+                        endAngle: endAngle,
+                        alpha: 1.0,
+                        speed: SHOCKWAVE_SPEED,
+                        fadeSpeed: SHOCKWAVE_FADE_SPEED
+                    });
+                }
+
+                // 衝撃波の更新とフィルタリング
+                for (let i = obs.shockwaves.length - 1; i >= 0; i--) {
+                    let sw = obs.shockwaves[i];
+                    sw.currentRadius += sw.speed * speedMultiplier;
+                    sw.alpha -= sw.fadeSpeed * speedMultiplier;
+
+                    // 最大半径のチェックを削除し、アルファ値のみで消滅を判断
+                    if (sw.alpha <= 0) {
+                        obs.shockwaves.splice(i, 1); // 透明になった衝撃波を削除
+                    }
+                }
             }
         }
 
@@ -846,6 +1147,48 @@ function animate() {
             if (checkCollision(player, obs)) {
                 isGameOver = true;
                 gameState = "gameover";
+                currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
+                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
+            }
+            // 三角の衝撃波との衝突判定
+            if (obs.type === "triangle") {
+                for (let sw of obs.shockwaves) {
+                    // 衝撃波の不透明度が一定値より高い場合のみ当たり判定を行う
+                    if (sw.alpha > SHOCKWAVE_MIN_ALPHA_FOR_COLLISION) {
+                        let dx = player.x - sw.x;
+                        let dy = player.y - sw.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+
+                        // プレイヤーが衝撃波の「厚み」の範囲内にいるかチェック
+                        const SHOCKWAVE_COLLISION_BAND = 10; // 衝撃波の線周りの衝突判定帯域
+                        const minEffectiveRadius = sw.currentRadius - SHOCKWAVE_COLLISION_BAND / 2;
+                        const maxEffectiveRadius = sw.currentRadius + SHOCKWAVE_COLLISION_BAND / 2;
+
+                        if (dist >= minEffectiveRadius && dist <= maxEffectiveRadius) {
+                            // プレイヤーの角度が衝撃波の扇の範囲内にあるかチェック
+                            let angleToPlayerFromShockwaveOrigin = Math.atan2(player.y - sw.y, player.x - sw.x);
+                            // 角度を0から2*PIの範囲に正規化
+                            let normalizedPlayerAngle = (angleToPlayerFromShockwaveOrigin + Math.PI * 2) % (Math.PI * 2);
+                            let normalizedStartAngle = (sw.startAngle + Math.PI * 2) % (Math.PI * 2);
+                            let normalizedEndAngle = (sw.endAngle + Math.PI * 2) % (Math.PI * 2);
+
+                            let isInArc = false;
+                            if (normalizedStartAngle <= normalizedEndAngle) {
+                                isInArc = (normalizedPlayerAngle >= normalizedStartAngle && normalizedPlayerAngle <= normalizedEndAngle);
+                            } else { // 扇が0/2*PI境界をまたぐ場合 (例: 3PI/2 から PI/2)
+                                isInArc = (normalizedPlayerAngle >= normalizedStartAngle || normalizedPlayerAngle <= normalizedEndAngle);
+                            }
+
+                            if (isInArc) {
+                                isGameOver = true;
+                                gameState = "gameover";
+                                currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
+                                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
+                                break; // この障害物の他の衝撃波をチェックする必要はない
+                            }
+                        }
+                    }
+                }
             }
         }
         // 赤玉小玉との衝突判定
@@ -855,12 +1198,14 @@ function animate() {
             if (dx*dx + dy*dy < (player.radius + RED_BULLET_RADIUS) * (player.radius + RED_BULLET_RADIUS)) {
                 isGameOver = true;
                 gameState = "gameover";
+                currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
+                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
             }
         }
 
         if (offsetSky > maxAltitude) {
             maxAltitude = offsetSky;
-            saveMaxAltitude(maxAltitude);
+            // ここでは直接スプレッドシートに保存せず、ゲームオーバー時にまとめて送信
         }
     }
 
@@ -875,7 +1220,241 @@ function animate() {
     if (gameState === "playing") {
         drawPlayer();
     }
+    // 歯車アイコンはHTMLで描画されるため、ここでは描画しない
+    // オプションポップアップもHTMLで描画されるため、ここでは描画しない
     requestAnimationFrame(animate);
 }
+const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnIFelFfJmUuWD1ywIhqvCtYXdOvX-MKUZVYb3wEowVmeOMrzm7L/exec'; 
+//v22
+// Google Sheetにスコアを送信する関数
+function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userName) { // 引数にuserNameを追加
 
-animate();
+    if (gasWebAppUrl === 'YOUR_DEPLOYED_GAS_WEB_APP_URL_HERE') {
+        console.warn("Google Apps ScriptのウェブアプリURLが設定されていません。データを送信できません。");
+        return;
+    }
+
+    console.log(currentScore, maxReachedAltitude, userId, userName)
+
+    const formData = new URLSearchParams();
+    formData.append("score", currentScore); // 現在の到達高度
+    formData.append("altitude", maxReachedAltitude); // 最高到達点
+    formData.append("userId", userId);
+    formData.append("userName", userName); // ユーザー名を追加
+
+    fetch(gasWebAppUrl, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: formData
+    })
+    .then(res => res.json())
+    .then(data => console.log("成功:", data))
+    .catch(err => console.error("エラー:", err));
+}
+
+//これはげっと関数
+async function fetchUData(userId) {
+  try {
+
+    const url = new URL(gasWebAppUrl);
+    url.searchParams.append("userId", userId);
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTPエラー: ${response.status}`);
+    }
+
+    const json = await response.json();
+
+    if (json.result === "success") {
+      console.log("取得データ:", json.data);
+      return json.data;
+    } else {
+      console.warn("取得失敗:", json.message);
+      return null;
+    }
+  } catch (err) {
+    console.error("通信エラー:", err);
+  }
+}
+
+//全データ取得関数
+async function AllFetchData() {
+    try {
+        // const url = new URL(gasWebAppUrl);
+        // url.searchParams.append("mode", "fetchAll");
+        console.log(gasWebAppUrl+"?mode=fetchAll")
+
+        const response = await fetch(gasWebAppUrl+"?mode=fetchAll", { // response変数が定義されていなかったので追加
+            method: "GET",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTPエラー: ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        if (json.result === "success") {
+            console.log("取得データ:", json.data);
+            return json.data;
+        } else {
+            console.warn("取得失敗:", json.message);
+            return null;
+        }
+    } catch (err) {
+        console.error("通信エラー:", err);
+    }
+}
+
+// オプションポップアップ関連の変数
+let showOptionsPopup = false;
+let tempUserName = ""; // ポップアップ表示中の一時的なユーザー名
+
+// HTML要素の参照
+const optionsPopupOverlay = document.getElementById('options-popup-overlay');
+const userNameInput = document.getElementById('userNameInput');
+const displayUserId = document.getElementById('displayUserId');
+const closeOptionsButton = document.getElementById('closeOptionsButton');
+const applyOptionsButton = document.getElementById('applyOptionsButton');
+const gearIconHtml = document.getElementById('gear-icon-html');
+
+// ランキング関連のHTML要素
+const rankingPopupOverlay = document.getElementById('ranking-popup-overlay');
+const rankingList = document.getElementById('rankingList');
+const closeRankingButton = document.getElementById('closeRankingButton');
+const rankingIconHtml = document.getElementById('ranking-icon-html');
+
+
+// オプションポップアップの表示/非表示を切り替える関数
+function toggleOptionsPopup() {
+    showOptionsPopup = !showOptionsPopup;
+
+    if (showOptionsPopup) {
+        tempUserName = userName; // 現在のユーザー名を一時変数にコピー
+        userNameInput.value = tempUserName; // 入力欄に表示
+        displayUserId.textContent = userId; // ユーザーIDを表示
+        optionsPopupOverlay.classList.add('show'); // ポップアップを表示
+        // オプションポップアップ表示中は他のポップアップを閉じる
+        rankingPopupOverlay.classList.remove('show');
+    } else {
+        optionsPopupOverlay.classList.remove('show'); // ポップアップを非表示
+
+        const formData = new URLSearchParams();
+        formData.append("userId", userId);
+        formData.append("userName", userName); // ユーザー名を追加
+
+        console.log(userId, userName)
+
+        fetch(gasWebAppUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => console.log("成功:", data))
+        .catch(err => console.error("エラー:", err));
+
+        // ゲームを再開するロジック (animate関数内で描画を制御)
+    }
+}
+
+// ランキングポップアップの表示/非表示を切り替える関数
+async function toggleRankingPopup() {
+    if (rankingPopupOverlay.classList.contains('show')) {
+        rankingPopupOverlay.classList.remove('show'); // ポップアップを非表示
+    } else {
+        optionsPopupOverlay.classList.remove('show'); // 他のポップアップを閉じる
+        rankingPopupOverlay.classList.add('show'); // ポップアップを表示
+        await displayRanking(); // ランキングデータを取得して表示
+    }
+}
+
+// ランキングデータを取得して表示する関数
+async function displayRanking() {
+    rankingList.innerHTML = '<li>ランキングを読み込み中...</li>'; // ロード中メッセージ
+
+    try {
+        const allData = await AllFetchData();
+        if (allData && Array.isArray(allData)) {
+            // スコア（altitude）で降順にソート
+            allData.sort((a, b) => (parseFloat(b.altitude) || 0) - (parseFloat(a.altitude) || 0));
+
+            rankingList.innerHTML = ''; // リストをクリア
+
+            if (allData.length === 0) {
+                rankingList.innerHTML = '<li>まだランキングデータがありません。</li>';
+                return;
+            }
+
+            allData.forEach((data, index) => {
+                const listItem = document.createElement('li');
+                const rank = index + 1;
+                const userName = data.userName || '匿名さん';
+                const altitude = Math.floor(parseFloat(data.altitude) || 0);
+
+                listItem.innerHTML = `
+                    <span>${rank}. ${userName}</span>
+                    <span>${altitude} m</span>
+                `;
+                rankingList.appendChild(listItem);
+            });
+        } else {
+            rankingList.innerHTML = '<li>ランキングデータの取得に失敗しました。</li>';
+        }
+    } catch (error) {
+        console.error("ランキングの表示中にエラーが発生しました:", error);
+        rankingList.innerHTML = '<li>ランキングの読み込み中にエラーが発生しました。</li>';
+    }
+}
+
+
+// イベントリスナーのセットアップ
+if (gearIconHtml) {
+    gearIconHtml.addEventListener('click', toggleOptionsPopup);
+}
+
+if (closeOptionsButton) {
+    closeOptionsButton.addEventListener('click', toggleOptionsPopup);
+}
+
+if (applyOptionsButton) {
+    applyOptionsButton.addEventListener('click', () => {
+        userName = userNameInput.value; // 名前を反映
+        localStorage.setItem('game_user_name', userName); // ローカルストレージに保存
+        toggleOptionsPopup(); // ポップアップを閉じる
+    });
+}
+
+// ランキングアイコンとボタンのイベントリスナー
+if (rankingIconHtml) {
+    rankingIconHtml.addEventListener('click', toggleRankingPopup);
+}
+
+if (closeRankingButton) {
+    closeRankingButton.addEventListener('click', toggleRankingPopup);
+}
+
+
+// アプリ起動時にゲームを初期化
+async function initGame() {
+    userId = getOrCreateUserId(); // ユーザーIDを初期化
+    userName = getOrCreateUserName(); // ユーザー名を初期化
+    maxAltitude = newuser ? 0 : await loadMaxAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
+    animate(); // アニメーションループを開始
+}
+
+initGame();
