@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ばうんすばうんす</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* スクロールバーを非表示にする */
+        }
+        body {
+            height: 100%;
+            width: 100%;
+            background: #1b98c9;
+            margin: 0;
+            display: flex; /* Flexboxを使って中央に配置 */
+            flex-direction: column; /* 縦方向に要素を並べる */
+            justify-content: center; /* 垂直方向中央揃え */
+            align-items: center; /* 水平方向中央揃え */
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%; /* 親要素の高さに合わせる */
+            width: 100%; /* 親要素の幅に合わせる */
+        }
+        #bg-canvas {
+            display: block;
+            margin: 0 auto;
+            background: #87ceeb;
+            /* デフォルトサイズ */
+            width: 600px;
+            height: 800px;
+            max-width: 100%;
+            max-height: calc(100vh - 120px); /* ボタンの高さとマージンを考慮 */
+            touch-action: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); /* 影を追加 */
+        }
+
+        /* ボタンコンテナのスタイル */
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px; /* ボタン間のスペース */
+            margin-top: 20px; /* キャンバスとの間隔 */
+            width: 100%;
+            max-width: 600px; /* キャンバスの幅に合わせる */
+        }
+
+        /* ボタンの基本スタイル */
+        .control-button {
+            background-color: #4CAF50; /* 緑色 */
+            color: white;
+            padding: 20px 30px;
+            border: none;
+            border-radius: 50%; /* 円形にする */
+            font-size: 2.5em; /* アイコンのサイズ */
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); /* 影 */
+            transition: all 0.2s ease; /* ホバー/アクティブ時のアニメーション */
+            width: 80px; /* ボタンの幅 */
+            height: 80px; /* ボタンの高さ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', sans-serif; /* フォント */
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3); /* テキストの影 */
+            background-image: linear-gradient(to bottom, #6ddb71, #4CAF50); /* グラデーション */
+            border: 3px solid #3a8a3e; /* 枠線 */
+        }
+
+        .control-button:active {
+            transform: translateY(2px); /* 押した時のエフェクト */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            background-image: linear-gradient(to bottom, #4CAF50, #6ddb71); /* グラデーション反転 */
+        }
+
+        /* モバイル版のみボタンを表示 */
+        #controls {
+            display: none; /* デフォルトでは非表示 */
+        }
+
+        @media (max-width: 700px), (max-height: 900px) {
+            #bg-canvas {
+                /* スマホや小さい画面では画面いっぱいに拡大 */
+                width: auto;
+                height: auto;
+                max-height: calc(100vh - 100px); /* ボタンの高さとマージンを考慮 */
+            }
+            #controls {
+                display: flex; /* モバイル版で表示 */
+            }
+        }
+        </style>
+        <!-- Font Awesome for icons -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
+    <body>
+        <div id="game-container">
+            <canvas id="bg-canvas" width="600" height="800"></canvas>
+            <div id="controls">
+                <button id="left-button" class="control-button"><i class="fas fa-arrow-left"></i></button>
+                <button id="right-button" class="control-button"><i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+        <script src="anime.js"></script>
+    </body>
+</html>
