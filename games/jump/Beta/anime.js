@@ -1215,21 +1215,14 @@ function sendScoreToGoogleSheet(altitude, userId) {
     };
 
     fetch(gasWebAppUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        method: "POST",
         body: JSON.stringify(data),
-    })
-    .then(response => response.json())
-    .then(result => {
-        console.log('GASからの応答:', result);
-        if (result.success) {
-            console.log('データがスプレッドシートに保存されました。');
-        } else {
-            console.error('データの保存に失敗しました:', result.message);
+        headers: {
+            "Content-Type": "application/json"
         }
     })
+    .then(res => res.json())
+    .then(data => console.log(data))    
     .catch(error => {
         console.error('GASへのリクエスト中にエラーが発生しました:', error);
     });
