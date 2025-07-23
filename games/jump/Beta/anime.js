@@ -1208,24 +1208,21 @@ function sendScoreToGoogleSheet(altitude, userId) {
         return;
     }
 
-    const data = {
-        score: altitude, // 今回は到達高度をスコアとして扱う
-        altitude: altitude,
-        userId: userId // ユーザーIDを追加
-    };
+    const formData = new URLSearchParams();
+    formData.append("score", altitude);
+    formData.append("altitude", altitude);
+    formData.append("userId", userId);
 
     fetch(gasWebAppUrl, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-            "Content-Type": "application/json"
-        }
+    method: "POST",
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: formData
     })
     .then(res => res.json())
-    .then(data => console.log(data))    
-    .catch(error => {
-        console.error('GASへのリクエスト中にエラーが発生しました:', error);
-    });
+    .then(data => console.log("成功:", data))
+    .catch(err => console.error("エラー:", err));
 }
 
 animate();
