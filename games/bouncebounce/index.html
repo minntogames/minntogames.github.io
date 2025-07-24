@@ -79,6 +79,8 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
             width: 90%; /* レスポンシブ対応 */
             max-width: 400px; /* 最大幅 */
+            max-height: 80vh; /* ランキングリストが長くなる可能性があるので高さを制限 */
+            overflow-y: auto; /* コンテンツが溢れたらスクロール */
         }
         .popup-close-button {
             position: absolute;

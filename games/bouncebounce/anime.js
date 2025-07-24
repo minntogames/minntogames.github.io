@@ -577,6 +577,23 @@ function getOrCreateUserId() {
         id = crypto.randomUUID(); // ユニークなIDを生成
         localStorage.setItem('game_user_id', id);
         newuser = true
+
+        const formData = new URLSearchParams();
+        formData.append("score", 0); // 現在の到達高度
+        formData.append("altitude", 0); // 最高到達点
+        formData.append("userId", id);
+        formData.append("userName", "匿名さん"); // ユーザー名を追加
+
+        fetch(gasWebAppUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => console.log("成功:", data))
+        .catch(err => console.error("エラー:", err));
     }
     return id;
 }
@@ -1289,10 +1306,6 @@ async function fetchUData(userId) {
 //全データ取得関数
 async function AllFetchData() {
     try {
-        // const url = new URL(gasWebAppUrl);
-        // url.searchParams.append("mode", "fetchAll");
-        console.log(gasWebAppUrl+"?mode=fetchAll")
-
         const response = await fetch(gasWebAppUrl+"?mode=fetchAll", { // response変数が定義されていなかったので追加
             method: "GET",
             headers: {
@@ -1388,10 +1401,15 @@ async function displayRanking() {
     rankingList.innerHTML = '<li>ランキングを読み込み中...</li>'; // ロード中メッセージ
 
     try {
-        const allData = await AllFetchData();
-        if (allData && Array.isArray(allData)) {
+        const Data = await AllFetchData();
+        if (Data && Array.isArray(Data)) {
             // スコア（altitude）で降順にソート
-            allData.sort((a, b) => (parseFloat(b.altitude) || 0) - (parseFloat(a.altitude) || 0));
+
+            Data.sort((a, b) => (parseFloat(b.altitude) || 0) - (parseFloat(a.altitude) || 0))
+            const allData = Data.filter(user => user.altitude !== 0); // ユーザー名と高度が存在するデータのみをフィルタリング
+
+
+            console.table(allData); // デバッグ用に全データを表示
 
             rankingList.innerHTML = ''; // リストをクリア
 
@@ -1405,6 +1423,10 @@ async function displayRanking() {
                 const rank = index + 1;
                 const userName = data.userName || '匿名さん';
                 const altitude = Math.floor(parseFloat(data.altitude) || 0);
+
+                if (altitude === 0) return; // 高度が0未満のデータは表示しない
+                if (rank > 100) return; // 上位100件のみ表示
+                console.log(altitude === 0)
 
                 listItem.innerHTML = `
                     <span>${rank}. ${userName}</span>
