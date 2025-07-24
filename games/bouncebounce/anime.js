@@ -1,6 +1,161 @@
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
+// 音声管理システム
+const audioManager = {
+    bgm: {
+        title: new Audio('src/bgm/title.mp3'),
+        game: new Audio('src/bgm/game.mp3'),
+        gameover: new Audio('src/bgm/gameover.mp3')
+    },
+    se: {
+        circle: new Audio('src/se/circle.mp3'),
+        triangle: new Audio('src/se/triangle.mp3'),
+        hit: new Audio('src/se/hit.mp3'),
+        fall: new Audio('src/se/fall.mp3')
+    },
+    currentBgm: null,
+    gameoverPlayed: false, // ゲームオーバーBGMが再生されたかのフラグ
+    
+    // 音量設定
+    volumes: {
+        bgm: 0.6,
+        se: 0.7
+    },
+    
+    // ミュート設定
+    muted: {
+        bgm: false,
+        se: false
+    },
+    
+    // BGMの初期設定
+    init() {
+        // ローカルストレージから音量設定を読み込み
+        this.loadVolumeSettings();
+        
+        // BGMをループ設定（ゲームオーバーBGMは除く）
+        this.bgm.title.loop = true;
+        this.bgm.game.loop = true;
+        this.bgm.gameover.loop = false; // ゲームオーバーBGMは一回のみ
+        
+        // 音量設定を適用
+        this.updateBgmVolumes();
+        this.updateSeVolumes();
+    },
+    
+    // 音量設定をローカルストレージから読み込み
+    loadVolumeSettings() {
+        const savedBgmVolume = localStorage.getItem('game_bgm_volume');
+        const savedSeVolume = localStorage.getItem('game_se_volume');
+        const savedBgmMuted = localStorage.getItem('game_bgm_muted');
+        const savedSeMuted = localStorage.getItem('game_se_muted');
+        
+        if (savedBgmVolume !== null) this.volumes.bgm = parseFloat(savedBgmVolume);
+        if (savedSeVolume !== null) this.volumes.se = parseFloat(savedSeVolume);
+        if (savedBgmMuted !== null) this.muted.bgm = savedBgmMuted === 'true';
+        if (savedSeMuted !== null) this.muted.se = savedSeMuted === 'true';
+    },
+    
+    // 音量設定をローカルストレージに保存
+    saveVolumeSettings() {
+        localStorage.setItem('game_bgm_volume', this.volumes.bgm.toString());
+        localStorage.setItem('game_se_volume', this.volumes.se.toString());
+        localStorage.setItem('game_bgm_muted', this.muted.bgm.toString());
+        localStorage.setItem('game_se_muted', this.muted.se.toString());
+    },
+    
+    // BGM音量を設定
+    setBgmVolume(volume) {
+        this.volumes.bgm = Math.max(0, Math.min(1, volume));
+        this.updateBgmVolumes();
+        this.saveVolumeSettings();
+    },
+    
+    // SE音量を設定
+    setSeVolume(volume) {
+        this.volumes.se = Math.max(0, Math.min(1, volume));
+        this.updateSeVolumes();
+        this.saveVolumeSettings();
+    },
+    
+    // BGMミュート切り替え
+    toggleBgmMute() {
+        this.muted.bgm = !this.muted.bgm;
+        this.updateBgmVolumes();
+        this.saveVolumeSettings();
+    },
+    
+    // SEミュート切り替え
+    toggleSeMute() {
+        this.muted.se = !this.muted.se;
+        this.updateSeVolumes();
+        this.saveVolumeSettings();
+    },
+    
+    // BGM音量を更新
+    updateBgmVolumes() {
+        const volume = this.muted.bgm ? 0 : this.volumes.bgm;
+        this.bgm.title.volume = volume;
+        this.bgm.game.volume = volume;
+        this.bgm.gameover.volume = volume;
+    },
+    
+    // SE音量を更新
+    updateSeVolumes() {
+        const volume = this.muted.se ? 0 : this.volumes.se;
+        this.se.circle.volume = volume;
+        this.se.triangle.volume = volume;
+        this.se.hit.volume = volume;
+        this.se.fall.volume = volume;
+    },
+    
+    // BGM再生
+    playBgm(bgmName) {
+        if (this.currentBgm) {
+            this.currentBgm.pause();
+            this.currentBgm.currentTime = 0;
+        }
+        
+        if (this.bgm[bgmName]) {
+            this.currentBgm = this.bgm[bgmName];
+            this.currentBgm.play().catch(e => console.log('BGM再生エラー:', e));
+        }
+    },
+    
+    // ゲームオーバーBGM専用再生（一回のみ）
+    playGameoverBgm() {
+        if (!this.gameoverPlayed) {
+            this.playBgm('gameover');
+            this.gameoverPlayed = true;
+        }
+    },
+    
+    // 効果音再生
+    playSe(seName) {
+        if (this.se[seName]) {
+            this.se[seName].currentTime = 0;
+            this.se[seName].play().catch(e => console.log('SE再生エラー:', e));
+        }
+    },
+    
+    // 全音声停止
+    stopAll() {
+        if (this.currentBgm) {
+            this.currentBgm.pause();
+            this.currentBgm.currentTime = 0;
+        }
+    },
+    
+    // ゲーム開始時にフラグをリセット
+    resetGameoverFlag() {
+        this.gameoverPlayed = false;
+    }
+};
+
+// 音声管理システムを初期化
+audioManager.init();
+
 let speedMultiplier = 1; // 固定値
 
 let offsetSky = 0;
@@ -403,9 +558,28 @@ const player = {
     y: canvas.height - 120,
     radius: 24,
     color: "#fffa3a",
-    vx: 0
+    vx: 0,
+    isMoving: false,
+    facingLeft: false,
+    // 落下アニメーション用
+    isDying: false,
+    deathVy: 0,
+    deathGravity: 0.5,
+    deathInitialVy: -8
 };
 let isGameOver = false;
+
+// プレイヤー画像の読み込み
+const playerImages = {
+    normal: new Image(),
+    normalHit: new Image(),
+    move: new Image(),
+    moveHit: new Image()
+};
+playerImages.normal.src = 'img/cat_normal.PNG';
+playerImages.normalHit.src = 'img/cat_normal_hit.PNG';
+playerImages.move.src = 'img/cat_move.PNG';
+playerImages.moveHit.src = 'img/cat_move_hit.PNG';
 
 // 障害物設定
 let obstacles = [];
@@ -570,6 +744,9 @@ let newuser = false
 
 let maxAltitude = 0; // スプレッドシートから読み込むため、初期値は0
 
+// デバッグ用：当たり判定表示フラグ
+let showHitbox = false; // trueにすると当たり判定が表示される
+
 // ユーザーIDの取得または生成
 function getOrCreateUserId() {
     let id = localStorage.getItem('game_user_id');
@@ -640,21 +817,93 @@ function startGame() {
     redBullets = []; // 赤玉の小玉もリセット
     player.x = canvas.width / 2;
     player.vx = 0;
+    player.isMoving = false;
+    player.facingLeft = false;
+    // プレイヤーの落下状態をリセット
+    player.isDying = false;
+    player.deathVy = 0;
+    // プレイヤーのY座標もリセット
+    player.y = canvas.height - 120;
     isGameOver = false;
     frameCount = 0;
     gameState = "playing";
+    // audioManagerのゲームオーバーフラグもリセット
+    audioManager.gameoverPlayed = false;
     initialMaxAltitude = maxAltitude; // ゲーム開始時に現在の最高到達点を記録（スプレッドシートからロードされた値）
 }
 
 // プレイヤー描画
 function drawPlayer() {
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.fillStyle = player.color;
-    ctx.shadowColor = "#fff";
-    ctx.shadowBlur = 16;
-    ctx.fill();
+    
+    // 使用する画像を決定
+    let currentImage;
+    if (player.isDying || isGameOver) {
+        // 落下中またはゲームオーバー時はhit画像を選択
+        if (player.isMoving) {
+            currentImage = playerImages.moveHit;
+        } else {
+            currentImage = playerImages.normalHit;
+        }
+    } else {
+        // 通常時は移動状態に応じて画像を選択
+        if (player.isMoving) {
+            currentImage = playerImages.move;
+        } else {
+            currentImage = playerImages.normal;
+        }
+    }
+    
+    // 画像が読み込まれている場合は画像を描画、そうでなければ従来の円を描画
+    if (currentImage && currentImage.complete) {
+        // 画像サイズを原寸大で取得（ここで画像サイズを変更可能）
+        // const imageWidth = currentImage.naturalWidth;   // 原寸幅（変更したい場合はここを編集）
+        // const imageHeight = currentImage.naturalHeight; // 原寸高さ（変更したい場合はここを編集）
+        const imageWidth = 150  // 原寸幅（変更したい場合はここを編集）
+        const imageHeight = 230
+        
+        
+        // 当たり判定用の半径を画像サイズに基づいて設定
+        player.radius = 20 //Math.min(imageWidth, imageHeight) / 2;
+        
+        // 左向きの場合は画像を反転
+        if (player.facingLeft) {
+            ctx.scale(-1, 1);
+            ctx.drawImage(
+                currentImage, 
+                -player.x - imageWidth/2, 
+                player.y - imageHeight/2 + 18, 
+                imageWidth, 
+                imageHeight
+            );
+        } else {
+            ctx.drawImage(
+                currentImage, 
+                player.x - imageWidth/2, 
+                player.y - imageHeight/2 + 18, 
+                imageWidth, 
+                imageHeight
+            );
+        }
+    } else {
+        // 画像が読み込まれていない場合は従来の円を描画
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = player.color;
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 16;
+        ctx.fill();
+    }
+    
+    // デバッグ用：当たり判定の表示
+    if (showHitbox) {
+        ctx.strokeStyle = "#ff0000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
     ctx.restore();
 }
 
@@ -662,35 +911,48 @@ function drawPlayer() {
 function drawObstacles() {
     for (let obs of obstacles) {
         ctx.save();
+        
+        // フラッシュエフェクトのスケールと色を計算
+        let scale = 1;
+        let flashColor = null;
+        if (obs.flashTimer !== undefined && obs.flashTimer > 0) {
+            let flashProgress = obs.flashTimer / obs.flashDuration;
+            scale = 0.8 + 0.2 * flashProgress; // 0.8倍まで縮んで元に戻る
+            if (flashProgress > 0.5) {
+                flashColor = "#ffffff"; // 白くする
+            }
+        }
+        
         if (obs.type === "circle") {
             ctx.beginPath();
-            ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
-            ctx.fillStyle = "#d33";
-            ctx.shadowColor = "#a00";
+            ctx.arc(obs.x, obs.y, obs.radius * scale, 0, Math.PI * 2);
+            ctx.fillStyle = flashColor || "#d33";
+            ctx.shadowColor = flashColor || "#a00";
             ctx.shadowBlur = 8;
             ctx.fill();
         } else if (obs.type === "rect") {
             // 左右に伸び縮みする青棒
             ctx.beginPath();
             ctx.rect(
-                obs.x - obs.width/2,
-                obs.y - obs.height/2,
-                obs.width,
-                obs.height
+                obs.x - (obs.width * scale)/2,
+                obs.y - (obs.height * scale)/2,
+                obs.width * scale,
+                obs.height * scale
             );
-            ctx.fillStyle = "#39f";
-            ctx.shadowColor = "#06f";
+            ctx.fillStyle = flashColor || "#39f";
+            ctx.shadowColor = flashColor || "#06f";
             ctx.shadowBlur = 8;
             ctx.fill();
         } else if (obs.type === "triangle") {
             // 緑の三角
             ctx.beginPath();
-            ctx.moveTo(obs.x, obs.y - obs.size); // Top point
-            ctx.lineTo(obs.x + obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2); // Bottom right
-            ctx.lineTo(obs.x - obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2); // Bottom left
+            let size = obs.size * scale;
+            ctx.moveTo(obs.x, obs.y - size); // Top point
+            ctx.lineTo(obs.x + size * Math.sqrt(3) / 2, obs.y + size / 2); // Bottom right
+            ctx.lineTo(obs.x - size * Math.sqrt(3) / 2, obs.y + size / 2); // Bottom left
             ctx.closePath();
-            ctx.fillStyle = TRIANGLE_OBSTACLE_COLOR;
-            ctx.shadowColor = TRIANGLE_OBSTACLE_COLOR;
+            ctx.fillStyle = flashColor || TRIANGLE_OBSTACLE_COLOR;
+            ctx.shadowColor = flashColor || TRIANGLE_OBSTACLE_COLOR;
             ctx.shadowBlur = 8;
             ctx.fill();
 
@@ -706,6 +968,35 @@ function drawObstacles() {
                 ctx.restore();
             }
         }
+        
+        // デバッグ用：当たり判定の表示
+        if (showHitbox) {
+            ctx.strokeStyle = "#00ff00";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]); // 点線
+            ctx.beginPath();
+            
+            if (obs.type === "circle") {
+                ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+            } else if (obs.type === "rect") {
+                ctx.rect(
+                    obs.x - obs.width/2,
+                    obs.y - obs.height/2,
+                    obs.width,
+                    obs.height
+                );
+            } else if (obs.type === "triangle") {
+                // 三角形の頂点を描画
+                ctx.moveTo(obs.x, obs.y - obs.size);
+                ctx.lineTo(obs.x + obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2);
+                ctx.lineTo(obs.x - obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2);
+                ctx.closePath();
+            }
+            
+            ctx.stroke();
+            ctx.setLineDash([]); // 点線を解除
+        }
+        
         ctx.restore();
     }
     // 赤玉の小玉も描画
@@ -717,6 +1008,18 @@ function drawObstacles() {
         ctx.shadowColor = "#a00";
         ctx.shadowBlur = 6;
         ctx.fill();
+        
+        // デバッグ用：当たり判定の表示
+        if (showHitbox) {
+            ctx.strokeStyle = "#ffff00";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]); // 細かい点線
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, RED_BULLET_RADIUS, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]); // 点線を解除
+        }
+        
         ctx.restore();
     }
 }
@@ -817,8 +1120,25 @@ function checkCollision(player, obs) {
     return false; // その他の障害物タイプ（全て処理済みだが念のため）
 }
 
+// 落下アニメーション開始
+function startDeathAnimation() {
+    player.isDying = true;
+    player.deathVy = player.deathInitialVy; // 上向きの初期速度を設定
+    // 落下効果音を再生
+    audioManager.playSe('fall');
+}
+
 
 function animate() {
+    // BGM制御
+    if (gameState === "title" && audioManager.currentBgm !== audioManager.bgm.title) {
+        audioManager.playBgm('title');
+    } else if (gameState === "playing" && audioManager.currentBgm !== audioManager.bgm.game) {
+        audioManager.playBgm('game');
+    } else if (gameState === "gameover") {
+        audioManager.playGameoverBgm(); // 一回のみ再生
+    }
+    
     // ゲーム状態による分岐
     if (gameState === "title") {
         // タイトル画面（高度・背景・障害物は動かさない）
@@ -1015,12 +1335,35 @@ function animate() {
         meteors = meteors.filter(m => m.y - m.radius < canvas.height + 50);
 
         // プレイヤー操作
-        if (keyLeft) player.vx = -6;
-        else if (keyRight) player.vx = 6;
-        else player.vx *= 0.7;
-        player.x += player.vx;
-        if (player.x - player.radius < 0) player.x = player.radius;
-        if (player.x + player.radius > canvas.width) player.x = canvas.width - player.radius;
+        if (!player.isDying) {
+            if (keyLeft) {
+                player.vx = -6;
+                player.isMoving = true;
+                player.facingLeft = true;
+            } else if (keyRight) {
+                player.vx = 6;
+                player.isMoving = true;
+                player.facingLeft = false;
+            } else {
+                player.vx *= 0.7;
+                player.isMoving = false;
+            }
+            player.x += player.vx;
+            if (player.x - player.radius < 0) player.x = player.radius;
+            if (player.x + player.radius > canvas.width) player.x = canvas.width - player.radius;
+        } else {
+            // 落下アニメーション中
+            player.deathVy += player.deathGravity;
+            player.y += player.deathVy;
+            
+            // 画面下に落ちたらゲームオーバー状態にする
+            if (player.y > canvas.height + 100) {
+                isGameOver = true;
+                gameState = "gameover";
+                currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
+                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
+            }
+        }
 
         // 障害物生成
         if (frameCount % OBSTACLE_INTERVAL === 0) {
@@ -1083,6 +1426,13 @@ function animate() {
                 obs.shootTimer++;
                 if (!obs.hasShot && obs.shootTimer > 40) { // 40フレーム後に1回だけ
                     obs.hasShot = true;
+                    // フラッシュエフェクトを開始
+                    obs.flashTimer = 10; // 10フレーム持続
+                    obs.flashDuration = 10;
+                    
+                    // 効果音再生
+                    audioManager.playSe('circle');
+                    
                     for (let i = 0; i < 4; i++) {
                         let angle = Math.random() * Math.PI * 2 + i * Math.PI / 2;
                         redBullets.push({
@@ -1092,6 +1442,11 @@ function animate() {
                             vy: Math.sin(angle) * RED_BULLET_SPEED
                         });
                     }
+                }
+                
+                // フラッシュエフェクトタイマーを更新
+                if (obs.flashTimer !== undefined && obs.flashTimer > 0) {
+                    obs.flashTimer--;
                 }
             }
             // 青棒: 一定間隔で左右に伸び縮み
@@ -1108,6 +1463,7 @@ function animate() {
                 let stretch = Math.sin(obs.stretchTimer / 30 * Math.PI) * 0.5 + 1;
                 obs.width = OBSTACLE_WIDTH * stretch;
                 obs.height = OBSTACLE_HEIGHT; // 高さは固定
+
             }
             // 緑の三角: 自機に向かって衝撃波を放つ
             else if (obs.type === "triangle") {
@@ -1116,6 +1472,13 @@ function animate() {
                 if (!obs.hasShotShockwave && obs.shootTimer >= TRIANGLE_SHOOT_INTERVAL) {
                     obs.shootTimer = 0; // タイマーをリセット
                     obs.hasShotShockwave = true; // 衝撃波を放ったことを記録
+
+                    // フラッシュエフェクトを開始
+                    obs.flashTimer = 12; // 12フレーム持続
+                    obs.flashDuration = 12;
+
+                    // 効果音再生
+                    audioManager.playSe('triangle');
 
                     // プレイヤーへの角度を計算
                     let angleToPlayer = Math.atan2(player.y - obs.y, player.x - obs.x);
@@ -1138,12 +1501,24 @@ function animate() {
                 for (let i = obs.shockwaves.length - 1; i >= 0; i--) {
                     let sw = obs.shockwaves[i];
                     sw.currentRadius += sw.speed * speedMultiplier;
-                    sw.alpha -= sw.fadeSpeed * speedMultiplier;
+                    
+                    // 当たり判定がある間は通常の透明化速度、なくなったら高速化
+                    if (sw.alpha > SHOCKWAVE_MIN_ALPHA_FOR_COLLISION) {
+                        sw.alpha -= sw.fadeSpeed * speedMultiplier;
+                    } else {
+                        // 当たり判定がなくなったら透明化を3倍速にする
+                        sw.alpha -= sw.fadeSpeed * speedMultiplier * 3;
+                    }
 
                     // 最大半径のチェックを削除し、アルファ値のみで消滅を判断
                     if (sw.alpha <= 0) {
                         obs.shockwaves.splice(i, 1); // 透明になった衝撃波を削除
                     }
+                }
+                
+                // フラッシュエフェクトタイマーを更新
+                if (obs.flashTimer !== undefined && obs.flashTimer > 0) {
+                    obs.flashTimer--;
                 }
             }
         }
@@ -1159,21 +1534,23 @@ function animate() {
             b.y > -RED_BULLET_RADIUS && b.y < canvas.height + RED_BULLET_RADIUS
         );
 
-        // 衝突判定
-        for (let obs of obstacles) {
-            if (checkCollision(player, obs)) {
-                isGameOver = true;
-                gameState = "gameover";
-                currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
-                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
-            }
-            // 三角の衝撃波との衝突判定
-            if (obs.type === "triangle") {
-                for (let sw of obs.shockwaves) {
-                    // 衝撃波の不透明度が一定値より高い場合のみ当たり判定を行う
-                    if (sw.alpha > SHOCKWAVE_MIN_ALPHA_FOR_COLLISION) {
-                        let dx = player.x - sw.x;
-                        let dy = player.y - sw.y;
+        // 衝突判定（落下中でない場合のみ）
+        if (!player.isDying) {
+            for (let obs of obstacles) {
+                if (checkCollision(player, obs)) {
+                    // 効果音再生
+                    audioManager.playSe('hit');
+                    // 落下アニメーション開始
+                    startDeathAnimation();
+                    break; // 衝突時は障害物ループを抜ける
+                }
+                // 三角の衝撃波との衝突判定
+                if (obs.type === "triangle") {
+                    for (let sw of obs.shockwaves) {
+                        // 衝撃波の不透明度が一定値より高い場合のみ当たり判定を行う
+                        if (sw.alpha > SHOCKWAVE_MIN_ALPHA_FOR_COLLISION) {
+                            let dx = player.x - sw.x;
+                            let dy = player.y - sw.y;
                         let dist = Math.sqrt(dx * dx + dy * dy);
 
                         // プレイヤーが衝撃波の「厚み」の範囲内にいるかチェック
@@ -1197,28 +1574,33 @@ function animate() {
                             }
 
                             if (isInArc) {
-                                isGameOver = true;
-                                gameState = "gameover";
-                                currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
-                                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
-                                break; // この障害物の他の衝撃波をチェックする必要はない
+                                // 効果音再生
+                                audioManager.playSe('hit');
+                                // 落下アニメーション開始
+                                startDeathAnimation();
+                                break; // 衝撃波ループを抜ける
                             }
                         }
                     }
                 }
             }
         }
-        // 赤玉小玉との衝突判定
-        for (let b of redBullets) {
-            let dx = player.x - b.x;
-            let dy = player.y - b.y;
-            if (dx*dx + dy*dy < (player.radius + RED_BULLET_RADIUS) * (player.radius + RED_BULLET_RADIUS)) {
-                isGameOver = true;
-                gameState = "gameover";
-                currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
-                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
+        // 赤玉小玉との衝突判定（落下中でない場合のみ）
+        if (!player.isDying) {
+            for (let b of redBullets) {
+                let dx = player.x - b.x;
+                let dy = player.y - b.y;
+                if (dx*dx + dy*dy < (player.radius + RED_BULLET_RADIUS) * (player.radius + RED_BULLET_RADIUS)) {
+                    // 効果音再生
+                    audioManager.playSe('hit');
+                    // 落下アニメーション開始
+                    startDeathAnimation();
+                    break; // 衝突時は赤玉ループを抜ける
+                }
             }
         }
+
+    } // gameState === "playing" の終了
 
         if (offsetSky > maxAltitude) {
             maxAltitude = offsetSky;
@@ -1234,7 +1616,7 @@ function animate() {
         gameState === "playing"  // showMaxAltitude
     );
     drawObstacles();
-    if (gameState === "playing") {
+    if (gameState === "playing" || gameState === "gameover") {
         drawPlayer();
     }
     // 歯車アイコンはHTMLで描画されるため、ここでは描画しない
@@ -1343,7 +1725,12 @@ const userNameInput = document.getElementById('userNameInput');
 const displayUserId = document.getElementById('displayUserId');
 const closeOptionsButton = document.getElementById('closeOptionsButton');
 const applyOptionsButton = document.getElementById('applyOptionsButton');
+const howToPlayButton = document.getElementById('howToPlayButton');
 const gearIconHtml = document.getElementById('gear-icon-html');
+
+// 遊び方ポップアップ関連のHTML要素
+const howToPlayPopupOverlay = document.getElementById('how-to-play-popup-overlay');
+const closeHowToPlayButton = document.getElementById('closeHowToPlayButton');
 
 // ランキング関連のHTML要素
 const rankingPopupOverlay = document.getElementById('ranking-popup-overlay');
@@ -1363,6 +1750,7 @@ function toggleOptionsPopup() {
         optionsPopupOverlay.classList.add('show'); // ポップアップを表示
         // オプションポップアップ表示中は他のポップアップを閉じる
         rankingPopupOverlay.classList.remove('show');
+        howToPlayPopupOverlay.classList.remove('show');
     } else {
         optionsPopupOverlay.classList.remove('show'); // ポップアップを非表示
 
@@ -1393,8 +1781,18 @@ async function toggleRankingPopup() {
         rankingPopupOverlay.classList.remove('show'); // ポップアップを非表示
     } else {
         optionsPopupOverlay.classList.remove('show'); // 他のポップアップを閉じる
+        howToPlayPopupOverlay.classList.remove('show');
         rankingPopupOverlay.classList.add('show'); // ポップアップを表示
         await displayRanking(); // ランキングデータを取得して表示
+    }
+}
+
+// 遊び方ポップアップの表示/非表示を切り替える関数
+function toggleHowToPlayPopup() {
+    if (howToPlayPopupOverlay.classList.contains('show')) {
+        howToPlayPopupOverlay.classList.remove('show'); // ポップアップを非表示
+    } else {
+        howToPlayPopupOverlay.classList.add('show'); // ポップアップを表示
     }
 }
 
@@ -1463,6 +1861,15 @@ if (applyOptionsButton) {
     });
 }
 
+// 遊び方ボタンのイベントリスナー
+if (howToPlayButton) {
+    howToPlayButton.addEventListener('click', toggleHowToPlayPopup);
+}
+
+if (closeHowToPlayButton) {
+    closeHowToPlayButton.addEventListener('click', toggleHowToPlayPopup);
+}
+
 // ランキングアイコンとボタンのイベントリスナー
 if (rankingIconHtml) {
     rankingIconHtml.addEventListener('click', toggleRankingPopup);
@@ -1472,12 +1879,108 @@ if (closeRankingButton) {
     closeRankingButton.addEventListener('click', toggleRankingPopup);
 }
 
+// 音量調節UIの要素を取得
+const bgmVolumeSlider = document.getElementById('bgmVolumeSlider');
+const seVolumeSlider = document.getElementById('seVolumeSlider');
+const bgmMuteButton = document.getElementById('bgmMuteButton');
+const seMuteButton = document.getElementById('seMuteButton');
+const bgmVolumeValue = document.getElementById('bgmVolumeValue');
+const seVolumeValue = document.getElementById('seVolumeValue');
+
+// 音量調節UIの初期化
+function initVolumeControls() {
+    if (bgmVolumeSlider && seVolumeSlider) {
+        // スライダーの初期値を設定
+        bgmVolumeSlider.value = Math.round(audioManager.volumes.bgm * 100);
+        seVolumeSlider.value = Math.round(audioManager.volumes.se * 100);
+        
+        // 表示値を更新
+        if (bgmVolumeValue) bgmVolumeValue.textContent = `${Math.round(audioManager.volumes.bgm * 100)}%`;
+        if (seVolumeValue) seVolumeValue.textContent = `${Math.round(audioManager.volumes.se * 100)}%`;
+        
+        // ミュートボタンの状態を更新
+        updateMuteButtonState();
+        
+        // イベントリスナーを追加
+        bgmVolumeSlider.addEventListener('input', (e) => {
+            const volume = parseInt(e.target.value) / 100;
+            audioManager.setBgmVolume(volume);
+            if (bgmVolumeValue) bgmVolumeValue.textContent = `${e.target.value}%`;
+            updateMuteButtonState();
+        });
+        
+        seVolumeSlider.addEventListener('input', (e) => {
+            const volume = parseInt(e.target.value) / 100;
+            audioManager.setSeVolume(volume);
+            if (seVolumeValue) seVolumeValue.textContent = `${e.target.value}%`;
+            updateMuteButtonState();
+        });
+    }
+    
+    if (bgmMuteButton) {
+        bgmMuteButton.addEventListener('click', () => {
+            audioManager.toggleBgmMute();
+            updateMuteButtonState();
+        });
+    }
+    
+    if (seMuteButton) {
+        seMuteButton.addEventListener('click', () => {
+            audioManager.toggleSeMute();
+            updateMuteButtonState();
+        });
+    }
+}
+
+// ミュートボタンの状態を更新
+function updateMuteButtonState() {
+    if (bgmMuteButton) {
+        if (audioManager.muted.bgm) {
+            bgmMuteButton.classList.add('muted');
+            bgmMuteButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm5.5 9L21 15.5l2.5-2.5L21 10.5z"/>
+                </svg>
+            `;
+        } else {
+            bgmMuteButton.classList.remove('muted');
+            bgmMuteButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                </svg>
+            `;
+        }
+    }
+    
+    if (seMuteButton) {
+        if (audioManager.muted.se) {
+            seMuteButton.classList.add('muted');
+            seMuteButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm5.5 9L21 15.5l2.5-2.5L21 10.5z"/>
+                </svg>
+            `;
+        } else {
+            seMuteButton.classList.remove('muted');
+            seMuteButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                </svg>
+            `;
+        }
+    }
+}
+
 
 // アプリ起動時にゲームを初期化
 async function initGame() {
     userId = getOrCreateUserId(); // ユーザーIDを初期化
     userName = getOrCreateUserName(); // ユーザー名を初期化
     maxAltitude = newuser ? 0 : await loadMaxAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
+    
+    // 音量調節UIを初期化
+    initVolumeControls();
+    
     animate(); // アニメーションループを開始
 }
 

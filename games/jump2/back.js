@@ -352,7 +352,7 @@ window.onload = function() {
 
     function animate() {
         drawBackground();
-        sky += 500; // 空の動き(デフォ10)
+        sky += 10; // 空の動き(デフォ10)
 
         // 山・地面のy座標はskyに比例して動くので個別のy更新は不要
 

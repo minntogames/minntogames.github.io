@@ -265,6 +265,88 @@
                 display: flex; /* モバイル版で表示 */
             }
         }
+
+        /* 音量調節のスタイル */
+        .audio-controls {
+            border-top: 1px solid #ddd;
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mute-button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .mute-button:hover {
+            background: #45a049;
+        }
+
+        .mute-button.muted {
+            background: #f44336;
+        }
+
+        .mute-button.muted svg {
+            opacity: 0.6;
+        }
+
+        .volume-label {
+            width: 60px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .volume-value {
+            width: 45px;
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+
         </style>
         <!-- Font Awesome for icons -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -299,7 +381,72 @@
                     <div class="text-lg text-left mb-2">ユーザーID: <span id="displayUserId"></span></div>
                     <div class="text-lg text-left mb-2">名前:</div>
                     <input type="text" id="userNameInput" class="popup-input" placeholder="名前を入力">
+                    
+                    <!-- 音量調節セクション -->
+                    <div class="audio-controls mb-4">
+                        <h3 class="text-lg font-semibold mb-3">音量設定</h3>
+                        
+                        <!-- BGM音量 -->
+                        <div class="volume-control mb-3">
+                            <div class="flex items-center gap-2 mb-1">
+                                <button id="bgmMuteButton" class="mute-button" title="BGMミュート">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                                    </svg>
+                                </button>
+                                <label class="volume-label">BGM</label>
+                            </div>
+                            <input type="range" id="bgmVolumeSlider" class="volume-slider" min="0" max="100" value="60">
+                            <span id="bgmVolumeValue" class="volume-value">60%</span>
+                        </div>
+                        
+                        <!-- SE音量 -->
+                        <div class="volume-control mb-3">
+                            <div class="flex items-center gap-2 mb-1">
+                                <button id="seMuteButton" class="mute-button" title="SE ミュート">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                                    </svg>
+                                </button>
+                                <label class="volume-label">効果音</label>
+                            </div>
+                            <input type="range" id="seVolumeSlider" class="volume-slider" min="0" max="100" value="70">
+                            <span id="seVolumeValue" class="volume-value">70%</span>
+                        </div>
+                    </div>
+                    
+                    <button id="howToPlayButton" class="popup-button" style="background: #28a745; margin-right: 10px;">遊び方</button>
                     <button id="applyOptionsButton" class="popup-button">適用</button>
+                </div>
+            </div>
+
+            <!-- 遊び方ポップアップ (HTML要素として) -->
+            <div id="how-to-play-popup-overlay" class="popup-overlay">
+                <div class="popup-content" style="max-width: 500px;">
+                    <button id="closeHowToPlayButton" class="popup-close-button">×</button>
+                    <h2 class="text-2xl font-bold mb-4">遊び方</h2>
+                    <div class="text-left text-base space-y-3">
+                        <div><strong>🎯 目標:</strong><br>ねこちゃんを操作して、できるだけ高い場所まで到達しよう！</div>
+                        
+                        <div><strong>🎮 操作方法:</strong><br>
+                        • PCの場合: 左右の矢印キー<br>
+                        • スマホの場合: 画面下の左右ボタン</div>
+                        
+                        <div><strong>⚠️ 障害物:</strong><br>
+                        • <span style="color: #d33;">🔴 赤い円</span>: 4方向に小玉を発射<br>
+                        • <span style="color: #39f;">🔵 青い棒</span>: 左右に伸び縮み<br>
+                        • <span style="color: #00a000;">🔺 緑の三角</span>: プレイヤーに向かって衝撃波</div>
+
+                        <strong>⚠️ これらの障害物は風船に当たるとアウトだぞ！</strong>
+                        
+                        <div><strong>💡 コツ:</strong><br>
+                        障害物が白く光った瞬間は攻撃の合図！<br>
+                        タイミングを見計らって避けよう。</div>
+                        
+                        <div class="text-center mt-4">
+                            <strong>頑張って伝説のにぼし星を目指そう！🌟</strong>
+                        </div>
+                    </div>
                 </div>
             </div>
 
