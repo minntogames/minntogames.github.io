@@ -565,6 +565,8 @@ let gameState = "title"; // "title", "playing", "gameover"
 let initialMaxAltitude = 0; // ゲーム開始時の最高到達点を保存する変数
 let currentReachedAltitude = 0; // ゲームオーバー時に到達した高度を保存する変数
 let userId; // ユーザーIDはinitGameで初期化
+let userName = "匿名さん"; // ユーザー名を保存する変数
+let newuser = false
 
 let maxAltitude = 0; // スプレッドシートから読み込むため、初期値は0
 
@@ -574,8 +576,36 @@ function getOrCreateUserId() {
     if (!id) {
         id = crypto.randomUUID(); // ユニークなIDを生成
         localStorage.setItem('game_user_id', id);
+        newuser = true
+
+        const formData = new URLSearchParams();
+        formData.append("score", 0); // 現在の到達高度
+        formData.append("altitude", 0); // 最高到達点
+        formData.append("userId", id);
+        formData.append("userName", "匿名さん"); // ユーザー名を追加
+
+        fetch(gasWebAppUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => console.log("成功:", data))
+        .catch(err => console.error("エラー:", err));
     }
     return id;
+}
+
+// ユーザー名の取得または初期化
+function getOrCreateUserName() {
+    let name = localStorage.getItem('game_user_name');
+    if (!name) {
+        name = "匿名さん"; // 初期値
+        localStorage.setItem('game_user_name', name);
+    }
+    return name;
 }
 
 // 最高到達点の読込（スプレッドシートDB使用）
@@ -583,7 +613,7 @@ async function loadMaxAltitudeFromSheet(userId) {
     try {
         const data = await fetchUData(userId);
         if (data && data.altitude !== undefined) {
-            return parseFloat(data.ltitude);
+            return parseFloat(data.altitude); // プロパティ名を修正
         }
         return 0; // データがない場合は0を返す
     } catch (error) {
@@ -591,8 +621,6 @@ async function loadMaxAltitudeFromSheet(userId) {
         return 0; // エラー時も0を返す
     }
 }
-
-// 最高到達点の保存はsendScoreToGoogleSheetに統合されるため、saveMaxAltitudeは削除
 
 function startGame() {
     // 初期化
@@ -813,6 +841,8 @@ function animate() {
         ctx.strokeText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, 460);
         ctx.fillText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, 460);
         ctx.restore();
+        if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
+        if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
         requestAnimationFrame(animate);
         return;
     }
@@ -858,12 +888,17 @@ function animate() {
             ctx.fillText("新記録！", canvas.width/2, canvas.height/2 + 180);
         }
         ctx.restore();
+        if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
+        if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
         requestAnimationFrame(animate);
         return;
     }
 
     // プレイ中のみ高度・背景・障害物を動かす
     if (gameState === "playing") {
+        if (gearIconHtml) gearIconHtml.style.display = 'none'; // 歯車アイコンを非表示
+        if (rankingIconHtml) rankingIconHtml.style.display = 'none'; // ランキングアイコンを非表示
+
         offsetSky += 1 * speedMultiplier;
         offsetMountFar += 0.03 * speedMultiplier;
         offsetMount += 0.1 * speedMultiplier;
@@ -1130,7 +1165,7 @@ function animate() {
                 isGameOver = true;
                 gameState = "gameover";
                 currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
-                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId); // Google Sheetにデータを送信
+                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
             }
             // 三角の衝撃波との衝突判定
             if (obs.type === "triangle") {
@@ -1165,7 +1200,7 @@ function animate() {
                                 isGameOver = true;
                                 gameState = "gameover";
                                 currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
-                                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId); // Google Sheetにデータを送信
+                                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
                                 break; // この障害物の他の衝撃波をチェックする必要はない
                             }
                         }
@@ -1181,7 +1216,7 @@ function animate() {
                 isGameOver = true;
                 gameState = "gameover";
                 currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
-                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId); // Google Sheetにデータを送信
+                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
             }
         }
 
@@ -1202,23 +1237,29 @@ function animate() {
     if (gameState === "playing") {
         drawPlayer();
     }
+    // 歯車アイコンはHTMLで描画されるため、ここでは描画しない
+    // オプションポップアップもHTMLで描画されるため、ここでは描画しない
     requestAnimationFrame(animate);
 }
-
+const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnIFelFfJmUuWD1ywIhqvCtYXdOvX-MKUZVYb3wEowVmeOMrzm7L/exec'; 
+//v22
 // Google Sheetにスコアを送信する関数
-function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId) { // 引数名を明確化
-    // TODO: ここにデプロイしたGoogle Apps ScriptのウェブアプリのURLを設定してください
-    const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbw1mKSeVdMAR85XRuw4mNKIGRsgizP9YROaBhpmkEULXgX-bYCQgevsnVTKY20WYZFU/exec'; // ここをデプロイしたGASウェブアプリのURLに置き換えてください！
+function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userName) { // 引数にuserNameを追加
 
     if (gasWebAppUrl === 'YOUR_DEPLOYED_GAS_WEB_APP_URL_HERE') {
         console.warn("Google Apps ScriptのウェブアプリURLが設定されていません。データを送信できません。");
         return;
     }
 
+    console.log(currentScore, maxReachedAltitude, userId, userName)
+
     const formData = new URLSearchParams();
     formData.append("score", currentScore); // 現在の到達高度
     formData.append("altitude", maxReachedAltitude); // 最高到達点
     formData.append("userId", userId);
+    formData.append("userName", userName); // ユーザー名を追加
+    formData.append("nightmare", false); // ナイトメアモードが解禁されているか
+    formData.append("n-altitude", maxReachedAltitude); // ナイトメアモードの最高到達点
 
     fetch(gasWebAppUrl, {
     method: "POST",
@@ -1235,9 +1276,8 @@ function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId) { // �
 //これはげっと関数
 async function fetchUData(userId) {
   try {
-    const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbw1mKSeVdMAR85XRuw4mNKIGRsgizP9YROaBhpmkEULXgX-bYCQgevsnVTKY20WYZFU/exec'; // GASのURLに置き換えてください
 
-    const url = new URL(GAS_WEBAPP_URL);
+    const url = new URL(gasWebAppUrl);
     url.searchParams.append("userId", userId);
 
     const response = await fetch(url.toString(), {
@@ -1265,10 +1305,179 @@ async function fetchUData(userId) {
   }
 }
 
+//全データ取得関数
+async function AllFetchData() {
+    try {
+        const response = await fetch(gasWebAppUrl+"?mode=fetchAll", { // response変数が定義されていなかったので追加
+            method: "GET",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTPエラー: ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        if (json.result === "success") {
+            console.log("取得データ:", json.data);
+            return json.data;
+        } else {
+            console.warn("取得失敗:", json.message);
+            return null;
+        }
+    } catch (err) {
+        console.error("通信エラー:", err);
+    }
+}
+
+// オプションポップアップ関連の変数
+let showOptionsPopup = false;
+let tempUserName = ""; // ポップアップ表示中の一時的なユーザー名
+
+// HTML要素の参照
+const optionsPopupOverlay = document.getElementById('options-popup-overlay');
+const userNameInput = document.getElementById('userNameInput');
+const displayUserId = document.getElementById('displayUserId');
+const closeOptionsButton = document.getElementById('closeOptionsButton');
+const applyOptionsButton = document.getElementById('applyOptionsButton');
+const gearIconHtml = document.getElementById('gear-icon-html');
+
+// ランキング関連のHTML要素
+const rankingPopupOverlay = document.getElementById('ranking-popup-overlay');
+const rankingList = document.getElementById('rankingList');
+const closeRankingButton = document.getElementById('closeRankingButton');
+const rankingIconHtml = document.getElementById('ranking-icon-html');
+
+
+// オプションポップアップの表示/非表示を切り替える関数
+function toggleOptionsPopup() {
+    showOptionsPopup = !showOptionsPopup;
+
+    if (showOptionsPopup) {
+        tempUserName = userName; // 現在のユーザー名を一時変数にコピー
+        userNameInput.value = tempUserName; // 入力欄に表示
+        displayUserId.textContent = userId; // ユーザーIDを表示
+        optionsPopupOverlay.classList.add('show'); // ポップアップを表示
+        // オプションポップアップ表示中は他のポップアップを閉じる
+        rankingPopupOverlay.classList.remove('show');
+    } else {
+        optionsPopupOverlay.classList.remove('show'); // ポップアップを非表示
+
+        const formData = new URLSearchParams();
+        formData.append("userId", userId);
+        formData.append("userName", userName); // ユーザー名を追加
+
+        console.log(userId, userName)
+
+        fetch(gasWebAppUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => console.log("成功:", data))
+        .catch(err => console.error("エラー:", err));
+
+        // ゲームを再開するロジック (animate関数内で描画を制御)
+    }
+}
+
+// ランキングポップアップの表示/非表示を切り替える関数
+async function toggleRankingPopup() {
+    if (rankingPopupOverlay.classList.contains('show')) {
+        rankingPopupOverlay.classList.remove('show'); // ポップアップを非表示
+    } else {
+        optionsPopupOverlay.classList.remove('show'); // 他のポップアップを閉じる
+        rankingPopupOverlay.classList.add('show'); // ポップアップを表示
+        await displayRanking(); // ランキングデータを取得して表示
+    }
+}
+
+// ランキングデータを取得して表示する関数
+async function displayRanking() {
+    rankingList.innerHTML = '<li>ランキングを読み込み中...</li>'; // ロード中メッセージ
+
+    try {
+        const Data = await AllFetchData();
+        if (Data && Array.isArray(Data)) {
+            // スコア（altitude）で降順にソート
+
+            Data.sort((a, b) => (parseFloat(b.altitude) || 0) - (parseFloat(a.altitude) || 0))
+            const allData = Data.filter(user => user.altitude !== 0); // ユーザー名と高度が存在するデータのみをフィルタリング
+
+
+            console.table(allData); // デバッグ用に全データを表示
+
+            rankingList.innerHTML = ''; // リストをクリア
+
+            if (allData.length === 0) {
+                rankingList.innerHTML = '<li>まだランキングデータがありません。</li>';
+                return;
+            }
+
+            allData.forEach((data, index) => {
+                const listItem = document.createElement('li');
+                const rank = index + 1;
+                const userName = data.userName || '匿名さん';
+                const altitude = Math.floor(parseFloat(data.altitude) || 0);
+
+                if (altitude === 0) return; // 高度が0未満のデータは表示しない
+                if (rank > 100) return; // 上位100件のみ表示
+                console.log(altitude === 0)
+
+                listItem.innerHTML = `
+                    <span>${rank}. ${userName}</span>
+                    <span>${altitude} m</span>
+                `;
+                rankingList.appendChild(listItem);
+            });
+        } else {
+            rankingList.innerHTML = '<li>ランキングデータの取得に失敗しました。</li>';
+        }
+    } catch (error) {
+        console.error("ランキングの表示中にエラーが発生しました:", error);
+        rankingList.innerHTML = '<li>ランキングの読み込み中にエラーが発生しました。</li>';
+    }
+}
+
+
+// イベントリスナーのセットアップ
+if (gearIconHtml) {
+    gearIconHtml.addEventListener('click', toggleOptionsPopup);
+}
+
+if (closeOptionsButton) {
+    closeOptionsButton.addEventListener('click', toggleOptionsPopup);
+}
+
+if (applyOptionsButton) {
+    applyOptionsButton.addEventListener('click', () => {
+        userName = userNameInput.value; // 名前を反映
+        localStorage.setItem('game_user_name', userName); // ローカルストレージに保存
+        toggleOptionsPopup(); // ポップアップを閉じる
+    });
+}
+
+// ランキングアイコンとボタンのイベントリスナー
+if (rankingIconHtml) {
+    rankingIconHtml.addEventListener('click', toggleRankingPopup);
+}
+
+if (closeRankingButton) {
+    closeRankingButton.addEventListener('click', toggleRankingPopup);
+}
+
+
 // アプリ起動時にゲームを初期化
 async function initGame() {
     userId = getOrCreateUserId(); // ユーザーIDを初期化
-    maxAltitude = await loadMaxAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
+    userName = getOrCreateUserName(); // ユーザー名を初期化
+    maxAltitude = newuser ? 0 : await loadMaxAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
     animate(); // アニメーションループを開始
 }
 

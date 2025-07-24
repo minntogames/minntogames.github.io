@@ -1258,6 +1258,8 @@ function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userNa
     formData.append("altitude", maxReachedAltitude); // 最高到達点
     formData.append("userId", userId);
     formData.append("userName", userName); // ユーザー名を追加
+    formData.append("nightmare", false); // ナイトメアモードが解禁されているか
+    formData.append("n-altitude", maxReachedAltitude); // ナイトメアモードの最高到達点
 
     fetch(gasWebAppUrl, {
     method: "POST",
