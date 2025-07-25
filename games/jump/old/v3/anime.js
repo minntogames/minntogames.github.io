@@ -12,10 +12,7 @@ const audioManager = {
         circle: new Audio('src/se/circle.mp3'),
         triangle: new Audio('src/se/triangle.mp3'),
         hit: new Audio('src/se/hit.mp3'),
-        fall: new Audio('src/se/fall.mp3'),
-        clone: new Audio('src/se/clone.mp3'),
-        warning: new Audio('src/se/warning.mp3'),
-        fastfall: new Audio('src/se/fastfall.mp3')
+        fall: new Audio('src/se/fall.mp3')
     },
     currentBgm: null,
     gameoverPlayed: false, // ゲームオーバーBGMが再生されたかのフラグ
@@ -111,9 +108,6 @@ const audioManager = {
         this.se.triangle.volume = volume;
         this.se.hit.volume = volume;
         this.se.fall.volume = volume;
-        this.se.clone.volume = volume;
-        this.se.warning.volume = volume;
-        this.se.fastfall.volume = volume;
     },
     
     // BGM再生
@@ -182,26 +176,26 @@ let clouds = [
     { x: 650, y: 60, size: 30, speedX: 0.4, speedY: 0.07 }
 ];
 let extraClouds = []; // 追加雲用
-const maxExtraClouds = 10; // 最大追加雲数（20から10に削減）
+const maxExtraClouds = 20; // 最大追加雲数
 let frameCount = 0; // フレームカウンタ
-const cloudAddInterval = 300; // 何フレームごとに追加するか（200から300に変更でより間隔を空ける）
+const cloudAddInterval = 200; // 何フレームごとに追加するか
 
 function drawCloud(cloud) {
     ctx.save();
     ctx.globalAlpha = 0.7;
     ctx.fillStyle = "#fff";
-    // 影効果を削除して軽量化
     ctx.beginPath();
     ctx.ellipse(cloud.x, cloud.y, cloud.size, cloud.size * 0.6, 0, 0, Math.PI * 2);
     ctx.ellipse(cloud.x + cloud.size * 0.6, cloud.y + 5, cloud.size * 0.7, cloud.size * 0.4, 0, 0, Math.PI * 2);
     ctx.ellipse(cloud.x - cloud.size * 0.6, cloud.y + 8, cloud.size * 1, cloud.size * 1, 0, 0, Math.PI * 2);
+    ctx.closePath();
     ctx.fill();
     ctx.globalAlpha = 1.0;
     ctx.restore();
 }
 
 let stars = [];
-const STAR_COUNT = 50; // 200から50に削減
+const STAR_COUNT = 200;
 for (let i = 0; i < STAR_COUNT; i++) {
     stars.push({
         x: Math.random() * 600,
@@ -215,15 +209,14 @@ for (let i = 0; i < STAR_COUNT; i++) {
 function drawStars(alpha) {
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "#fff";
-    ctx.shadowColor = "#fff";
-    
     for (let star of stars) {
-        // キラキラ点滅の計算を簡略化
+        // キラキラ点滅
         let blink = 0.7 + 0.3 * Math.sin(performance.now() * star.speed + star.phase);
-        ctx.shadowBlur = 4 * blink; // shadowBlurを軽減
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.r * blink, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 8 * blink;
         ctx.fill();
     }
     ctx.globalAlpha = 1.0;
@@ -360,37 +353,47 @@ let lastPlanetColor = { r: 10, g: 10, b: 24 }; // 宇宙色初期値
 
 // 隕石設定
 let meteors = [];
-const METEOR_MAX = 3; // 5から3に削減
+const METEOR_MAX = 5;
 const METEOR_MIN_RADIUS = 30;
-const METEOR_MAX_RADIUS = 80; // 100から80に削減（描画負荷軽減）
+const METEOR_MAX_RADIUS = 100;
 const METEOR_FALL_SPEED_MIN = 0.1;
 const METEOR_FALL_SPEED_MAX = 0.2;
 const METEOR_COLORS = ["#444", "#222", "#5a3a1a", "#2a1a0a", "#333", "#2d2d2d"];
 
 function drawMeteor(m) {
     ctx.save();
-    // より簡単な円形に変更（多角形計算を削除）
+    // 歪な形状（ノイズ付き多角形）
     ctx.beginPath();
-    ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+    let sides = Math.floor(Math.random() * 3) + 7; // 7〜9角形
+    let angleOffset = Math.random() * Math.PI * 2;
+    for (let i = 0; i < sides; i++) {
+        let angle = angleOffset + (Math.PI * 2 / sides) * i;
+        let noise = 0.7 + Math.random() * 0.5;
+        let r = m.radius * noise;
+        let px = m.x + Math.cos(angle) * r;
+        let py = m.y + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
     ctx.fillStyle = m.color;
     ctx.shadowColor = m.color;
-    ctx.shadowBlur = 5; // shadowBlurを軽減
+    ctx.shadowBlur = 10;
     ctx.globalAlpha = 0.92;
     ctx.fill();
 
-    // 模様を簡素化
+    // 〇模様
     ctx.save();
     ctx.clip();
-    ctx.globalAlpha = 0.3; // より薄く
+    ctx.globalAlpha = 0.5;
     ctx.fillStyle = "#fff";
-    // 模様の数を削減
-    for (let i = 0; i < Math.max(2, Math.floor(m.radius / 15)); i++) {
+    for (let i = 0; i < Math.floor(m.radius / 7); i++) {
         let angle = Math.random() * Math.PI * 2;
-        let rr = Math.random() * (m.radius * 0.5);
+        let rr = Math.random() * (m.radius * 0.7);
         let dx = Math.cos(angle) * rr;
         let dy = Math.sin(angle) * rr;
         ctx.beginPath();
-        ctx.arc(m.x + dx, m.y + dy, Math.max(2, m.radius * 0.1), 0, Math.PI * 2);
+        ctx.arc(m.x + dx, m.y + dy, Math.max(3, m.radius * 0.13 * Math.random()), 0, Math.PI * 2);
         ctx.fill();
     }
     ctx.restore();
@@ -541,9 +544,7 @@ function drawBackground(offsetSky, offsetMount, offsetMountFar, groundLayers, cl
         ctx.fillStyle = "#222";
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 3;
-        const displayMaxAltitude = isNightmareMode ? nightmareMaxAltitude : maxAltitude;
-        const modeText = isNightmareMode ? " (ナイトメア)" : "";
-        let maxText = `最高到達点: ${Math.floor(displayMaxAltitude)} m${modeText}`;
+        let maxText = `最高到達点: ${Math.floor(maxAltitude)} m`;
         ctx.textAlign = "right";
         ctx.strokeText(maxText, ctx.canvas.width - 20, 40);
         ctx.fillText(maxText, ctx.canvas.width - 20, 40);
@@ -585,20 +586,13 @@ let obstacles = [];
 const OBSTACLE_RADIUS = 32;
 const OBSTACLE_WIDTH = 60;
 const OBSTACLE_HEIGHT = 24;
-const OBSTACLE_INTERVAL = 90; // フレームごと（80から90に変更で生成頻度を下げる）
-const NIGHTMARE_OBSTACLE_INTERVAL = 60; // ナイトメアモード専用の出現間隔（より高頻度）
+const OBSTACLE_INTERVAL = 80; // フレームごと
 const OBSTACLE_SPEED = 2; // 障害物の落下速度
 
 // 赤玉が飛ばす小玉
 let redBullets = [];
 const RED_BULLET_RADIUS = 10;
 const RED_BULLET_SPEED = 5;
-
-// 水色ひし形が放つミニひし形
-let diamondMinis = [];
-
-// 紫六角形が放つ紫玉
-let purpleBullets = [];
 
 // 新しい障害物タイプ: 緑の三角（衝撃波を放つ）
 const TRIANGLE_OBSTACLE_SIZE = 40;
@@ -607,30 +601,8 @@ const SHOCKWAVE_INITIAL_RADIUS = 40;
 const SHOCKWAVE_SPEED = 5; // 衝撃波の拡大速度
 const SHOCKWAVE_FADE_SPEED = 0.01; // 衝撃波の透明度減少速度（調整）
 const SHOCKWAVE_ARC_ANGLE = Math.PI / 6; // 衝撃波の扇の角度 (60度)
-const TRIANGLE_SHOOT_INTERVAL = 150; // 三角が衝撃波を放つ間隔（フレーム）（120から150に変更）
+const TRIANGLE_SHOOT_INTERVAL = 120; // 三角が衝撃波を放つ間隔（フレーム）
 const SHOCKWAVE_MIN_ALPHA_FOR_COLLISION = 0.3; // 衝撃波が当たり判定を持つ最低不透明度
-
-// 新しい障害物タイプ: オレンジ五角形（クローン能力）
-const PENTAGON_OBSTACLE_SIZE = 35;
-const PENTAGON_OBSTACLE_COLOR = "#ff8c00";
-const PENTAGON_CLONE_INTERVAL = 180; // クローンを作るまでの間隔（フレーム）
-
-// 新しい障害物タイプ: 水色ひし形（突進能力）
-const DIAMOND_OBSTACLE_SIZE = 32;
-const DIAMOND_OBSTACLE_COLOR = "#00bfff";
-const DIAMOND_DETECT_RANGE = 60; // プレイヤー検知範囲（横方向）
-const DIAMOND_WAIT_TIME = 60; // 検知後の待機時間（フレーム）
-const DIAMOND_RUSH_SPEED = 8; // 突進速度
-const DIAMOND_MINI_SIZE = 12; // ミニひし形のサイズ
-const DIAMOND_MINI_SPEED = 3; // ミニひし形の速度
-const DIAMOND_MINI_RANGE = 150; // ミニひし形の射程
-
-// 新しい障害物タイプ: 紫六角形（6方向弾幕）
-const HEXAGON_OBSTACLE_SIZE = 30;
-const HEXAGON_OBSTACLE_COLOR = "#8a2be2";
-const HEXAGON_SHOOT_INTERVAL = 120; // 弾を発射するまでの間隔（フレーム）
-const HEXAGON_BULLET_SPEED = 4; // 紫玉の速度
-const HEXAGON_BULLET_RADIUS = 8; // 紫玉の半径
 
 
 // キー操作
@@ -764,17 +736,13 @@ if (rightButton) {
 
 
 let gameState = "title"; // "title", "playing", "gameover"
-let isNightmareMode = false; // ナイトメアモード状態
-let nightmareUnlocked = false; // ナイトメアモード開放フラグ
 let initialMaxAltitude = 0; // ゲーム開始時の最高到達点を保存する変数
-let initialNightmareMaxAltitude = 0; // ゲーム開始時のナイトメアモード最高到達点を保存する変数
 let currentReachedAltitude = 0; // ゲームオーバー時に到達した高度を保存する変数
 let userId; // ユーザーIDはinitGameで初期化
 let userName = "匿名さん"; // ユーザー名を保存する変数
 let newuser = false
 
 let maxAltitude = 0; // スプレッドシートから読み込むため、初期値は0
-let nightmareMaxAltitude = 0; // ナイトメアモード最高到達点
 
 // デバッグ用：当たり判定表示フラグ
 let showHitbox = false; // trueにすると当たり判定が表示される
@@ -831,46 +799,6 @@ async function loadMaxAltitudeFromSheet(userId) {
     }
 }
 
-// ナイトメアモード最高到達点の読込（スプレッドシートDB使用）
-async function loadNightmareMaxAltitudeFromSheet(userId) {
-    try {
-        const data = await fetchUData(userId);
-        if (data && data['n-altitude'] !== undefined) {
-            return parseFloat(data['n-altitude']);
-        }
-        return 0; // データがない場合は0を返す
-    } catch (error) {
-        console.error("Failed to load nightmare max altitude from sheet:", error);
-        return 0; // エラー時も0を返す
-    }
-}
-
-// ナイトメアモードの開放状態をチェック
-async function checkNightmareUnlocked(userId) {
-    try {
-        const data = await fetchUData(userId);
-        if (data && data.nightmare !== undefined) {
-            return data.nightmare === true; // 文字列として保存されているため比較
-        }
-        return false; // データがない場合は未開放
-    } catch (error) {
-        console.error("Failed to check nightmare unlock status:", error);
-        return false; // エラー時は未開放
-    }
-}
-
-// ナイトメアモードを開放する
-async function unlockNightmareMode(userId) {
-    nightmareUnlocked = true;
-    
-    // モード切り替えボタンの状態を更新
-    updateModeToggleButton();
-    
-    // アンロック通知表示
-    console.log('ナイトメアモードが開放されました！');
-    alert('おめでとうございます！\n高度50,000mに到達し、ナイトメアモードが開放されました！');
-}
-
 function startGame() {
     // 初期化
     offsetSky = 0;
@@ -887,8 +815,6 @@ function startGame() {
     meteors = [];
     obstacles = [];
     redBullets = []; // 赤玉の小玉もリセット
-    diamondMinis = []; // ひし形ミニもリセット
-    purpleBullets = []; // 紫玉もリセット
     player.x = canvas.width / 2;
     player.vx = 0;
     player.isMoving = false;
@@ -904,7 +830,6 @@ function startGame() {
     // audioManagerのゲームオーバーフラグもリセット
     audioManager.gameoverPlayed = false;
     initialMaxAltitude = maxAltitude; // ゲーム開始時に現在の最高到達点を記録（スプレッドシートからロードされた値）
-    initialNightmareMaxAltitude = nightmareMaxAltitude; // ゲーム開始時のナイトメアモード最高到達点を記録
 }
 
 // プレイヤー描画
@@ -965,9 +890,8 @@ function drawPlayer() {
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
         ctx.fillStyle = player.color;
-        // 影効果を軽減してパフォーマンス向上
         ctx.shadowColor = "#fff";
-        ctx.shadowBlur = 8; // 16から8に軽減
+        ctx.shadowBlur = 16;
         ctx.fill();
     }
     
@@ -1004,7 +928,7 @@ function drawObstacles() {
             ctx.arc(obs.x, obs.y, obs.radius * scale, 0, Math.PI * 2);
             ctx.fillStyle = flashColor || "#d33";
             ctx.shadowColor = flashColor || "#a00";
-            ctx.shadowBlur = 4; // 8から4に軽減
+            ctx.shadowBlur = 8;
             ctx.fill();
         } else if (obs.type === "rect") {
             // 左右に伸び縮みする青棒
@@ -1017,7 +941,7 @@ function drawObstacles() {
             );
             ctx.fillStyle = flashColor || "#39f";
             ctx.shadowColor = flashColor || "#06f";
-            ctx.shadowBlur = 4; // 8から4に軽減
+            ctx.shadowBlur = 8;
             ctx.fill();
         } else if (obs.type === "triangle") {
             // 緑の三角
@@ -1029,7 +953,7 @@ function drawObstacles() {
             ctx.closePath();
             ctx.fillStyle = flashColor || TRIANGLE_OBSTACLE_COLOR;
             ctx.shadowColor = flashColor || TRIANGLE_OBSTACLE_COLOR;
-            ctx.shadowBlur = 4; // 8から4に軽減
+            ctx.shadowBlur = 8;
             ctx.fill();
 
             // 衝撃波を描画
@@ -1043,77 +967,6 @@ function drawObstacles() {
                 ctx.stroke();
                 ctx.restore();
             }
-        } else if (obs.type === "pentagon") {
-            // オレンジの五角形
-            ctx.beginPath();
-            let size = obs.size * scale;
-            
-            // 五角形の頂点を計算
-            for (let i = 0; i < 5; i++) {
-                let angle = (Math.PI * 2 / 5) * i - Math.PI / 2; // -90度から開始で上向き
-                let x = obs.x + Math.cos(angle) * size;
-                let y = obs.y + Math.sin(angle) * size;
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            ctx.closePath();
-            ctx.fillStyle = flashColor || PENTAGON_OBSTACLE_COLOR;
-            ctx.shadowColor = flashColor || PENTAGON_OBSTACLE_COLOR;
-            ctx.shadowBlur = 4;
-            ctx.fill();
-        } else if (obs.type === "diamond") {
-            // 水色のひし形
-            ctx.beginPath();
-            let size = obs.size * scale;
-            
-            // フラッシュエフェクトの処理
-            let shouldFlash = false;
-            if (obs.state === "detected" && obs.flashTimer > 0) {
-                shouldFlash = true;
-            } else if (obs.state === "rushing" && obs.flashTimer > 0) {
-                shouldFlash = true;
-            }
-            
-            // ひし形の頂点を計算（上、右、下、左）
-            ctx.moveTo(obs.x, obs.y - size); // 上
-            ctx.lineTo(obs.x + size, obs.y); // 右
-            ctx.lineTo(obs.x, obs.y + size); // 下
-            ctx.lineTo(obs.x - size, obs.y); // 左
-            ctx.closePath();
-            
-            if (shouldFlash) {
-                ctx.fillStyle = "#ffffff"; // フラッシュ時は白
-                ctx.shadowColor = "#ffffff";
-            } else {
-                ctx.fillStyle = flashColor || DIAMOND_OBSTACLE_COLOR;
-                ctx.shadowColor = flashColor || DIAMOND_OBSTACLE_COLOR;
-            }
-            ctx.shadowBlur = 4;
-            ctx.fill();
-        } else if (obs.type === "hexagon") {
-            // 紫の六角形
-            ctx.beginPath();
-            let size = obs.size * scale;
-            
-            // 六角形の頂点を計算
-            for (let i = 0; i < 6; i++) {
-                let angle = (Math.PI * 2 / 6) * i - Math.PI / 2; // -90度から開始で上向き
-                let x = obs.x + Math.cos(angle) * size;
-                let y = obs.y + Math.sin(angle) * size;
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            ctx.closePath();
-            ctx.fillStyle = flashColor || HEXAGON_OBSTACLE_COLOR;
-            ctx.shadowColor = flashColor || HEXAGON_OBSTACLE_COLOR;
-            ctx.shadowBlur = 4;
-            ctx.fill();
         }
         
         // デバッグ用：当たり判定の表示
@@ -1138,39 +991,6 @@ function drawObstacles() {
                 ctx.lineTo(obs.x + obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2);
                 ctx.lineTo(obs.x - obs.size * Math.sqrt(3) / 2, obs.y + obs.size / 2);
                 ctx.closePath();
-            } else if (obs.type === "pentagon") {
-                // 五角形の頂点を描画
-                for (let i = 0; i < 5; i++) {
-                    let angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
-                    let x = obs.x + Math.cos(angle) * obs.size;
-                    let y = obs.y + Math.sin(angle) * obs.size;
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
-                }
-                ctx.closePath();
-            } else if (obs.type === "diamond") {
-                // ひし形の頂点を描画
-                ctx.moveTo(obs.x, obs.y - obs.size); // 上
-                ctx.lineTo(obs.x + obs.size, obs.y); // 右
-                ctx.lineTo(obs.x, obs.y + obs.size); // 下
-                ctx.lineTo(obs.x - obs.size, obs.y); // 左
-                ctx.closePath();
-            } else if (obs.type === "hexagon") {
-                // 六角形の頂点を描画
-                for (let i = 0; i < 6; i++) {
-                    let angle = (Math.PI * 2 / 6) * i - Math.PI / 2; // -90度から開始で上向き
-                    let x = obs.x + Math.cos(angle) * obs.size;
-                    let y = obs.y + Math.sin(angle) * obs.size;
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
-                }
-                ctx.closePath();
             }
             
             ctx.stroke();
@@ -1186,7 +1006,7 @@ function drawObstacles() {
         ctx.arc(b.x, b.y, RED_BULLET_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = "#f66";
         ctx.shadowColor = "#a00";
-        ctx.shadowBlur = 3; // 6から3に軽減
+        ctx.shadowBlur = 6;
         ctx.fill();
         
         // デバッグ用：当たり判定の表示
@@ -1196,63 +1016,6 @@ function drawObstacles() {
             ctx.setLineDash([3, 3]); // 細かい点線
             ctx.beginPath();
             ctx.arc(b.x, b.y, RED_BULLET_RADIUS, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]); // 点線を解除
-        }
-        
-        ctx.restore();
-    }
-
-    // ミニひし形も描画
-    for (let mini of diamondMinis) {
-        ctx.save();
-        ctx.globalAlpha = mini.alpha; // 透明度を適用
-        ctx.beginPath();
-        let size = DIAMOND_MINI_SIZE / 2;
-        
-        // ミニひし形の頂点を計算
-        ctx.moveTo(mini.x, mini.y - size); // 上
-        ctx.lineTo(mini.x + size, mini.y); // 右
-        ctx.lineTo(mini.x, mini.y + size); // 下
-        ctx.lineTo(mini.x - size, mini.y); // 左
-        ctx.closePath();
-        
-        ctx.fillStyle = "#87ceeb"; // やや薄い水色
-        ctx.shadowColor = "#00bfff";
-        ctx.shadowBlur = 2;
-        ctx.fill();
-        
-        // デバッグ用：当たり判定の表示（透明度0.3以上の場合のみ）
-        if (showHitbox && mini.alpha >= 0.3) {
-            ctx.strokeStyle = "#ffff00";
-            ctx.lineWidth = 1;
-            ctx.setLineDash([2, 2]); // 細かい点線
-            ctx.beginPath();
-            ctx.arc(mini.x, mini.y, DIAMOND_MINI_SIZE/2, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]); // 点線を解除
-        }
-        
-        ctx.restore();
-    }
-
-    // 紫玉も描画
-    for (let b of purpleBullets) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, HEXAGON_BULLET_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = "#9932cc"; // 濃い紫色
-        ctx.shadowColor = "#8a2be2";
-        ctx.shadowBlur = 3;
-        ctx.fill();
-        
-        // デバッグ用：当たり判定の表示
-        if (showHitbox) {
-            ctx.strokeStyle = "#ffff00";
-            ctx.lineWidth = 1;
-            ctx.setLineDash([3, 3]); // 細かい点線
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, HEXAGON_BULLET_RADIUS, 0, Math.PI * 2);
             ctx.stroke();
             ctx.setLineDash([]); // 点線を解除
         }
@@ -1353,12 +1116,6 @@ function checkCollision(player, obs) {
             }
         }
         return false; // 衝突なし
-    } else if (obs.type === "pentagon") {
-        // 五角形との衝突判定（円形近似）
-        let dx = player.x - obs.x;
-        let dy = player.y - obs.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        return dist < player.radius + obs.size;
     }
     return false; // その他の障害物タイプ（全て処理済みだが念のため）
 }
@@ -1401,25 +1158,11 @@ function animate() {
         ctx.fillText("スペースキーまたは画面をタップでスタート", canvas.width/2, 400);
         // 最高到達点
         ctx.font = "bold 24px sans-serif";
-        const titleDisplayMaxAltitude = isNightmareMode ? nightmareMaxAltitude : maxAltitude;
-        const titleModeText = isNightmareMode ? " (ナイトメア)" : "";
-        ctx.strokeText(`最高到達点: ${Math.floor(titleDisplayMaxAltitude)} m${titleModeText}`, canvas.width/2, 460);
-        ctx.fillText(`最高到達点: ${Math.floor(titleDisplayMaxAltitude)} m${titleModeText}`, canvas.width/2, 460);
-        
-        // 現在のモード表示
-        ctx.font = "bold 20px sans-serif";
-        const modeText = isNightmareMode ? 'ナイトメアモード' : 'ノーマルモード';
-        const modeColor = isNightmareMode ? '#ff6b6b' : '#00b894';
-        ctx.fillStyle = modeColor;
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 3;
-        ctx.strokeText(`現在: ${modeText}`, canvas.width/2, 500);
-        ctx.fillText(`現在: ${modeText}`, canvas.width/2, 500);
-        
+        ctx.strokeText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, 460);
+        ctx.fillText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, 460);
         ctx.restore();
         if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
         if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
-        updateModeToggleButton(); // モード切り替えボタンを更新
         requestAnimationFrame(animate);
         return;
     }
@@ -1452,14 +1195,11 @@ function animate() {
 
         // 最高到達点表示
         ctx.font = "bold 24px sans-serif"; // フォントサイズを統一
-        const displayMaxAltitude = isNightmareMode ? nightmareMaxAltitude : maxAltitude;
-        const maxModeText = isNightmareMode ? "(ナイトメア)" : "";
-        ctx.strokeText(`最高到達点: ${Math.floor(displayMaxAltitude)} m ${maxModeText}`, canvas.width/2, canvas.height/2 + 120); // Y位置調整
-        ctx.fillText(`最高到達点: ${Math.floor(displayMaxAltitude)} m ${maxModeText}`, canvas.width/2, canvas.height/2 + 120);
+        ctx.strokeText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, canvas.height/2 + 120); // Y位置調整
+        ctx.fillText(`最高到達点: ${Math.floor(maxAltitude)} m`, canvas.width/2, canvas.height/2 + 120);
 
         // 新記録表示: ゲーム開始時の最高到達点より今回の到達高度が高ければ新記録
-        const initialMax = isNightmareMode ? initialNightmareMaxAltitude : initialMaxAltitude;
-        if (Math.floor(currentReachedAltitude) > Math.floor(initialMax)) {
+        if (Math.floor(currentReachedAltitude) > Math.floor(initialMaxAltitude)) {
             ctx.font = "bold 32px sans-serif";
             ctx.fillStyle = "#ff0";
             ctx.strokeStyle = "#c90";
@@ -1467,31 +1207,9 @@ function animate() {
             ctx.strokeText("新記録！", canvas.width/2, canvas.height/2 + 180); // Y位置調整
             ctx.fillText("新記録！", canvas.width/2, canvas.height/2 + 180);
         }
-        
-        // ナイトメア開放通知
-        if (!isNightmareMode && currentReachedAltitude >= 50000 && !nightmareUnlocked) {
-            ctx.font = "bold 24px sans-serif";
-            ctx.fillStyle = "#ff6b6b";
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 3;
-            ctx.strokeText("ナイトメアモード開放！", canvas.width/2, canvas.height/2 + 220);
-            ctx.fillText("ナイトメアモード開放！", canvas.width/2, canvas.height/2 + 220);
-        }
-        
-        // 現在のモード表示
-        ctx.font = "bold 20px sans-serif";
-        const modeText = isNightmareMode ? 'ナイトメアモード' : 'ノーマルモード';
-        const modeColor = isNightmareMode ? '#ff6b6b' : '#00b894';
-        ctx.fillStyle = modeColor;
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 3;
-        ctx.strokeText(`プレイモード: ${modeText}`, canvas.width/2, canvas.height/2 + 260);
-        ctx.fillText(`プレイモード: ${modeText}`, canvas.width/2, canvas.height/2 + 260);
-        
         ctx.restore();
         if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
         if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
-        updateModeToggleButton(); // モード切り替えボタンを更新
         requestAnimationFrame(animate);
         return;
     }
@@ -1500,7 +1218,6 @@ function animate() {
     if (gameState === "playing") {
         if (gearIconHtml) gearIconHtml.style.display = 'none'; // 歯車アイコンを非表示
         if (rankingIconHtml) rankingIconHtml.style.display = 'none'; // ランキングアイコンを非表示
-        updateModeToggleButton(); // モード切り替えボタンを非表示にする
 
         offsetSky += 1 * speedMultiplier;
         offsetMountFar += 0.03 * speedMultiplier;
@@ -1599,8 +1316,8 @@ function animate() {
             planets.shift();
         }
 
-        // 隕石の追加（10万m以上で最大3個まで）
-        if (offsetSky > 100000 && meteors.length < METEOR_MAX && frameCount % 120 === 0) { // 80から120に変更
+        // 隕石の追加（10万m以上で最大5個まで）
+        if (offsetSky > 100000 && meteors.length < METEOR_MAX && frameCount % 80 === 0) {
             let radius = Math.random() * (METEOR_MAX_RADIUS - METEOR_MIN_RADIUS) + METEOR_MIN_RADIUS;
             meteors.push({
                 x: Math.random() * canvas.width,
@@ -1644,74 +1361,23 @@ function animate() {
                 isGameOver = true;
                 gameState = "gameover";
                 currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
-                
-                // ナイトメアモード開放判定（高度50000以上到達かつ通常モード）
-                let shouldUnlockNightmare = !isNightmareMode && currentReachedAltitude >= 50000 && !nightmareUnlocked;
-                
-                // データ送信（ナイトメアモードの場合はn-altitudeに記録）
-                if (isNightmareMode) {
-                    sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName, false, Math.floor(currentReachedAltitude), nightmareUnlocked);
-                } else {
-                    // ナイトメアモード開放フラグを含めてデータ送信
-                    sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName, shouldUnlockNightmare);
-                }
-                
-                // ナイトメアモード開放処理（UI更新のみ）
-                if (shouldUnlockNightmare) {
-                    unlockNightmareMode(userId);
-                }
+                sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName); // Google Sheetにデータを送信
             }
         }
 
         // 障害物生成
-        let currentInterval = isNightmareMode ? NIGHTMARE_OBSTACLE_INTERVAL : OBSTACLE_INTERVAL;
-        if (frameCount % currentInterval === 0) {
-            let obstacleCount = 1; // 常に1体ずつ生成
-            
-            for (let i = 0; i < obstacleCount; i++) {
-                let rand = Math.random();
-                let type;
-                
-                if (isNightmareMode) {
-                    // ナイトメアモードでは最初から全種類の障害物が出現
-                    let typeRand = Math.random();
-                    if (typeRand < 0.16) { // 16.67%
-                        type = "circle";
-                    } else if (typeRand < 0.33) { // 16.67%
-                        type = "rect";
-                    } else if (typeRand < 0.5) { // 16.67%
-                        type = "triangle";
-                    } else if (typeRand < 0.66) { // 16.67%
-                        type = "pentagon";
-                    } else if (typeRand < 0.83) { // 16.67%
-                        type = "diamond";
-                    } else { // 16.67%
-                        type = "hexagon";
-                    }
-                } else {
-                    // 通常モードの障害物生成ロジック
-                    if (offsetSky >= 50000) {
-                        if (rand < 0.4) { // Hexagon (purple) - 赤円の代わり
-                            type = "hexagon";
-                        } else if (rand < 0.7) { // Pentagon (orange) - 青棒の代わり
-                            type = "pentagon";
-                        } else { // Diamond (light blue) - 三角の代わり
-                            type = "diamond";
-                        }
-                    } else {
-                        // 通常の障害物生成
-                        if (rand < 0.4) { // Circle (red)
-                            type = "circle";
-                        } else if (rand < 0.8) { // Rect (blue)
-                            type = "rect";
-                        } else { // Triangle (green)
-                            type = "triangle";
-                        }
-                    }
-                }
-            
-                // 障害物を生成（既存のコードはそのまま使用）
-                if (type === "circle") {
+        if (frameCount % OBSTACLE_INTERVAL === 0) {
+            let rand = Math.random();
+            let type;
+            if (rand < 0.4) { // Circle (red)
+                type = "circle";
+            } else if (rand < 0.8) { // Rect (blue)
+                type = "rect";
+            } else { // Triangle (green)
+                type = "triangle";
+            }
+
+            if (type === "circle") {
                 obstacles.push({
                     type: "circle",
                     x: Math.random() * (canvas.width - OBSTACLE_RADIUS*2) + OBSTACLE_RADIUS,
@@ -1728,34 +1394,6 @@ function animate() {
                     height: OBSTACLE_HEIGHT,
                     vy: OBSTACLE_SPEED + Math.random() * 2
                 });
-            } else if (type === "pentagon") {
-                obstacles.push({
-                    type: "pentagon",
-                    x: Math.random() * (canvas.width - PENTAGON_OBSTACLE_SIZE * 2) + PENTAGON_OBSTACLE_SIZE,
-                    y: -PENTAGON_OBSTACLE_SIZE,
-                    size: PENTAGON_OBSTACLE_SIZE,
-                    vy: OBSTACLE_SPEED + Math.random() * 2,
-                    cloneTimer: 0,
-                    hasCloned: false, // クローンを一度だけ作るためのフラグ
-                    isClone: false // クローン体かどうかのフラグ
-                });
-            } else if (type === "diamond") {
-                obstacles.push({
-                    type: "diamond",
-                    x: Math.random() * (canvas.width - DIAMOND_OBSTACLE_SIZE * 2) + DIAMOND_OBSTACLE_SIZE,
-                    y: -DIAMOND_OBSTACLE_SIZE,
-                    originalY: -DIAMOND_OBSTACLE_SIZE, // 元の位置を保存
-                    size: DIAMOND_OBSTACLE_SIZE,
-                    vy: OBSTACLE_SPEED + Math.random() * 2,
-                    originalVy: OBSTACLE_SPEED + Math.random() * 2, // 元の速度を保存
-                    detectionTimer: 0,
-                    state: "normal", // "normal", "detected", "waiting", "rushing"
-                    waitTimer: 0,
-                    flashTimer: 0,
-                    flashCount: 0,
-                    miniShotCount: 0, // ミニひし形の発射回数
-                    rushDistance: 0 // 突進距離を記録
-                });
             } else if (type === "triangle") {
                 obstacles.push({
                     type: "triangle",
@@ -1767,20 +1405,7 @@ function animate() {
                     hasShotShockwave: false, // 衝撃波を一度だけ放つためのフラグ
                     shockwaves: [] // 各三角は自身の衝撃波を持つ
                 });
-            } else if (type === "hexagon") {
-                obstacles.push({
-                    type: "hexagon",
-                    x: Math.random() * (canvas.width - HEXAGON_OBSTACLE_SIZE * 2) + HEXAGON_OBSTACLE_SIZE,
-                    y: -HEXAGON_OBSTACLE_SIZE,
-                    size: HEXAGON_OBSTACLE_SIZE,
-                    vy: OBSTACLE_SPEED + Math.random() * 2,
-                    shootTimer: 0,
-                    hasShotBullets: false, // 弾を一度だけ放つためのフラグ
-                    flashTimer: 0,
-                    flashDuration: 12
-                });
             }
-            } // forループの終了
         }
 
         // 障害物移動
@@ -1839,154 +1464,6 @@ function animate() {
                 obs.width = OBSTACLE_WIDTH * stretch;
                 obs.height = OBSTACLE_HEIGHT; // 高さは固定
 
-            }
-            // オレンジの五角形: 一定時間後にクローンを1体作成
-            else if (obs.type === "pentagon") {
-                obs.cloneTimer++;
-                // hasCloned フラグを追加し、一度だけクローンするように変更
-                if (!obs.hasCloned && !obs.isClone && obs.cloneTimer >= PENTAGON_CLONE_INTERVAL) {
-                    obs.cloneTimer = 0; // タイマーをリセット
-                    obs.hasCloned = true; // クローンを作ったことを記録
-
-                    // フラッシュエフェクトを開始
-                    obs.flashTimer = 12; // 12フレーム持続
-                    obs.flashDuration = 12;
-
-                    // クローン効果音を再生
-                    audioManager.playSe('clone');
-
-                    // クローンを作成（本体の周りにランダムな位置）
-                    let cloneAngle = Math.random() * Math.PI * 2;
-                    let cloneDistance = PENTAGON_OBSTACLE_SIZE * 3; // 本体から3倍の距離
-                    let cloneX = obs.x + Math.cos(cloneAngle) * cloneDistance;
-                    let cloneY = obs.y + Math.sin(cloneAngle) * cloneDistance;
-                    
-                    // 画面内に収まるように調整
-                    cloneX = Math.max(PENTAGON_OBSTACLE_SIZE, Math.min(canvas.width - PENTAGON_OBSTACLE_SIZE, cloneX));
-                    cloneY = Math.max(-PENTAGON_OBSTACLE_SIZE, cloneY);
-
-                    obstacles.push({
-                        type: "pentagon",
-                        x: cloneX,
-                        y: cloneY,
-                        size: PENTAGON_OBSTACLE_SIZE,
-                        vy: obs.vy, // 本体と同じ速度
-                        cloneTimer: 0,
-                        hasCloned: true, // クローンはクローンを作らない
-                        isClone: true // クローン体フラグ
-                    });
-                }
-                
-                // フラッシュエフェクトタイマーを更新
-                if (obs.flashTimer !== undefined && obs.flashTimer > 0) {
-                    obs.flashTimer--;
-                }
-            }
-            // 水色ひし形: プレイヤーが直下にいると突進してくる
-            else if (obs.type === "diamond") {
-                // プレイヤーが下にいるかをチェック（横方向の範囲内）
-                let playerInRange = Math.abs(player.x - obs.x) < DIAMOND_DETECT_RANGE && 
-                                  player.y > obs.y; // プレイヤーが下にいる
-                
-                if (obs.state === "normal") {
-                    if (playerInRange) {
-                        obs.state = "detected";
-                        obs.vy = 0; // 停止
-                        obs.flashTimer = 8; // フラッシュ開始
-                        obs.flashCount = 0;
-                        obs.waitTimer = 0;
-                        // 警告音を再生
-                        audioManager.playSe('warning');
-                    }
-                } else if (obs.state === "detected") {
-                    obs.waitTimer++;
-                    
-                    // フラッシュ処理（2回）
-                    if (obs.flashTimer > 0) {
-                        obs.flashTimer--;
-                        if (obs.flashTimer === 0) {
-                            obs.flashCount++;
-                            if (obs.flashCount < 2) {
-                                obs.flashTimer = 8; // 次のフラッシュ
-                            }
-                        }
-                    }
-                    
-                    // 待機時間が終了したら突進開始
-                    if (obs.waitTimer >= DIAMOND_WAIT_TIME) {
-                        obs.state = "rushing";
-                        obs.vy = DIAMOND_RUSH_SPEED; // 突進速度
-                        obs.flashTimer = 6; // 突進時のフラッシュ
-                        obs.miniShotCount = 0;
-                        obs.rushDistance = 0; // 突進距離をリセット
-                        obs.originalY = obs.y; // 突進開始位置を記録
-                        // 突進効果音を再生
-                        audioManager.playSe('fastfall');
-                    }
-                } else if (obs.state === "rushing") {
-                    // 突進中の加速度（どんどん早くなる）
-                    obs.vy += 0.2; // 毎フレーム0.2ずつ加速
-                    obs.rushDistance += obs.vy; // 突進距離を加算
-                    
-                    // 突進中のフラッシュ
-                    if (obs.flashTimer > 0) {
-                        obs.flashTimer--;
-                    }
-                    
-                    // ミニひし形を30ピクセル毎に発射（画面下まで継続）
-                    if (Math.floor(obs.rushDistance / 30) > obs.miniShotCount) {
-                        obs.miniShotCount++;
-                        
-                        // 左右にミニひし形を発射
-                        for (let direction of [-1, 1]) {
-                            diamondMinis.push({
-                                x: obs.x,
-                                y: obs.y,
-                                vx: direction * DIAMOND_MINI_SPEED,
-                                vy: DIAMOND_MINI_SPEED * 0.5,
-                                maxDistance: DIAMOND_MINI_RANGE,
-                                traveledDistance: 0,
-                                alpha: 1.0, // 初期透明度
-                                fadeSpeed: 0.015 // フェードアウト速度
-                            });
-                        }
-                    }
-                }
-            }
-            // 紫の六角形: 6方向にランダムな方向で紫玉を発射
-            else if (obs.type === "hexagon") {
-                obs.shootTimer++;
-                // hasShotBullets フラグを追加し、一度だけ発射するように変更
-                if (!obs.hasShotBullets && obs.shootTimer >= HEXAGON_SHOOT_INTERVAL) {
-                    obs.shootTimer = 0; // タイマーをリセット
-                    obs.hasShotBullets = true; // 弾を放ったことを記録
-
-                    // フラッシュエフェクトを開始
-                    obs.flashTimer = 12; // 12フレーム持続
-                    obs.flashDuration = 12;
-
-                    // 効果音再生
-                    audioManager.playSe('circle');
-
-                    // 6方向にランダムな角度で紫玉を発射
-                    for (let i = 0; i < 6; i++) {
-                        // ランダムな基準角度 + 60度ずつずらした6方向
-                        let baseAngle = Math.random() * Math.PI * 2; // 0-360度のランダム
-                        let angle = baseAngle + (i * Math.PI / 3); // 60度ずつ
-                        
-                        purpleBullets.push({
-                            x: obs.x,
-                            y: obs.y,
-                            vx: Math.cos(angle) * HEXAGON_BULLET_SPEED,
-                            vy: Math.sin(angle) * HEXAGON_BULLET_SPEED
-                        });
-                    }
-                }
-                
-                // フラッシュエフェクトタイマーを更新
-                if (obs.flashTimer !== undefined && obs.flashTimer > 0) {
-                    obs.flashTimer--;
-                }
             }
             // 緑の三角: 自機に向かって衝撃波を放つ
             else if (obs.type === "triangle") {
@@ -2057,38 +1534,6 @@ function animate() {
             b.y > -RED_BULLET_RADIUS && b.y < canvas.height + RED_BULLET_RADIUS
         );
 
-        // ミニひし形の移動とライフ管理
-        for (let j = diamondMinis.length - 1; j >= 0; j--) {
-            let mini = diamondMinis[j];
-            mini.x += mini.vx;
-            mini.y += mini.vy;
-            mini.traveledDistance += Math.sqrt(mini.vx * mini.vx + mini.vy * mini.vy);
-            
-            // フェードアウト処理
-            mini.alpha -= mini.fadeSpeed;
-            if (mini.alpha < 0) mini.alpha = 0;
-            
-            // 射程距離を超えるか画面外に出たら削除
-            if (mini.traveledDistance > mini.maxDistance || 
-                mini.y > canvas.height + 50 || 
-                mini.x < -50 || 
-                mini.x > canvas.width + 50 ||
-                mini.alpha <= 0) {
-                diamondMinis.splice(j, 1);
-            }
-        }
-
-        // 紫玉の移動
-        for (let b of purpleBullets) {
-            b.x += b.vx;
-            b.y += b.vy;
-        }
-        // 画面外の紫玉を削除
-        purpleBullets = purpleBullets.filter(b =>
-            b.x > -HEXAGON_BULLET_RADIUS && b.x < canvas.width + HEXAGON_BULLET_RADIUS &&
-            b.y > -HEXAGON_BULLET_RADIUS && b.y < canvas.height + HEXAGON_BULLET_RADIUS
-        );
-
         // 衝突判定（落下中でない場合のみ）
         if (!player.isDying) {
             for (let obs of obstacles) {
@@ -2155,52 +1600,11 @@ function animate() {
             }
         }
 
-        // ミニひし形との衝突判定（落下中でない場合のみ）
-        if (!player.isDying) {
-            for (let j = diamondMinis.length - 1; j >= 0; j--) {
-                let mini = diamondMinis[j];
-                // 透明度が0.3以上の場合のみ当たり判定
-                if (mini.alpha >= 0.3) {
-                    let dx = player.x - mini.x;
-                    let dy = player.y - mini.y;
-                    if (dx*dx + dy*dy < (player.radius + DIAMOND_MINI_SIZE/2) * (player.radius + DIAMOND_MINI_SIZE/2)) {
-                        // 効果音再生
-                        audioManager.playSe('hit');
-                        // 落下アニメーション開始
-                        startDeathAnimation();
-                        break; // 衝突時はループを抜ける
-                    }
-                }
-            }
-        }
-
-        // 紫玉との衝突判定（落下中でない場合のみ）
-        if (!player.isDying) {
-            for (let b of purpleBullets) {
-                let dx = player.x - b.x;
-                let dy = player.y - b.y;
-                if (dx*dx + dy*dy < (player.radius + HEXAGON_BULLET_RADIUS) * (player.radius + HEXAGON_BULLET_RADIUS)) {
-                    // 効果音再生
-                    audioManager.playSe('hit');
-                    // 落下アニメーション開始
-                    startDeathAnimation();
-                    break; // 衝突時は紫玉ループを抜ける
-                }
-            }
-        }
-
     } // gameState === "playing" の終了
 
         if (offsetSky > maxAltitude) {
             maxAltitude = offsetSky;
-            // ナイトメアモードの場合はナイトメア最高到達点も更新
-            if (isNightmareMode && offsetSky > nightmareMaxAltitude) {
-                nightmareMaxAltitude = offsetSky;
-            }
             // ここでは直接スプレッドシートに保存せず、ゲームオーバー時にまとめて送信
-        } else if (isNightmareMode && offsetSky > nightmareMaxAltitude) {
-            // ナイトメアモードで、通常の最高到達点は超えないがナイトメア最高到達点は超える場合
-            nightmareMaxAltitude = offsetSky;
         }
     }
 
@@ -2222,7 +1626,7 @@ function animate() {
 const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnIFelFfJmUuWD1ywIhqvCtYXdOvX-MKUZVYb3wEowVmeOMrzm7L/exec'; 
 //v22
 // Google Sheetにスコアを送信する関数
-function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userName, unlockNightmare = false, nightmareAltitude = null, isNightmare) { // パラメータ追加
+function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userName) { // 引数にuserNameを追加
 
     if (gasWebAppUrl === 'YOUR_DEPLOYED_GAS_WEB_APP_URL_HERE') {
         console.warn("Google Apps ScriptのウェブアプリURLが設定されていません。データを送信できません。");
@@ -2236,16 +1640,8 @@ function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userNa
     formData.append("altitude", maxReachedAltitude); // 最高到達点
     formData.append("userId", userId);
     formData.append("userName", userName); // ユーザー名を追加
-    if (isNightmare == false) {
-        formData.append("nightmare", unlockNightmare ? 'true' : 'false'); // ナイトメアモード開放フラグ
-    }
-    
-    // ナイトメアモードの最高到達点（通常モードまたはナイトメアモード用）
-    if (isNightmareMode && nightmareAltitude !== null) {
-        formData.append("n-altitude", nightmareAltitude); // ナイトメアモードの最高到達点
-    } else {
-        formData.append("n-altitude", maxReachedAltitude); // 通常は最高到達点と同じ
-    }
+    formData.append("nightmare", false); // ナイトメアモードが解禁されているか
+    formData.append("n-altitude", maxReachedAltitude); // ナイトメアモードの最高到達点
 
     fetch(gasWebAppUrl, {
     method: "POST",
@@ -2341,11 +1737,6 @@ const rankingPopupOverlay = document.getElementById('ranking-popup-overlay');
 const rankingList = document.getElementById('rankingList');
 const closeRankingButton = document.getElementById('closeRankingButton');
 const rankingIconHtml = document.getElementById('ranking-icon-html');
-const normalRankingTab = document.getElementById('normal-ranking-tab');
-const nightmareRankingTab = document.getElementById('nightmare-ranking-tab');
-
-// ランキング表示モード（'normal' または 'nightmare'）
-let currentRankingMode = 'normal';
 
 
 // オプションポップアップの表示/非表示を切り替える関数
@@ -2392,11 +1783,7 @@ async function toggleRankingPopup() {
         optionsPopupOverlay.classList.remove('show'); // 他のポップアップを閉じる
         howToPlayPopupOverlay.classList.remove('show');
         rankingPopupOverlay.classList.add('show'); // ポップアップを表示
-        
-        // 初期表示はノーマルモード
-        currentRankingMode = 'normal';
-        updateRankingTabs();
-        await displayRanking(currentRankingMode); // ランキングデータを取得して表示
+        await displayRanking(); // ランキングデータを取得して表示
     }
 }
 
@@ -2410,34 +1797,24 @@ function toggleHowToPlayPopup() {
 }
 
 // ランキングデータを取得して表示する関数
-async function displayRanking(mode = currentRankingMode) {
-    currentRankingMode = mode;
-    updateRankingTabs();
-    
+async function displayRanking() {
     rankingList.innerHTML = '<li>ランキングを読み込み中...</li>'; // ロード中メッセージ
 
     try {
         const Data = await AllFetchData();
         if (Data && Array.isArray(Data)) {
-            let allData;
-            
-            if (mode === 'nightmare') {
-                // ナイトメアモード: n-altitudeでソート
-                allData = Data.filter(user => user['n-altitude'] && parseFloat(user['n-altitude']) > 0);
-                allData.sort((a, b) => (parseFloat(b['n-altitude']) || 0) - (parseFloat(a['n-altitude']) || 0));
-            } else {
-                // ノーマルモード: altitudeでソート
-                allData = Data.filter(user => user.altitude && parseFloat(user.altitude) > 0);
-                allData.sort((a, b) => (parseFloat(b.altitude) || 0) - (parseFloat(a.altitude) || 0));
-            }
+            // スコア（altitude）で降順にソート
+
+            Data.sort((a, b) => (parseFloat(b.altitude) || 0) - (parseFloat(a.altitude) || 0))
+            const allData = Data.filter(user => user.altitude !== 0); // ユーザー名と高度が存在するデータのみをフィルタリング
+
 
             console.table(allData); // デバッグ用に全データを表示
 
             rankingList.innerHTML = ''; // リストをクリア
 
             if (allData.length === 0) {
-                const modeText = mode === 'nightmare' ? 'ナイトメアモード' : 'ノーマルモード';
-                rankingList.innerHTML = `<li>まだ${modeText}のランキングデータがありません。</li>`;
+                rankingList.innerHTML = '<li>まだランキングデータがありません。</li>';
                 return;
             }
 
@@ -2445,12 +1822,11 @@ async function displayRanking(mode = currentRankingMode) {
                 const listItem = document.createElement('li');
                 const rank = index + 1;
                 const userName = data.userName || '匿名さん';
-                const altitude = mode === 'nightmare' 
-                    ? Math.floor(parseFloat(data['n-altitude']) || 0)
-                    : Math.floor(parseFloat(data.altitude) || 0);
+                const altitude = Math.floor(parseFloat(data.altitude) || 0);
 
-                if (altitude === 0) return; // 高度が0のデータは表示しない
+                if (altitude === 0) return; // 高度が0未満のデータは表示しない
                 if (rank > 100) return; // 上位100件のみ表示
+                console.log(altitude === 0)
 
                 listItem.innerHTML = `
                     <span>${rank}. ${userName}</span>
@@ -2464,19 +1840,6 @@ async function displayRanking(mode = currentRankingMode) {
     } catch (error) {
         console.error("ランキングの表示中にエラーが発生しました:", error);
         rankingList.innerHTML = '<li>ランキングの読み込み中にエラーが発生しました。</li>';
-    }
-}
-
-// ランキングタブの表示を更新する関数
-function updateRankingTabs() {
-    if (normalRankingTab && nightmareRankingTab) {
-        if (currentRankingMode === 'normal') {
-            normalRankingTab.classList.add('active');
-            nightmareRankingTab.classList.remove('active');
-        } else {
-            normalRankingTab.classList.remove('active');
-            nightmareRankingTab.classList.add('active');
-        }
     }
 }
 
@@ -2514,19 +1877,6 @@ if (rankingIconHtml) {
 
 if (closeRankingButton) {
     closeRankingButton.addEventListener('click', toggleRankingPopup);
-}
-
-// ランキングタブのイベントリスナー
-if (normalRankingTab) {
-    normalRankingTab.addEventListener('click', () => {
-        displayRanking('normal');
-    });
-}
-
-if (nightmareRankingTab) {
-    nightmareRankingTab.addEventListener('click', () => {
-        displayRanking('nightmare');
-    });
 }
 
 // 音量調節UIの要素を取得
@@ -2621,82 +1971,17 @@ function updateMuteButtonState() {
     }
 }
 
-// モード切り替えボタンの初期化
-function initModeToggleButton() {
-    const modeToggleButton = document.getElementById('mode-toggle-button');
-    
-    if (modeToggleButton) {
-        // 初期状態の設定
-        updateModeToggleButton();
-        
-        // クリックイベントリスナー
-        modeToggleButton.addEventListener('click', () => {
-            if (nightmareUnlocked && (gameState === "title" || gameState === "gameover")) {
-                isNightmareMode = !isNightmareMode;
-                updateModeToggleButton();
-            }
-        });
-    }
-}
-
-// モード切り替えボタンの表示更新
-function updateModeToggleButton() {
-    const modeToggleButton = document.getElementById('mode-toggle-button');
-    
-    if (modeToggleButton) {
-        if (nightmareUnlocked) {
-            modeToggleButton.classList.remove('disabled');
-            modeToggleButton.textContent = isNightmareMode ? 'ナイトメアモード' : 'ノーマルモード';
-            modeToggleButton.style.background = isNightmareMode ? 
-                'linear-gradient(to bottom, #6c5ce7, #5f3dc4)' : 
-                'linear-gradient(to bottom, #00b894, #00a085)';
-        } else {
-            modeToggleButton.classList.add('disabled');
-            modeToggleButton.textContent = 'ナイトメア未開放';
-        }
-        
-        // タイトル画面またはゲームオーバー画面でのみ表示
-        if (gameState === "title" || gameState === "gameover") {
-            modeToggleButton.style.display = 'block';
-        } else {
-            modeToggleButton.style.display = 'none';
-        }
-    }
-}
-
 
 // アプリ起動時にゲームを初期化
 async function initGame() {
-    try {
-        userId = getOrCreateUserId(); // ユーザーIDを初期化
-        userName = getOrCreateUserName(); // ユーザー名を初期化
-        maxAltitude = newuser ? 0 : await loadMaxAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
-        nightmareMaxAltitude = newuser ? 0 : await loadNightmareMaxAltitudeFromSheet(userId); // ナイトメアモード最高到達点をロード
-        
-        // ナイトメアモードの開放状態を確認
-        nightmareUnlocked = newuser ? false : await checkNightmareUnlocked(userId);
-        
-        // 音量調節UIを初期化
-        initVolumeControls();
-        
-        // モード切り替えボタンを初期化
-        initModeToggleButton();
-        
-        // ナイトメアモード開放状態に基づいてボタンを更新
-        updateModeToggleButton();
-        
-    } catch (error) {
-        console.error("ゲーム初期化中にエラーが発生しました:", error);
-        // エラーが発生してもゲームを開始
-    } finally {
-        // 読み込み完了後に読み込み中表示を非表示
-        const loadingOverlay = document.getElementById('loading-overlay');
-        if (loadingOverlay) {
-            loadingOverlay.classList.add('hidden');
-        }
-        
-        animate(); // アニメーションループを開始
-    }
+    userId = getOrCreateUserId(); // ユーザーIDを初期化
+    userName = getOrCreateUserName(); // ユーザー名を初期化
+    maxAltitude = newuser ? 0 : await loadMaxAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
+    
+    // 音量調節UIを初期化
+    initVolumeControls();
+    
+    animate(); // アニメーションループを開始
 }
 
 initGame();
