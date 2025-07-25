@@ -71,14 +71,50 @@ const audioManager = {
     // BGM音量を設定
     setBgmVolume(volume) {
         this.volumes.bgm = Math.max(0, Math.min(1, volume));
-        this.updateBgmVolumes();
+        
+        // モバイル対応: 音量設定を複数回試行
+        if (this.isMobile()) {
+            // 即座に設定
+            this.updateBgmVolumes();
+            
+            // 少し遅れて再設定（モバイルブラウザの遅延対応）
+            setTimeout(() => {
+                this.updateBgmVolumes();
+            }, 50);
+            
+            // さらに遅れて再設定
+            setTimeout(() => {
+                this.updateBgmVolumes();
+            }, 200);
+        } else {
+            this.updateBgmVolumes();
+        }
+        
         this.saveVolumeSettings();
     },
     
     // SE音量を設定
     setSeVolume(volume) {
         this.volumes.se = Math.max(0, Math.min(1, volume));
-        this.updateSeVolumes();
+        
+        // モバイル対応: 音量設定を複数回試行
+        if (this.isMobile()) {
+            // 即座に設定
+            this.updateSeVolumes();
+            
+            // 少し遅れて再設定
+            setTimeout(() => {
+                this.updateSeVolumes();
+            }, 50);
+            
+            // さらに遅れて再設定
+            setTimeout(() => {
+                this.updateSeVolumes();
+            }, 200);
+        } else {
+            this.updateSeVolumes();
+        }
+        
         this.saveVolumeSettings();
     },
     
@@ -99,21 +135,92 @@ const audioManager = {
     // BGM音量を更新
     updateBgmVolumes() {
         const volume = this.muted.bgm ? 0 : this.volumes.bgm;
-        this.bgm.title.volume = volume;
-        this.bgm.game.volume = volume;
-        this.bgm.gameover.volume = volume;
+        
+        // モバイル対応: volumeプロパティを強制的に設定
+        try {
+            if (this.bgm.title) {
+                this.bgm.title.volume = volume;
+                // モバイルSafari対応: 一度pauseしてからvolumeを設定
+                if (this.isMobile() && !this.bgm.title.paused) {
+                    const wasPlaying = !this.bgm.title.paused;
+                    const currentTime = this.bgm.title.currentTime;
+                    this.bgm.title.pause();
+                    this.bgm.title.volume = volume;
+                    if (wasPlaying) {
+                        this.bgm.title.currentTime = currentTime;
+                        this.bgm.title.play().catch(e => console.log("BGM再生エラー:", e));
+                    }
+                }
+            }
+            if (this.bgm.game) {
+                this.bgm.game.volume = volume;
+                if (this.isMobile() && !this.bgm.game.paused) {
+                    const wasPlaying = !this.bgm.game.paused;
+                    const currentTime = this.bgm.game.currentTime;
+                    this.bgm.game.pause();
+                    this.bgm.game.volume = volume;
+                    if (wasPlaying) {
+                        this.bgm.game.currentTime = currentTime;
+                        this.bgm.game.play().catch(e => console.log("BGM再生エラー:", e));
+                    }
+                }
+            }
+            if (this.bgm.gameover) {
+                this.bgm.gameover.volume = volume;
+                if (this.isMobile() && !this.bgm.gameover.paused) {
+                    const wasPlaying = !this.bgm.gameover.paused;
+                    const currentTime = this.bgm.gameover.currentTime;
+                    this.bgm.gameover.pause();
+                    this.bgm.gameover.volume = volume;
+                    if (wasPlaying) {
+                        this.bgm.gameover.currentTime = currentTime;
+                        this.bgm.gameover.play().catch(e => console.log("BGM再生エラー:", e));
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn("BGM音量設定エラー:", error);
+        }
     },
     
     // SE音量を更新
     updateSeVolumes() {
         const volume = this.muted.se ? 0 : this.volumes.se;
-        this.se.circle.volume = volume;
-        this.se.triangle.volume = volume;
-        this.se.hit.volume = volume;
-        this.se.fall.volume = volume;
-        this.se.clone.volume = volume;
-        this.se.warning.volume = volume;
-        this.se.fastfall.volume = volume;
+        
+        // モバイル対応: 各SE音量を個別に設定
+        try {
+            const seList = [this.se.circle, this.se.triangle, this.se.hit, this.se.fall, this.se.clone, this.se.warning, this.se.fastfall];
+            
+            seList.forEach(se => {
+                if (se) {
+                    se.volume = volume;
+                    // モバイルブラウザでは音量変更が即座に反映されない場合があるため、
+                    // 複数回設定を試行
+                    if (this.isMobile()) {
+                        setTimeout(() => {
+                            se.volume = volume;
+                        }, 10);
+                    }
+                }
+            });
+        } catch (error) {
+            console.warn("SE音量設定エラー:", error);
+        }
+    },
+    
+    // モバイルデバイス判定
+    isMobile() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                        /Safari/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+        
+        // デバッグ用ログ（初回のみ）
+        if (!this._mobileChecked) {
+            console.log("モバイル判定:", isMobile ? "モバイルデバイス" : "デスクトップ");
+            console.log("User Agent:", navigator.userAgent);
+            this._mobileChecked = true;
+        }
+        
+        return isMobile;
     },
     
     // BGM再生
@@ -2540,19 +2647,25 @@ function initVolumeControls() {
         // ミュートボタンの状態を更新
         updateMuteButtonState();
         
-        // イベントリスナーを追加
-        bgmVolumeSlider.addEventListener('input', (e) => {
+        // イベントリスナーを追加（モバイル対応強化）
+        const handleBgmVolumeChange = (e) => {
             const volume = parseInt(e.target.value) / 100;
             audioManager.setBgmVolume(volume);
             if (bgmVolumeValue) bgmVolumeValue.textContent = `${e.target.value}%`;
             updateMuteButtonState();
-        });
+        };
         
-        seVolumeSlider.addEventListener('input', (e) => {
+        const handleSeVolumeChange = (e) => {
             const volume = parseInt(e.target.value) / 100;
             audioManager.setSeVolume(volume);
             if (seVolumeValue) seVolumeValue.textContent = `${e.target.value}%`;
             updateMuteButtonState();
+        };
+        
+        // 複数のイベントタイプをサポート（モバイル対応）
+        ['input', 'change', 'touchend'].forEach(eventType => {
+            bgmVolumeSlider.addEventListener(eventType, handleBgmVolumeChange);
+            seVolumeSlider.addEventListener(eventType, handleSeVolumeChange);
         });
     }
     
