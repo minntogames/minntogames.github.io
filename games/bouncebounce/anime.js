@@ -782,6 +782,7 @@ let showHitbox = false; // trueにすると当たり判定が表示される
 // ユーザーIDの取得または生成
 function getOrCreateUserId() {
     let id = localStorage.getItem('game_user_id');
+
     if (!id) {
         id = crypto.randomUUID(); // ユニークなIDを生成
         localStorage.setItem('game_user_id', id);
@@ -792,6 +793,8 @@ function getOrCreateUserId() {
         formData.append("altitude", 0); // 最高到達点
         formData.append("userId", id);
         formData.append("userName", "匿名さん"); // ユーザー名を追加
+        formData.append("nightmare", false); // ナイトメアモード開放フラグ
+        formData.append("n-altitude", 0);
 
         fetch(gasWebAppUrl, {
             method: "POST",
@@ -817,31 +820,18 @@ function getOrCreateUserName() {
     return name;
 }
 
-// 最高到達点の読込（スプレッドシートDB使用）
-async function loadMaxAltitudeFromSheet(userId) {
+// 最高到達点の読込
+async function loadAltitudeFromSheet(userId) {
     try {
         const data = await fetchUData(userId);
         if (data && data.altitude !== undefined) {
-            return parseFloat(data.altitude); // プロパティ名を修正
+            maxAltitude = parseFloat(data.altitude); 
         }
-        return 0; // データがない場合は0を返す
-    } catch (error) {
-        console.error("Failed to load max altitude from sheet:", error);
-        return 0; // エラー時も0を返す
-    }
-}
-
-// ナイトメアモード最高到達点の読込（スプレッドシートDB使用）
-async function loadNightmareMaxAltitudeFromSheet(userId) {
-    try {
-        const data = await fetchUData(userId);
         if (data && data['n-altitude'] !== undefined) {
-            return parseFloat(data['n-altitude']);
+            nightmareMaxAltitude = parseFloat(data['n-altitude']);
         }
-        return 0; // データがない場合は0を返す
     } catch (error) {
-        console.error("Failed to load nightmare max altitude from sheet:", error);
-        return 0; // エラー時も0を返す
+        console.error("Failed to load altitude from sheet:", error);
     }
 }
 
@@ -2244,7 +2234,7 @@ function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userNa
     if (isNightmareMode && nightmareAltitude !== null) {
         formData.append("n-altitude", nightmareAltitude); // ナイトメアモードの最高到達点
     } else {
-        formData.append("n-altitude", maxReachedAltitude); // 通常は最高到達点と同じ
+        formData.append("altitude", maxReachedAltitude); // 通常は最高到達点と同じ
     }
 
     fetch(gasWebAppUrl, {
@@ -2262,7 +2252,6 @@ function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userNa
 //これはげっと関数
 async function fetchUData(userId) {
   try {
-
     const url = new URL(gasWebAppUrl);
     url.searchParams.append("userId", userId);
 
@@ -2670,11 +2659,7 @@ async function initGame() {
     try {
         userId = getOrCreateUserId(); // ユーザーIDを初期化
         userName = getOrCreateUserName(); // ユーザー名を初期化
-        maxAltitude = newuser ? 0 : await loadMaxAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
-        nightmareMaxAltitude = newuser ? 0 : await loadNightmareMaxAltitudeFromSheet(userId); // ナイトメアモード最高到達点をロード
-        
-        // ナイトメアモードの開放状態を確認
-        nightmareUnlocked = newuser ? false : await checkNightmareUnlocked(userId);
+        await loadAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
         
         // 音量調節UIを初期化
         initVolumeControls();
