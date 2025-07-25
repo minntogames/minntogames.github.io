@@ -404,6 +404,10 @@ const audioManager = {
     }
 };
 
+document.addEventListener('click', audioManager.resumeAudioContext());
+document.addEventListener('touchstart', audioManager.resumeAudioContext());
+document.addEventListener('keydown', audioManager.resumeAudioContext());
+
 // 音声管理システムを初期化（非同期）
 (async () => {
     await audioManager.init();
