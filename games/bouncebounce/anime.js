@@ -950,6 +950,8 @@ const rightButton = document.getElementById('right-button');
 if (leftButton) {
     leftButton.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        // AudioContext復旧
+        audioManager.resumeAudioContext();
         keyLeft = true;
         keyRight = false;
         isButtonActive = true;
@@ -964,6 +966,8 @@ if (leftButton) {
     }, { passive: false });
     // マウスイベントも追加（PCでのデバッグ用）
     leftButton.addEventListener('mousedown', () => {
+        // AudioContext復旧
+        audioManager.resumeAudioContext();
         keyLeft = true;
         keyRight = false;
         isButtonActive = true;
@@ -984,6 +988,8 @@ if (leftButton) {
 if (rightButton) {
     rightButton.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        // AudioContext復旧
+        audioManager.resumeAudioContext();
         keyRight = true;
         keyLeft = false;
         isButtonActive = true;
@@ -998,6 +1004,8 @@ if (rightButton) {
     }, { passive: false });
     // マウスイベントも追加（PCでのデバッグ用）
     rightButton.addEventListener('mousedown', () => {
+        // AudioContext復旧
+        audioManager.resumeAudioContext();
         keyRight = true;
         keyLeft = false;
         isButtonActive = true;
@@ -1115,6 +1123,9 @@ async function unlockNightmareMode(userId) {
 }
 
 function startGame() {
+    // AudioContext復旧（ゲーム開始時）
+    audioManager.resumeAudioContext();
+    
     // 初期化
     offsetSky = 0;
     offsetMount = 250;
@@ -2725,7 +2736,11 @@ function updateRankingTabs() {
 
 // イベントリスナーのセットアップ
 if (gearIconHtml) {
-    gearIconHtml.addEventListener('click', toggleOptionsPopup);
+    gearIconHtml.addEventListener('click', () => {
+        // AudioContext復旧
+        audioManager.resumeAudioContext();
+        toggleOptionsPopup();
+    });
 }
 
 if (closeOptionsButton) {
@@ -2817,6 +2832,8 @@ function initVolumeControls() {
     
     if (bgmMuteButton) {
         bgmMuteButton.addEventListener('click', () => {
+            // AudioContext復旧
+            audioManager.resumeAudioContext();
             audioManager.toggleBgmMute();
             updateMuteButtonState();
         });
@@ -2824,6 +2841,8 @@ function initVolumeControls() {
     
     if (seMuteButton) {
         seMuteButton.addEventListener('click', () => {
+            // AudioContext復旧
+            audioManager.resumeAudioContext();
             audioManager.toggleSeMute();
             updateMuteButtonState();
         });
