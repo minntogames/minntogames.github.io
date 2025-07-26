@@ -1017,8 +1017,10 @@ async function unlockNightmareMode(userId) {
     updateModeToggleButton();
     
     // アンロック通知表示
-    console.log('ナイトメアモードが開放されました！');
-    alert('おめでとうございます！\n高度50,000mに到達し、ナイトメアモードが開放されました！');
+    if (!dbnightmareUnlocked){
+        console.log('ナイトメアモードが開放されました！');
+        alert('おめでとうございます！\n高度50,000mに到達し、ナイトメアモードが開放されました！');
+    }
 }
 
 function startGame() {
