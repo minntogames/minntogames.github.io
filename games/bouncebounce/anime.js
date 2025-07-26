@@ -1,36 +1,24 @@
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
-// Web Audio API対応音声管理システム
+// 音声管理システム
 const audioManager = {
-    // Web Audio APIコンテキスト
-    audioContext: null,
-    masterGainNode: null,
-    bgmGainNode: null,
-    seGainNode: null,
-    
-    // 音声バッファ
-    buffers: {
-        bgm: {
-            title: null,
-            game: null,
-            gameover: null
-        },
-        se: {
-            circle: null,
-            triangle: null,
-            hit: null,
-            fall: null,
-            clone: null,
-            warning: null,
-            fastfall: null
-        }
+    bgm: {
+        title: new Audio('src/bgm/title.mp3'),
+        game: new Audio('src/bgm/game.mp3'),
+        gameover: new Audio('src/bgm/gameover.mp3')
     },
-    
-    // 現在再生中のソース
-    currentBgmSource: null,
+    se: {
+        circle: new Audio('src/se/circle.mp3'),
+        triangle: new Audio('src/se/triangle.mp3'),
+        hit: new Audio('src/se/hit.mp3'),
+        fall: new Audio('src/se/fall.mp3'),
+        clone: new Audio('src/se/clone.mp3'),
+        warning: new Audio('src/se/warning.mp3'),
+        fastfall: new Audio('src/se/fastfall.mp3')
+    },
     currentBgm: null,
-    gameoverPlayed: false,
+    gameoverPlayed: false, // ゲームオーバーBGMが再生されたかのフラグ
     
     // 音量設定
     volumes: {
@@ -44,146 +32,22 @@ const audioManager = {
         se: false
     },
     
-    // 初期化フラグ
-    initialized: false,
-    
-    // Web Audio API初期化
-    async init() {
-        try {
-            // AudioContextを作成
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // ゲインノード作成
-            this.masterGainNode = this.audioContext.createGain();
-            this.bgmGainNode = this.audioContext.createGain();
-            this.seGainNode = this.audioContext.createGain();
-            
-            // ノードを接続
-            this.bgmGainNode.connect(this.masterGainNode);
-            this.seGainNode.connect(this.masterGainNode);
-            this.masterGainNode.connect(this.audioContext.destination);
-            
-            // ローカルストレージから音量設定を読み込み
-            this.loadVolumeSettings();
-            
-            // 音量を適用
-            this.updateGainNodes();
-            
-            // 音声ファイルを読み込み
-            await this.loadAudioFiles();
-            
-            console.log("Web Audio API initialized successfully");
-            this.initialized = true;
-            
-        } catch (error) {
-            console.error("Web Audio API initialization failed:", error);
-            // フォールバック: 従来のAudio要素を使用
-            this.initFallback();
-        }
+    // BGMの初期設定
+    init() {
+        // ローカルストレージから音量設定を読み込み
+        this.loadVolumeSettings();
+        
+        // BGMをループ設定（ゲームオーバーBGMは除く）
+        this.bgm.title.loop = true;
+        this.bgm.game.loop = true;
+        this.bgm.gameover.loop = false; // ゲームオーバーBGMは一回のみ
+        
+        // 音量設定を適用
+        this.updateBgmVolumes();
+        this.updateSeVolumes();
     },
     
-    // 音声ファイル読み込み
-    async loadAudioFiles() {
-        const audioFiles = {
-            bgm: {
-                title: 'src/bgm/title.mp3',
-                game: 'src/bgm/game.mp3',
-                gameover: 'src/bgm/gameover.mp3'
-            },
-            se: {
-                circle: 'src/se/circle.mp3',
-                triangle: 'src/se/triangle.mp3',
-                hit: 'src/se/hit.mp3',
-                fall: 'src/se/fall.mp3',
-                clone: 'src/se/clone.mp3',
-                warning: 'src/se/warning.mp3',
-                fastfall: 'src/se/fastfall.mp3'
-            }
-        };
-        
-        // BGM読み込み
-        for (const [key, url] of Object.entries(audioFiles.bgm)) {
-            try {
-                this.buffers.bgm[key] = await this.loadAudioBuffer(url);
-            } catch (error) {
-                console.error(`Failed to load BGM ${key}:`, error);
-            }
-        }
-        
-        // SE読み込み
-        for (const [key, url] of Object.entries(audioFiles.se)) {
-            try {
-                this.buffers.se[key] = await this.loadAudioBuffer(url);
-            } catch (error) {
-                console.error(`Failed to load SE ${key}:`, error);
-            }
-        }
-    },
-    
-    // 単一音声ファイル読み込み
-    async loadAudioBuffer(url) {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        return await this.audioContext.decodeAudioData(arrayBuffer);
-    },
-    
-    // フォールバック（従来のAudio要素使用）
-    initFallback() {
-        this.useFallback = true;
-        this.fallbackAudio = {
-            bgm: {
-                title: new Audio('src/bgm/title.mp3'),
-                game: new Audio('src/bgm/game.mp3'),
-                gameover: new Audio('src/bgm/gameover.mp3')
-            },
-            se: {
-                circle: new Audio('src/se/circle.mp3'),
-                triangle: new Audio('src/se/triangle.mp3'),
-                hit: new Audio('src/se/hit.mp3'),
-                fall: new Audio('src/se/fall.mp3'),
-                clone: new Audio('src/se/clone.mp3'),
-                warning: new Audio('src/se/warning.mp3'),
-                fastfall: new Audio('src/se/fastfall.mp3')
-            }
-        };
-        
-        // BGMループ設定
-        this.fallbackAudio.bgm.title.loop = true;
-        this.fallbackAudio.bgm.game.loop = true;
-        this.fallbackAudio.bgm.gameover.loop = false;
-        
-        this.updateFallbackVolumes();
-        this.initialized = true;
-    },
-    
-    // ゲインノード更新
-    updateGainNodes() {
-        if (!this.audioContext) return;
-        
-        const bgmVolume = this.muted.bgm ? 0 : this.volumes.bgm;
-        const seVolume = this.muted.se ? 0 : this.volumes.se;
-        
-        this.bgmGainNode.gain.setValueAtTime(bgmVolume, this.audioContext.currentTime);
-        this.seGainNode.gain.setValueAtTime(seVolume, this.audioContext.currentTime);
-    },
-    
-    // フォールバック音量更新
-    updateFallbackVolumes() {
-        if (!this.fallbackAudio) return;
-        
-        const bgmVolume = this.muted.bgm ? 0 : this.volumes.bgm;
-        const seVolume = this.muted.se ? 0 : this.volumes.se;
-        
-        Object.values(this.fallbackAudio.bgm).forEach(audio => {
-            audio.volume = bgmVolume;
-        });
-        
-        Object.values(this.fallbackAudio.se).forEach(audio => {
-            audio.volume = seVolume;
-        });
-    },
-    
-    // ローカルストレージから音量設定読み込み
+    // 音量設定をローカルストレージから読み込み
     loadVolumeSettings() {
         const savedBgmVolume = localStorage.getItem('game_bgm_volume');
         const savedSeVolume = localStorage.getItem('game_se_volume');
@@ -196,7 +60,7 @@ const audioManager = {
         if (savedSeMuted !== null) this.muted.se = savedSeMuted === 'true';
     },
     
-    // ローカルストレージに音量設定保存
+    // 音量設定をローカルストレージに保存
     saveVolumeSettings() {
         localStorage.setItem('game_bgm_volume', this.volumes.bgm.toString());
         localStorage.setItem('game_se_volume', this.volumes.se.toString());
@@ -204,214 +68,99 @@ const audioManager = {
         localStorage.setItem('game_se_muted', this.muted.se.toString());
     },
     
-    // BGM音量設定
+    // BGM音量を設定
     setBgmVolume(volume) {
         this.volumes.bgm = Math.max(0, Math.min(1, volume));
-        
-        if (this.useFallback) {
-            this.updateFallbackVolumes();
-        } else {
-            this.updateGainNodes();
-        }
-        
+        this.updateBgmVolumes();
         this.saveVolumeSettings();
     },
     
-    // SE音量設定
+    // SE音量を設定
     setSeVolume(volume) {
         this.volumes.se = Math.max(0, Math.min(1, volume));
-        
-        if (this.useFallback) {
-            this.updateFallbackVolumes();
-        } else {
-            this.updateGainNodes();
-        }
-        
+        this.updateSeVolumes();
         this.saveVolumeSettings();
     },
     
     // BGMミュート切り替え
     toggleBgmMute() {
         this.muted.bgm = !this.muted.bgm;
-        
-        if (this.useFallback) {
-            this.updateFallbackVolumes();
-        } else {
-            this.updateGainNodes();
-        }
-        
+        this.updateBgmVolumes();
         this.saveVolumeSettings();
     },
     
     // SEミュート切り替え
     toggleSeMute() {
         this.muted.se = !this.muted.se;
-        
-        if (this.useFallback) {
-            this.updateFallbackVolumes();
-        } else {
-            this.updateGainNodes();
-        }
-        
+        this.updateSeVolumes();
         this.saveVolumeSettings();
     },
     
-    // BGM再生（Web Audio API版）
-    playBgm(bgmName, forceRestart = false) {
-        if (!this.initialized) return;
-        
-        if (this.useFallback) {
-            this.playBgmFallback(bgmName, forceRestart);
-            return;
+    // BGM音量を更新
+    updateBgmVolumes() {
+        const volume = this.muted.bgm ? 0 : this.volumes.bgm;
+        this.bgm.title.volume = volume;
+        this.bgm.game.volume = volume;
+        this.bgm.gameover.volume = volume;
+    },
+    
+    // SE音量を更新
+    updateSeVolumes() {
+        const volume = this.muted.se ? 0 : this.volumes.se;
+        this.se.circle.volume = volume;
+        this.se.triangle.volume = volume;
+        this.se.hit.volume = volume;
+        this.se.fall.volume = volume;
+        this.se.clone.volume = volume;
+        this.se.warning.volume = volume;
+        this.se.fastfall.volume = volume;
+    },
+    
+    // BGM再生
+    playBgm(bgmName) {
+        if (this.currentBgm) {
+            this.currentBgm.pause();
+            this.currentBgm.currentTime = 0;
         }
         
-        if (!this.buffers.bgm[bgmName]) {
-            console.error(`BGM ${bgmName} not found`);
-            return;
-        }
-        
-        // 現在のBGMを停止
-        if (this.currentBgmSource && (this.currentBgm !== bgmName || forceRestart)) {
-            this.currentBgmSource.stop();
-            this.currentBgmSource = null;
-        }
-        
-        // 同じBGMが再生中で、強制再開でない場合は何もしない
-        if (this.currentBgm === bgmName && this.currentBgmSource && !forceRestart) {
-            return;
-        }
-        
-        // 新しいBGMソースを作成
-        this.currentBgmSource = this.audioContext.createBufferSource();
-        this.currentBgmSource.buffer = this.buffers.bgm[bgmName];
-        this.currentBgmSource.loop = bgmName !== 'gameover'; // ゲームオーバー以外はループ
-        this.currentBgmSource.connect(this.bgmGainNode);
-        
-        this.currentBgmSource.start();
-        this.currentBgm = bgmName;
-        
-        // ゲームオーバー時の処理
-        if (bgmName === 'gameover') {
-            this.gameoverPlayed = true;
-            this.currentBgmSource.onended = () => {
-                this.currentBgmSource = null;
-                this.currentBgm = null;
-            };
+        if (this.bgm[bgmName]) {
+            this.currentBgm = this.bgm[bgmName];
+            this.currentBgm.play().catch(e => console.log('BGM再生エラー:', e));
         }
     },
     
-    // BGM再生（フォールバック版）
-    playBgmFallback(bgmName, forceRestart = false) {
-        const audio = this.fallbackAudio.bgm[bgmName];
-        if (!audio) return;
-        
-        // 現在のBGMを停止
-        if (this.currentBgm && this.currentBgm !== bgmName) {
-            this.fallbackAudio.bgm[this.currentBgm].pause();
-            this.fallbackAudio.bgm[this.currentBgm].currentTime = 0;
-        }
-        
-        if (forceRestart || this.currentBgm !== bgmName) {
-            audio.currentTime = 0;
-            audio.play().catch(error => {
-                console.error(`Failed to play BGM ${bgmName}:`, error);
-            });
-            this.currentBgm = bgmName;
-            
-            if (bgmName === 'gameover') {
-                this.gameoverPlayed = true;
-            }
-        }
-    },
-    
-    // SE再生（Web Audio API版）
-    playSe(seName) {
-        if (!this.initialized || this.muted.se) return;
-        
-        if (this.useFallback) {
-            this.playSeFallback(seName);
-            return;
-        }
-        
-        if (!this.buffers.se[seName]) {
-            console.error(`SE ${seName} not found`);
-            return;
-        }
-        
-        const source = this.audioContext.createBufferSource();
-        source.buffer = this.buffers.se[seName];
-        source.connect(this.seGainNode);
-        source.start();
-    },
-    
-    // SE再生（フォールバック版）
-    playSeFallback(seName) {
-        if (this.muted.se) return;
-        
-        const audio = this.fallbackAudio.se[seName];
-        if (!audio) return;
-        
-        // オーディオを複製して同時再生を可能にする
-        const clonedAudio = audio.cloneNode();
-        clonedAudio.volume = this.volumes.se;
-        clonedAudio.play().catch(error => {
-            console.error(`Failed to play SE ${seName}:`, error);
-        });
-    },
-    
-    // BGM停止
-    stopBgm() {
-        if (this.useFallback) {
-            if (this.currentBgm) {
-                this.fallbackAudio.bgm[this.currentBgm].pause();
-                this.fallbackAudio.bgm[this.currentBgm].currentTime = 0;
-            }
-        } else if (this.currentBgmSource) {
-            this.currentBgmSource.stop();
-            this.currentBgmSource = null;
-        }
-        
-        this.currentBgm = null;
-    },
-    
-    // ゲームオーバー専用BGM再生（一回のみ）
+    // ゲームオーバーBGM専用再生（一回のみ）
     playGameoverBgm() {
         if (!this.gameoverPlayed) {
             this.playBgm('gameover');
+            this.gameoverPlayed = true;
+        }
+    },
+    
+    // 効果音再生
+    playSe(seName) {
+        if (this.se[seName]) {
+            this.se[seName].currentTime = 0;
+            this.se[seName].play().catch(e => console.log('SE再生エラー:', e));
         }
     },
     
     // 全音声停止
     stopAll() {
-        this.stopBgm();
+        if (this.currentBgm) {
+            this.currentBgm.pause();
+            this.currentBgm.currentTime = 0;
+        }
     },
     
     // ゲーム開始時にフラグをリセット
     resetGameoverFlag() {
         this.gameoverPlayed = false;
-    },
-    
-    // モバイル判定
-    isMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    },
-    
-    // AudioContext復旧（ユーザー操作後）
-    resumeAudioContext() {
-        if (this.audioContext && this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
     }
 };
 
-document.addEventListener('click', audioManager.resumeAudioContext());
-document.addEventListener('touchstart', audioManager.resumeAudioContext());
-document.addEventListener('keydown', audioManager.resumeAudioContext());
-
-// 音声管理システムを初期化（非同期）
-(async () => {
-    await audioManager.init();
-})();
+// 音声管理システムを初期化
+audioManager.init();
 
 let speedMultiplier = 1; // 固定値
 
@@ -887,9 +636,6 @@ const HEXAGON_BULLET_RADIUS = 8; // 紫玉の半径
 // キー操作
 let keyLeft = false, keyRight = false;
 window.addEventListener("keydown", e => {
-    // AudioContext復旧
-    audioManager.resumeAudioContext();
-    
     if (e.key === "ArrowLeft") keyLeft = true;
     if (e.key === "ArrowRight") keyRight = true;
     if (gameState === "title" && (e.key === " " || e.key === "Enter")) {
@@ -911,9 +657,6 @@ canvas.addEventListener("touchend", handleCanvasTouchEnd, { passive: false });
 
 function handleCanvasTouch(e) {
     e.preventDefault();
-    
-    // AudioContext復旧
-    audioManager.resumeAudioContext();
     if (gameState === "title" || gameState === "gameover") {
         startGame();
         return;
@@ -954,8 +697,6 @@ const rightButton = document.getElementById('right-button');
 if (leftButton) {
     leftButton.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        // AudioContext復旧
-        audioManager.resumeAudioContext();
         keyLeft = true;
         keyRight = false;
         isButtonActive = true;
@@ -970,8 +711,6 @@ if (leftButton) {
     }, { passive: false });
     // マウスイベントも追加（PCでのデバッグ用）
     leftButton.addEventListener('mousedown', () => {
-        // AudioContext復旧
-        audioManager.resumeAudioContext();
         keyLeft = true;
         keyRight = false;
         isButtonActive = true;
@@ -992,8 +731,6 @@ if (leftButton) {
 if (rightButton) {
     rightButton.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        // AudioContext復旧
-        audioManager.resumeAudioContext();
         keyRight = true;
         keyLeft = false;
         isButtonActive = true;
@@ -1008,8 +745,6 @@ if (rightButton) {
     }, { passive: false });
     // マウスイベントも追加（PCでのデバッグ用）
     rightButton.addEventListener('mousedown', () => {
-        // AudioContext復旧
-        audioManager.resumeAudioContext();
         keyRight = true;
         keyLeft = false;
         isButtonActive = true;
@@ -1127,9 +862,6 @@ async function unlockNightmareMode(userId) {
 }
 
 function startGame() {
-    // AudioContext復旧（ゲーム開始時）
-    audioManager.resumeAudioContext();
-    
     // 初期化
     offsetSky = 0;
     offsetMount = 250;
@@ -1632,9 +1364,9 @@ function startDeathAnimation() {
 
 function animate() {
     // BGM制御
-    if (gameState === "title" && audioManager.currentBgm !== 'title') {
+    if (gameState === "title" && audioManager.currentBgm !== audioManager.bgm.title) {
         audioManager.playBgm('title');
-    } else if (gameState === "playing" && audioManager.currentBgm !== 'game') {
+    } else if (gameState === "playing" && audioManager.currentBgm !== audioManager.bgm.game) {
         audioManager.playBgm('game');
     } else if (gameState === "gameover") {
         audioManager.playGameoverBgm(); // 一回のみ再生
@@ -2740,11 +2472,7 @@ function updateRankingTabs() {
 
 // イベントリスナーのセットアップ
 if (gearIconHtml) {
-    gearIconHtml.addEventListener('click', () => {
-        // AudioContext復旧
-        audioManager.resumeAudioContext();
-        toggleOptionsPopup();
-    });
+    gearIconHtml.addEventListener('click', toggleOptionsPopup);
 }
 
 if (closeOptionsButton) {
@@ -2812,32 +2540,24 @@ function initVolumeControls() {
         // ミュートボタンの状態を更新
         updateMuteButtonState();
         
-        // イベントリスナーを追加（モバイル対応強化）
-        const handleBgmVolumeChange = (e) => {
+        // イベントリスナーを追加
+        bgmVolumeSlider.addEventListener('input', (e) => {
             const volume = parseInt(e.target.value) / 100;
             audioManager.setBgmVolume(volume);
             if (bgmVolumeValue) bgmVolumeValue.textContent = `${e.target.value}%`;
             updateMuteButtonState();
-        };
+        });
         
-        const handleSeVolumeChange = (e) => {
+        seVolumeSlider.addEventListener('input', (e) => {
             const volume = parseInt(e.target.value) / 100;
             audioManager.setSeVolume(volume);
             if (seVolumeValue) seVolumeValue.textContent = `${e.target.value}%`;
             updateMuteButtonState();
-        };
-        
-        // 複数のイベントタイプをサポート（モバイル対応）
-        ['input', 'change', 'touchend'].forEach(eventType => {
-            bgmVolumeSlider.addEventListener(eventType, handleBgmVolumeChange);
-            seVolumeSlider.addEventListener(eventType, handleSeVolumeChange);
         });
     }
     
     if (bgmMuteButton) {
         bgmMuteButton.addEventListener('click', () => {
-            // AudioContext復旧
-            audioManager.resumeAudioContext();
             audioManager.toggleBgmMute();
             updateMuteButtonState();
         });
@@ -2845,8 +2565,6 @@ function initVolumeControls() {
     
     if (seMuteButton) {
         seMuteButton.addEventListener('click', () => {
-            // AudioContext復旧
-            audioManager.resumeAudioContext();
             audioManager.toggleSeMute();
             updateMuteButtonState();
         });
