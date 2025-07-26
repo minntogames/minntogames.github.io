@@ -3170,13 +3170,21 @@ function updateModeToggleButton() {
         }
     }
 }
-
+function getnightmare() {
+    // ナイトメアモードの開放状態を取得
+    const data = fetchUData(userId)
+    if (data) {
+        nightmareUnlocked = data.nightmare
+    }
+    updateModeToggleButton();
+}
 
 // アプリ起動時にゲームを初期化
 async function initGame() {
     try {
         userId = getOrCreateUserId(); // ユーザーIDを初期化
         userName = getOrCreateUserName(); // ユーザー名を初期化
+        getnightmare(); // ナイトメアモードの開放状態を取得
         await loadAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
         await loadCoinsAndSkins(userId); // コインと解放済みスキンを読み込み
         
@@ -3185,10 +3193,6 @@ async function initGame() {
         
         // モード切り替えボタンを初期化
         initModeToggleButton();
-        
-        // ナイトメアモード開放状態に基づいてボタンを更新
-        updateModeToggleButton();
-        
     } catch (error) {
         console.error("ゲーム初期化中にエラーが発生しました:", error);
         // エラーが発生してもゲームを開始
