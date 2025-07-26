@@ -1011,16 +1011,16 @@ async function loadCoinsAndSkins(userId) {
 
 // ナイトメアモードを開放する
 async function unlockNightmareMode(userId) {
+    if (!dbnightmareUnlocked && !nightmareUnlocked){
+        console.log('ナイトメアモードが開放されました！');
+        alert('おめでとうございます！\n高度50,000mに到達し、ナイトメアモードが開放されました！');
+    }
     nightmareUnlocked = true;
     
     // モード切り替えボタンの状態を更新
     updateModeToggleButton();
     
     // アンロック通知表示
-    if (!dbnightmareUnlocked){
-        console.log('ナイトメアモードが開放されました！');
-        alert('おめでとうございます！\n高度50,000mに到達し、ナイトメアモードが開放されました！');
-    }
 }
 
 function startGame() {
@@ -1853,7 +1853,7 @@ function animate() {
                 
                 // ナイトメアモード開放判定（高度50000以上到達かつ通常モード）
                 // データベースから読み込んだ開放状態を使用して判定
-                let shouldUnlockNightmare = dbnightmareUnlocked || (!isNightmareMode && maxAltitude >= 50000);
+                let shouldUnlockNightmare = (!isNightmareMode && maxAltitude >= 50000) || nightmareUnlocked;
                 
                 // データ送信（ナイトメアモードの場合はn-altitudeに記録）
                 if (isNightmareMode) {
