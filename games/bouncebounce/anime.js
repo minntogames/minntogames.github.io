@@ -1853,7 +1853,7 @@ function animate() {
                 
                 // ナイトメアモード開放判定（高度50000以上到達かつ通常モード）
                 // データベースから読み込んだ開放状態を使用して判定
-                let shouldUnlockNightmare = dbnightmareUnlocked || (!isNightmareMode && currentReachedAltitude >= 50000);
+                let shouldUnlockNightmare = dbnightmareUnlocked || (!isNightmareMode && maxAltitude >= 50000);
                 
                 // データ送信（ナイトメアモードの場合はn-altitudeに記録）
                 if (isNightmareMode) {
@@ -3176,7 +3176,7 @@ async function getnightmare() {
     const data = await fetchUData(userId)
     if (data) {
         nightmareUnlocked = data.nightmare
-        dbnightmareUnlocked = nightmareUnlocked; // データベースからの値を保存
+        dbnightmareUnlocked = data.nightmare; // データベースからの値を保存
     }
     updateModeToggleButton();
 }
