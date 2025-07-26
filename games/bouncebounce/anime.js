@@ -1850,7 +1850,8 @@ function animate() {
                 addCoins(Math.floor(currentReachedAltitude));
                 
                 // ナイトメアモード開放判定（高度50000以上到達かつ通常モード）
-                let shouldUnlockNightmare = !isNightmareMode && currentReachedAltitude >= 50000 && !nightmareUnlocked;
+                // データベースから読み込んだ開放状態を使用して判定
+                let shouldUnlockNightmare = !isNightmareMode && currentReachedAltitude >= 50000 && !dbnightmareUnlocked;
                 
                 // データ送信（ナイトメアモードの場合はn-altitudeに記録）
                 if (isNightmareMode) {
@@ -1859,9 +1860,6 @@ function animate() {
 
                 } else {
                     // ナイトメアモード開放フラグを含めてデータ送信
-                    if(dbnightmareUnlocked){
-                        shouldUnlockNightmare = null; // 既に開放済みならnull
-                    }
                     saveUserData(userId, null, Math.floor(currentReachedAltitude), Math.floor(maxAltitude), null, shouldUnlockNightmare, null, null)
                 }
                 
@@ -3171,9 +3169,9 @@ function updateModeToggleButton() {
         }
     }
 }
-function getnightmare() {
+async function getnightmare() {
     // ナイトメアモードの開放状態を取得
-    const data = fetchUData(userId)
+    const data = await fetchUData(userId)
     if (data) {
         nightmareUnlocked = data.nightmare
         dbnightmareUnlocked = nightmareUnlocked; // データベースからの値を保存
@@ -3186,7 +3184,7 @@ async function initGame() {
     try {
         userId = getOrCreateUserId(); // ユーザーIDを初期化
         userName = getOrCreateUserName(); // ユーザー名を初期化
-        getnightmare(); // ナイトメアモードの開放状態を取得
+        await getnightmare(); // ナイトメアモードの開放状態を取得
         await loadAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
         await loadCoinsAndSkins(userId); // コインと解放済みスキンを読み込み
         
