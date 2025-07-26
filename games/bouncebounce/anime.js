@@ -652,6 +652,9 @@ function savePlayerSkin() {
     localStorage.setItem('jump_player_skin', currentPlayerSkin);
 }
 
+// デバッグ用：FPS表示フラグ
+let showFps = false; // trueにするとFPSが表示される
+
 // FPS表示設定をローカルストレージから読み込み
 function loadFpsSettings() {
     const savedFpsSettings = localStorage.getItem('game_show_fps');
@@ -911,8 +914,7 @@ let nightmareMaxAltitude = 0; // ナイトメアモード最高到達点
 // デバッグ用：当たり判定表示フラグ
 let showHitbox = false; // trueにすると当たり判定が表示される
 
-// デバッグ用：FPS表示フラグ
-let showFps = false; // trueにするとFPSが表示される
+// FPS関連変数
 let fps = 0;
 let fpsFrameCount = 0;
 let lastTime = performance.now();
