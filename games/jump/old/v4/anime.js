@@ -568,90 +568,6 @@ const player = {
 };
 let isGameOver = false;
 
-// プレイヤー画像の管理システム
-const playerSkins = {
-    normal: { name: "シロ", folder: "normal" },
-    mike: { name: "ミケ", folder: "mike" },
-    black: { name: "クロ", folder: "black" },
-    brown: { name: "チャチャ", folder: "brown" },
-    mint: { name: "ミント", folder: "mint" },
-    shadow: { name: "シャドウ", folder: "shadow" }
-};
-
-// 現在の見た目設定
-let currentPlayerSkin = "normal";
-
-// ガチャ・コイン管理
-let playerCoins = 10000;
-let unlockedSkins = ["normal"]; // デフォルトでnormalはアンロック済み
-let currentGameCoins = 0; // 今回のゲームで獲得したコイン数
-
-// ガチャの排出率設定
-const gachaRates = {
-    mike: 0.15,    // 15%
-    black: 0.15,   // 15%
-    brown: 0.15,   // 15%
-    mint: 0.15,    // 15%
-    shadow: 0.10,  // 10%
-    miss: 0.30     // 30% (ハズレ)
-};
-
-// コイン数をローカルストレージから読み込み
-function loadPlayerCoins() {
-    const savedCoins = localStorage.getItem('jump_player_coins');
-    if (savedCoins) {
-        playerCoins = parseInt(savedCoins);
-    }
-}
-
-// コイン数をローカルストレージに保存
-function savePlayerCoins() {
-    localStorage.setItem('jump_player_coins', playerCoins.toString());
-
-    saveUserData(userId,null,null,null,null,null,playerCoins);
-}
-
-// アンロック済みスキンをローカルストレージから読み込み
-function loadUnlockedSkins() {
-    const savedSkins = localStorage.getItem('jump_unlocked_skins');
-    if (savedSkins) {
-        try {
-            // 文字列形式とJSON形式の両方をサポート（互換性のため）
-            if (savedSkins.startsWith('[')) {
-                // JSON形式（旧形式）
-                unlockedSkins = JSON.parse(savedSkins);
-            } else {
-                // カンマ区切り文字列形式（新形式）
-                unlockedSkins = savedSkins.split(',').filter(skin => skin.trim() !== '');
-                if (unlockedSkins.length === 0) {
-                    unlockedSkins = ["normal"];
-                }
-            }
-        } catch (e) {
-            console.error("Failed to parse unlocked skins from localStorage:", e);
-            unlockedSkins = ["normal"];
-        }
-    }
-}
-
-// アンロック済みスキンをローカルストレージに保存
-function saveUnlockedSkins() {
-    localStorage.setItem('jump_unlocked_skins', unlockedSkins.join(','));
-}
-
-// 見た目設定をローカルストレージから読み込み
-function loadPlayerSkin() {
-    const savedSkin = localStorage.getItem('jump_player_skin');
-    if (savedSkin && playerSkins[savedSkin]) {
-        currentPlayerSkin = savedSkin;
-    }
-}
-
-// 見た目設定をローカルストレージに保存
-function savePlayerSkin() {
-    localStorage.setItem('jump_player_skin', currentPlayerSkin);
-}
-
 // プレイヤー画像の読み込み
 const playerImages = {
     normal: new Image(),
@@ -659,31 +575,10 @@ const playerImages = {
     move: new Image(),
     moveHit: new Image()
 };
-
-// 現在の見た目に応じて画像を更新
-function updatePlayerImages() {
-    const folder = playerSkins[currentPlayerSkin].folder;
-    playerImages.normal.src = `img/${folder}/cat_normal.PNG`;
-    playerImages.normalHit.src = `img/${folder}/cat_normal_hit.PNG`;
-    playerImages.move.src = `img/${folder}/cat_move.PNG`;
-    playerImages.moveHit.src = `img/${folder}/cat_move_hit.PNG`;
-}
-
-// 見た目を変更する関数
-function changePlayerSkin(skinName) {
-    if (playerSkins[skinName]) {
-        currentPlayerSkin = skinName;
-        updatePlayerImages();
-        savePlayerSkin();
-        console.log(`プレイヤーの見た目を${playerSkins[skinName].name}に変更しました`);
-    }
-}
-
-// 初期化時に見た目を読み込み
-loadPlayerSkin();
-loadPlayerCoins();
-loadUnlockedSkins();
-updatePlayerImages();
+playerImages.normal.src = 'img/cat_normal.PNG';
+playerImages.normalHit.src = 'img/cat_normal_hit.PNG';
+playerImages.move.src = 'img/cat_move.PNG';
+playerImages.moveHit.src = 'img/cat_move_hit.PNG';
 
 // 障害物設定
 let obstacles = [];
@@ -911,7 +806,24 @@ function getOrCreateUserId() {
         localStorage.setItem('game_user_id', id);
         newuser = true
 
-        saveUserData(id, "匿名さん", 0, 0, 0, false, 0, ""); // 初期データを保存
+        const formData = new URLSearchParams();
+        formData.append("score", 0); // 現在の到達高度
+        formData.append("altitude", 0); // 最高到達点
+        formData.append("userId", id);
+        formData.append("userName", "匿名さん"); // ユーザー名を追加
+        formData.append("nightmare", false); // ナイトメアモード開放フラグ
+        formData.append("n-altitude", 0);
+
+        fetch(gasWebAppUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => console.log("成功:", data))
+        .catch(err => console.error("エラー:", err));
     }
     return id;
 }
@@ -952,44 +864,6 @@ async function checkNightmareUnlocked(userId) {
     } catch (error) {
         console.error("Failed to check nightmare unlock status:", error);
         return false; // エラー時は未開放
-    }
-}
-
-// コインと解放済みスキン情報を読み込み
-async function loadCoinsAndSkins(userId) {
-    try {
-        const data = await fetchUData(userId);
-        if (data) {
-            // コイン数の読み込み（複数のフィールド名に対応）
-            if (data.coins !== undefined) {
-                playerCoins = parseInt(data.coins) || 0;
-                updateCoinDisplay();
-            } else if (data.coins !== undefined) {
-                playerCoins = parseInt(data.coin) || 0;
-                updateCoinDisplay();
-            }
-            
-            // 解放済みスキンの読み込み（カンマ区切り文字列形式）
-            if (data.unlockedSkins) {
-                try {
-                    // 文字列をカンマで分割して配列に変換
-                    if (typeof data.unlockedSkins === 'string') {
-                        unlockedSkins = data.unlockedSkins.split(',').filter(skin => skin.trim() !== '');
-                        if (unlockedSkins.length === 0) {
-                            unlockedSkins = ["normal"];
-                        }
-                    } else {
-                        // 旧形式（JSON）との互換性のため
-                        unlockedSkins = JSON.parse(data.unlockedSkins) || ["normal"];
-                    }
-                } catch (e) {
-                    console.error("Failed to parse unlocked skins:", e);
-                    unlockedSkins = ["normal"];
-                }
-            }
-        }
-    } catch (error) {
-        console.error("Failed to load coins and skins:", error);
     }
 }
 
@@ -1039,7 +913,6 @@ function startGame() {
     audioManager.gameoverPlayed = false;
     initialMaxAltitude = maxAltitude; // ゲーム開始時に現在の最高到達点を記録（スプレッドシートからロードされた値）
     initialNightmareMaxAltitude = nightmareMaxAltitude; // ゲーム開始時のナイトメアモード最高到達点を記録
-    currentGameCoins = 0; // 今回のゲームで獲得したコイン数をリセット
 }
 
 // プレイヤー描画
@@ -1583,7 +1456,6 @@ function animate() {
         ctx.restore();
         if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
         if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
-        if (gachaIconHtml) gachaIconHtml.style.display = 'block'; // ガチャアイコンを表示
         updateModeToggleButton(); // モード切り替えボタンを更新
         requestAnimationFrame(animate);
         return;
@@ -1639,8 +1511,8 @@ function animate() {
             ctx.fillStyle = "#ff6b6b";
             ctx.strokeStyle = "#000";
             ctx.lineWidth = 3;
-            ctx.strokeText("ナイトメアモード開放！", canvas.width/2, canvas.height/2 + 200);
-            ctx.fillText("ナイトメアモード開放！", canvas.width/2, canvas.height/2 + 200);
+            ctx.strokeText("ナイトメアモード開放！", canvas.width/2, canvas.height/2 + 220);
+            ctx.fillText("ナイトメアモード開放！", canvas.width/2, canvas.height/2 + 220);
         }
         
         // 現在のモード表示
@@ -1650,31 +1522,12 @@ function animate() {
         ctx.fillStyle = modeColor;
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 3;
-        ctx.strokeText(`プレイモード: ${modeText}`, canvas.width/2, canvas.height/2 + 240);
-        ctx.fillText(`プレイモード: ${modeText}`, canvas.width/2, canvas.height/2 + 240);
-        
-        // コイン獲得数表示
-        if (currentGameCoins > 0) {
-            ctx.font = "bold 22px sans-serif";
-            ctx.fillStyle = "#FFD700"; // ゴールド色
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 3;
-            ctx.strokeText(`コイン獲得: ${currentGameCoins}枚`, canvas.width/2, canvas.height/2 + 280);
-            ctx.fillText(`コイン獲得: ${currentGameCoins}枚`, canvas.width/2, canvas.height/2 + 280);
-        } else {
-            // コインを獲得しなかった場合
-            ctx.font = "bold 18px sans-serif";
-            ctx.fillStyle = "#ccc";
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 2;
-            ctx.strokeText("コイン獲得: 0枚 (高度1000m毎に1コイン)", canvas.width/2, canvas.height/2 + 280);
-            ctx.fillText("コイン獲得: 0枚 (高度1000m毎に1コイン)", canvas.width/2, canvas.height/2 + 280);
-        }
+        ctx.strokeText(`プレイモード: ${modeText}`, canvas.width/2, canvas.height/2 + 260);
+        ctx.fillText(`プレイモード: ${modeText}`, canvas.width/2, canvas.height/2 + 260);
         
         ctx.restore();
         if (gearIconHtml) gearIconHtml.style.display = 'block'; // 歯車アイコンを表示
         if (rankingIconHtml) rankingIconHtml.style.display = 'block'; // ランキングアイコンを表示
-        if (gachaIconHtml) gachaIconHtml.style.display = 'block'; // ガチャアイコンを表示
         updateModeToggleButton(); // モード切り替えボタンを更新
         requestAnimationFrame(animate);
         return;
@@ -1684,7 +1537,6 @@ function animate() {
     if (gameState === "playing") {
         if (gearIconHtml) gearIconHtml.style.display = 'none'; // 歯車アイコンを非表示
         if (rankingIconHtml) rankingIconHtml.style.display = 'none'; // ランキングアイコンを非表示
-        if (gachaIconHtml) gachaIconHtml.style.display = 'none'; // ガチャアイコンを非表示
         updateModeToggleButton(); // モード切り替えボタンを非表示にする
 
         offsetSky += 1 * speedMultiplier;
@@ -1830,20 +1682,15 @@ function animate() {
                 gameState = "gameover";
                 currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
                 
-                // コイン獲得（高度1000につき1コイン）
-                addCoins(Math.floor(currentReachedAltitude));
-                
                 // ナイトメアモード開放判定（高度50000以上到達かつ通常モード）
                 let shouldUnlockNightmare = !isNightmareMode && currentReachedAltitude >= 50000 && !nightmareUnlocked;
                 
                 // データ送信（ナイトメアモードの場合はn-altitudeに記録）
                 if (isNightmareMode) {
-                    saveUserData(userId, null, Math.floor(currentReachedAltitude), null, Math.floor(maxAltitude), null, null, null)
-
-
+                    sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName, false, Math.floor(currentReachedAltitude), nightmareUnlocked);
                 } else {
                     // ナイトメアモード開放フラグを含めてデータ送信
-                    saveUserData(userId, null, Math.floor(currentReachedAltitude), Math.floor(maxAltitude), null, shouldUnlockNightmare, null, null)
+                    sendScoreToGoogleSheet(Math.floor(currentReachedAltitude), Math.floor(maxAltitude), userId, userName, shouldUnlockNightmare);
                 }
                 
                 // ナイトメアモード開放処理（UI更新のみ）
@@ -2424,15 +2271,6 @@ function animate() {
     // オプションポップアップもHTMLで描画されるため、ここでは描画しない
     requestAnimationFrame(animate);
 }
-
-// ゲーム初期化時に見た目選択機能を設定
-document.addEventListener('DOMContentLoaded', function() {
-    // DOM要素が読み込まれてから見た目選択イベントリスナーを設定
-    setTimeout(() => {
-        initializeSkinSelection();
-    }, 100);
-});
-
 const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnIFelFfJmUuWD1ywIhqvCtYXdOvX-MKUZVYb3wEowVmeOMrzm7L/exec'; 
 //v22
 // Google Sheetにスコアを送信する関数
@@ -2450,8 +2288,6 @@ function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userNa
     formData.append("altitude", maxReachedAltitude); // 最高到達点
     formData.append("userId", userId);
     formData.append("userName", userName); // ユーザー名を追加
-    formData.append("coins", playerCoins); // コイン数を追加
-    formData.append("unlockedSkins", unlockedSkins.join(',')); // 解放済みスキンをカンマ区切り文字列で追加
     if (isNightmare == false) {
         formData.append("nightmare", unlockNightmare ? 'true' : 'false'); // ナイトメアモード開放フラグ
     }
@@ -2474,54 +2310,6 @@ function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userNa
     .then(data => console.log("成功:", data))
     .catch(err => console.error("エラー:", err));
 }
-
-/**
- * データ保存関数
- * @param {String} userId 必須
- * @param {String} username 
- * @param {Number} score 
- * @param {Number} altitude 
- * @param {Number} nightmareAltitude 
- * @param {Boolean} nightmare 
- * @param {Number} coins 
- * @param {String} unlockedSkins 
- * @returns 
- */
-function saveUserData(userId, username=null, score=null, altitude=null, nightmareAltitude=null, nightmare=null, coins=null, unlockedSkins=null) {
-    if (!userId) {
-        console.warn("ユーザーIDが指定されていません。データを保存できません。");
-        return;
-    }
-
-    console.log({ userId, username, score, altitude, nightmareAltitude, nightmare, coins, unlockedSkins });
-    console.log(score !== null, altitude !== null, nightmareAltitude !== null, nightmare !== null, coins !== null, unlockedSkins !== null);
-
-    const formData = new URLSearchParams();
-    formData.append("userId", userId);
-    if (username) formData.append("userName", username);
-    if (score !== null) formData.append("score", score);
-    if (altitude !== null) formData.append("altitude", altitude);
-    if (nightmareAltitude !== null) formData.append("n-altitude", nightmareAltitude);
-    if (nightmare !== null) formData.append("nightmare", nightmare ? 'true' : 'false');
-    if (coins !== null) formData.append("coins", coins);
-    if (unlockedSkins !== null) formData.append("unlockedSkins", Array.isArray(unlockedSkins) ? unlockedSkins.join(',') : unlockedSkins);
-
-    fetch(gasWebAppUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("ユーザーデータ保存成功:", data);
-    })
-    .catch(err => {
-        console.error("ユーザーデータ保存エラー:", err);
-    });
-}
-
 
 //これはげっと関数
 async function fetchUData(userId) {
@@ -2607,23 +2395,6 @@ const rankingIconHtml = document.getElementById('ranking-icon-html');
 const normalRankingTab = document.getElementById('normal-ranking-tab');
 const nightmareRankingTab = document.getElementById('nightmare-ranking-tab');
 
-// ガチャ関連のHTML要素
-const gachaPopupOverlay = document.getElementById('gacha-popup-overlay');
-const gachaIconHtml = document.getElementById('gacha-icon-html');
-const closeGachaButton = document.getElementById('closeGachaButton');
-const gachaButton = document.getElementById('gachaButton');
-const coinAmount = document.getElementById('coinAmount');
-const gachaResultArea = document.getElementById('gachaResultArea');
-const gachaAnimation = document.getElementById('gachaAnimation');
-const gachaResult = document.getElementById('gachaResult');
-
-// ガチャ要素の存在確認（デバッグ用）
-console.log("Gacha elements check:");
-console.log("gachaPopupOverlay:", gachaPopupOverlay);
-console.log("gachaIconHtml:", gachaIconHtml);
-console.log("gachaButton:", gachaButton);
-console.log("coinAmount:", coinAmount);
-
 // ランキング表示モード（'normal' または 'nightmare'）
 let currentRankingMode = 'normal';
 
@@ -2636,7 +2407,6 @@ function toggleOptionsPopup() {
         tempUserName = userName; // 現在のユーザー名を一時変数にコピー
         userNameInput.value = tempUserName; // 入力欄に表示
         displayUserId.textContent = userId; // ユーザーIDを表示
-        initializeSkinSelection(); // 見た目選択UIを初期化
         optionsPopupOverlay.classList.add('show'); // ポップアップを表示
         // オプションポップアップ表示中は他のポップアップを閉じる
         rankingPopupOverlay.classList.remove('show');
@@ -2644,7 +2414,22 @@ function toggleOptionsPopup() {
     } else {
         optionsPopupOverlay.classList.remove('show'); // ポップアップを非表示
 
-        saveUserData(userId, userName, null, null, null, null, null, null);
+        const formData = new URLSearchParams();
+        formData.append("userId", userId);
+        formData.append("userName", userName); // ユーザー名を追加
+
+        console.log(userId, userName)
+
+        fetch(gasWebAppUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => console.log("成功:", data))
+        .catch(err => console.error("エラー:", err));
 
         // ゲームを再開するロジック (animate関数内で描画を制御)
     }
@@ -2672,157 +2457,6 @@ function toggleHowToPlayPopup() {
         howToPlayPopupOverlay.classList.remove('show'); // ポップアップを非表示
     } else {
         howToPlayPopupOverlay.classList.add('show'); // ポップアップを表示
-    }
-}
-
-// ガチャポップアップの表示/非表示を切り替える関数
-function toggleGachaPopup() {
-    console.log("toggleGachaPopup called"); // デバッグ用
-    console.log("gachaPopupOverlay:", gachaPopupOverlay); // デバッグ用
-    
-    if (gachaPopupOverlay && gachaPopupOverlay.classList.contains('show')) {
-        gachaPopupOverlay.classList.remove('show'); // ポップアップを非表示
-        console.log("Gacha popup hidden"); // デバッグ用
-    } else if (gachaPopupOverlay) {
-        // 他のポップアップを閉じる
-        if (optionsPopupOverlay) optionsPopupOverlay.classList.remove('show');
-        if (howToPlayPopupOverlay) howToPlayPopupOverlay.classList.remove('show');
-        if (rankingPopupOverlay) rankingPopupOverlay.classList.remove('show');
-        
-        updateCoinDisplay();
-        updateGachaButton();
-        gachaPopupOverlay.classList.add('show'); // ポップアップを表示
-        console.log("Gacha popup shown"); // デバッグ用
-    } else {
-        console.error("gachaPopupOverlay not found"); // デバッグ用
-    }
-}
-
-// コイン表示を更新
-function updateCoinDisplay() {
-    if (coinAmount) {
-        coinAmount.textContent = playerCoins.toString();
-    }
-}
-
-// ガチャボタンの状態を更新
-function updateGachaButton() {
-    if (gachaButton) {
-        if (playerCoins >= 1) {
-            gachaButton.disabled = false;
-            gachaButton.style.opacity = '1';
-        } else {
-            gachaButton.disabled = true;
-            gachaButton.style.opacity = '0.5';
-        }
-    }
-}
-
-// ガチャを実行
-function performGacha() {
-    if (playerCoins < 10) {
-        return;
-    }
-    
-    // コインを消費
-    playerCoins -= 10;
-    savePlayerCoins();
-    updateCoinDisplay();
-    updateGachaButton();
-    
-    // ガチャアニメーション開始
-    showGachaAnimation();
-    
-    // 2秒後に結果表示
-    setTimeout(() => {
-        const result = drawGacha();
-        showGachaResult(result);
-    }, 2000);
-}
-
-// ガチャアニメーションを表示
-function showGachaAnimation() {
-    gachaResultArea.style.display = 'block';
-    gachaAnimation.style.display = 'block';
-    gachaResult.style.display = 'none';
-    gachaButton.disabled = true;
-}
-
-// ガチャの抽選処理
-function drawGacha() {
-    const random = Math.random();
-    let cumulative = 0;
-    
-    for (const [skin, rate] of Object.entries(gachaRates)) {
-        cumulative += rate;
-        if (random <= cumulative) {
-            if (skin === 'miss') {
-                return { type: 'miss', skin: null };
-            } else {
-                const isNew = !unlockedSkins.includes(skin);
-                if (isNew) {
-                    unlockedSkins.push(skin);
-                    saveUnlockedSkins(); // ローカルストレージに保存
-                    // データベースにも保存
-                    console.log(`スキン保存開始`);
-                    console.log(unlockedSkins);
-                    saveUserData(userId, null, null, null, null, null, null, unlockedSkins);
-                }
-                return { type: isNew ? 'new' : 'duplicate', skin: skin };
-            }
-        }
-    }
-    
-    // フォールバック（通常は到達しない）
-    return { type: 'miss', skin: null };
-}
-
-// ガチャ結果を表示
-function showGachaResult(result) {
-    gachaAnimation.style.display = 'none';
-    gachaResult.style.display = 'block';
-    
-    let message = '';
-    let className = '';
-    
-    if (result.type === 'miss') {
-        message = '😞 ハズレ...';
-        className = 'miss';
-    } else if (result.type === 'new') {
-        const skinName = playerSkins[result.skin].name;
-        message = `🎉 新しいスキン獲得！<br>「${skinName}」`;
-        className = 'new-skin';
-        // 新しいスキンが獲得されたので見た目選択UIを更新
-        setTimeout(() => {
-            initializeSkinSelection();
-        }, 100);
-    } else if (result.type === 'duplicate') {
-        const skinName = playerSkins[result.skin].name;
-        message = `✨ 既に持っているスキン<br>「${skinName}」`;
-        className = 'duplicate';
-    }
-    
-    gachaResult.innerHTML = message;
-    gachaResult.className = `gacha-result ${className}`;
-    
-    // 3秒後にアニメーションエリアを非表示
-    setTimeout(() => {
-        gachaResultArea.style.display = 'none';
-        gachaButton.disabled = false;
-        updateGachaButton();
-    }, 3000);
-}
-
-// コインを追加（ゲームオーバー時に呼び出される）
-function addCoins(altitude) {
-    const newCoins = Math.floor(altitude / 1000);
-    if (newCoins > 0) {
-        currentGameCoins = newCoins; // 今回獲得したコイン数を記録
-        playerCoins += newCoins;
-        savePlayerCoins();
-        console.log(`${newCoins}コイン獲得！ 総コイン数: ${playerCoins}`);
-    } else {
-        currentGameCoins = 0; // コインを獲得しなかった場合
     }
 }
 
@@ -2915,73 +2549,6 @@ if (applyOptionsButton) {
     });
 }
 
-// 見た目選択ボタンのイベントリスナー（動的生成されるボタン用に無効化）
-// document.querySelectorAll('.skin-button').forEach(button => {
-//     button.addEventListener('click', () => {
-//         const skinName = button.dataset.skin;
-//         
-//         // 以前のactiveボタンからクラスを削除
-//         document.querySelectorAll('.skin-button').forEach(btn => {
-//             btn.classList.remove('active');
-//         });
-//         
-//         // 新しいボタンにactiveクラスを追加
-//         button.classList.add('active');
-//         
-//         // 見た目を変更
-//         changePlayerSkin(skinName);
-//     });
-// });
-
-// 見た目選択UIを初期化
-function initializeSkinSelection() {
-    const skinGrid = document.querySelector('.skin-grid');
-    if (!skinGrid) {
-        console.error('skin-grid element not found');
-        return;
-    }
-    
-    // 既存のボタンをクリア
-    skinGrid.innerHTML = '';
-    
-    // 解放済みスキンのみボタンを生成
-    unlockedSkins.forEach(skinType => {
-        if (playerSkins[skinType]) {
-            const button = document.createElement('button');
-            button.className = 'skin-button';
-            button.dataset.skin = skinType;
-            
-            // 現在のスキンの場合はactiveクラスを追加
-            if (skinType === currentPlayerSkin) {
-                button.classList.add('active');
-            }
-            
-            button.innerHTML = `
-                <img src="img/${skinType}/cat_normal.PNG" alt="${playerSkins[skinType].name}">
-                <span>${playerSkins[skinType].name}</span>
-            `;
-            
-            // クリックイベントリスナーを追加
-            button.addEventListener('click', function() {
-                // 他のボタンからactiveクラスを削除
-                document.querySelectorAll('.skin-button').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                // このボタンにactiveクラスを追加
-                this.classList.add('active');
-                
-                // スキンを変更
-                currentPlayerSkin = skinType;
-                savePlayerSkin();
-                changePlayerSkin(skinType); // 見た目変更関数も呼び出し
-            });
-            
-            skinGrid.appendChild(button);
-        }
-    });
-}
-
 // 遊び方ボタンのイベントリスナー
 if (howToPlayButton) {
     howToPlayButton.addEventListener('click', toggleHowToPlayPopup);
@@ -3011,33 +2578,6 @@ if (nightmareRankingTab) {
     nightmareRankingTab.addEventListener('click', () => {
         displayRanking('nightmare');
     });
-}
-
-// ガチャアイコンとボタンのイベントリスナー
-console.log("Setting up gacha event listeners..."); // デバッグ用
-console.log("gachaIconHtml:", gachaIconHtml); // デバッグ用
-console.log("gachaButton:", gachaButton); // デバッグ用
-console.log("closeGachaButton:", closeGachaButton); // デバッグ用
-
-if (gachaIconHtml) {
-    gachaIconHtml.addEventListener('click', toggleGachaPopup);
-    console.log("Gacha icon event listener added"); // デバッグ用
-} else {
-    console.error("gachaIconHtml not found"); // デバッグ用
-}
-
-if (closeGachaButton) {
-    closeGachaButton.addEventListener('click', toggleGachaPopup);
-    console.log("Close gacha button event listener added"); // デバッグ用
-} else {
-    console.error("closeGachaButton not found"); // デバッグ用
-}
-
-if (gachaButton) {
-    gachaButton.addEventListener('click', performGacha);
-    console.log("Gacha button event listener added"); // デバッグ用
-} else {
-    console.error("gachaButton not found"); // デバッグ用
 }
 
 // 音量調節UIの要素を取得
@@ -3182,7 +2722,6 @@ async function initGame() {
         userId = getOrCreateUserId(); // ユーザーIDを初期化
         userName = getOrCreateUserName(); // ユーザー名を初期化
         await loadAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
-        await loadCoinsAndSkins(userId); // コインと解放済みスキンを読み込み
         
         // 音量調節UIを初期化
         initVolumeControls();
@@ -3203,53 +2742,8 @@ async function initGame() {
             loadingOverlay.classList.add('hidden');
         }
         
-        // ガチャポップアップを初期状態で非表示に設定
-        const gachaPopup = document.getElementById('gacha-popup-overlay');
-        if (gachaPopup) {
-            gachaPopup.classList.remove('show'); // showクラスを削除
-            // style.displayは削除してCSSのクラス制御に委ねる
-        }
-        
-        // 見た目選択UIを初期化（解放済みスキンのみ表示）
-        setTimeout(() => {
-            initializeSkinSelection();
-        }, 100);
-        
         animate(); // アニメーションループを開始
     }
 }
 
 initGame();
-
-// DOMが完全に読み込まれた後にガチャ機能を再初期化
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM fully loaded, reinitializing gacha functionality...");
-    
-    // ガチャ要素を再取得
-    const gachaIconElement = document.getElementById('gacha-icon-html');
-    const gachaPopupElement = document.getElementById('gacha-popup-overlay');
-    const gachaButtonElement = document.getElementById('gachaButton');
-    const closeGachaButtonElement = document.getElementById('closeGachaButton');
-    
-    console.log("Reinitialize - gachaIconElement:", gachaIconElement);
-    console.log("Reinitialize - gachaPopupElement:", gachaPopupElement);
-    
-    // イベントリスナーを再設定（重複を避けるため一度削除してから追加）
-    if (gachaIconElement) {
-        gachaIconElement.removeEventListener('click', toggleGachaPopup);
-        gachaIconElement.addEventListener('click', toggleGachaPopup);
-        console.log("Gacha icon event listener reattached");
-    }
-    
-    if (closeGachaButtonElement) {
-        closeGachaButtonElement.removeEventListener('click', toggleGachaPopup);
-        closeGachaButtonElement.addEventListener('click', toggleGachaPopup);
-        console.log("Close gacha button event listener reattached");
-    }
-    
-    if (gachaButtonElement) {
-        gachaButtonElement.removeEventListener('click', performGacha);
-        gachaButtonElement.addEventListener('click', performGacha);
-        console.log("Gacha button event listener reattached");
-    }
-});
