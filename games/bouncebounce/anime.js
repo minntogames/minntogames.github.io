@@ -636,6 +636,7 @@ const HEXAGON_BULLET_RADIUS = 8; // 紫玉の半径
 // キー操作
 let keyLeft = false, keyRight = false;
 window.addEventListener("keydown", e => {
+    
     if (e.key === "ArrowLeft") keyLeft = true;
     if (e.key === "ArrowRight") keyRight = true;
     if (gameState === "title" && (e.key === " " || e.key === "Enter")) {
@@ -643,6 +644,16 @@ window.addEventListener("keydown", e => {
     }
     if (gameState === "gameover" && (e.key === " " || e.key === "Enter")) {
         startGame();
+    }
+    // Ctrl+8キーで当たり判定デバッグの切り替え
+    if (e.ctrlKey && e.key === "8") {
+        showHitbox = !showHitbox;
+        console.log(`当たり判定デバッグ: ${showHitbox ? 'ON' : 'OFF'}`);
+    }
+    // Ctrl+9キーでFPS表示の切り替え
+    if (e.ctrlKey && e.key === "9") {
+        showFps = !showFps;
+        console.log(`FPS表示: ${showFps ? 'ON' : 'OFF'}`);
     }
 });
 window.addEventListener("keyup", e => {
@@ -778,6 +789,13 @@ let nightmareMaxAltitude = 0; // ナイトメアモード最高到達点
 
 // デバッグ用：当たり判定表示フラグ
 let showHitbox = false; // trueにすると当たり判定が表示される
+
+// デバッグ用：FPS表示フラグ
+let showFps = false; // trueにするとFPSが表示される
+let fps = 0;
+let fpsFrameCount = 0;
+let lastTime = performance.now();
+let fpsUpdateInterval = 1000; // 1秒ごとにFPSを更新
 
 // ユーザーIDの取得または生成
 function getOrCreateUserId() {
@@ -1032,6 +1050,24 @@ function drawObstacles() {
                 ctx.arc(sw.x, sw.y, sw.currentRadius, sw.startAngle, sw.endAngle);
                 ctx.stroke();
                 ctx.restore();
+                
+                // デバッグ用：衝撃波の当たり判定表示（不透明度が判定値より高い場合のみ）
+                if (showHitbox && sw.alpha > SHOCKWAVE_MIN_ALPHA_FOR_COLLISION) {
+                    ctx.save();
+                    ctx.strokeStyle = "#ff00ff"; // マゼンタ色で衝撃波の当たり判定を表示
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([3, 3]); // 点線
+                    ctx.beginPath();
+                    // 衝撃波の当たり判定帯域を表示
+                    const SHOCKWAVE_COLLISION_BAND = 10;
+                    ctx.arc(sw.x, sw.y, sw.currentRadius - SHOCKWAVE_COLLISION_BAND / 2, sw.startAngle, sw.endAngle);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(sw.x, sw.y, sw.currentRadius + SHOCKWAVE_COLLISION_BAND / 2, sw.startAngle, sw.endAngle);
+                    ctx.stroke();
+                    ctx.setLineDash([]); // 点線を解除
+                    ctx.restore();
+                }
             }
         } else if (obs.type === "pentagon") {
             // オレンジの五角形
@@ -1363,6 +1399,17 @@ function startDeathAnimation() {
 
 
 function animate() {
+    // FPS計算
+    const currentTime = performance.now();
+    const deltaTime = currentTime - lastTime;
+    fpsFrameCount++;
+    
+    if (deltaTime >= fpsUpdateInterval) {
+        fps = Math.round((fpsFrameCount * 1000) / deltaTime);
+        fpsFrameCount = 0;
+        lastTime = currentTime;
+    }
+    
     // BGM制御
     if (gameState === "title" && audioManager.currentBgm !== audioManager.bgm.title) {
         audioManager.playBgm('title');
@@ -2205,6 +2252,21 @@ function animate() {
     if (gameState === "playing" || gameState === "gameover") {
         drawPlayer();
     }
+    
+    // FPS表示（デバッグ用）
+    if (showFps) {
+        ctx.save();
+        ctx.font = "16px monospace";
+        ctx.fillStyle = "#ff0000";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.textAlign = "left";
+        const fpsText = `FPS: ${fps}`;
+        ctx.strokeText(fpsText, 10, 30);
+        ctx.fillText(fpsText, 10, 30);
+        ctx.restore();
+    }
+    
     // 歯車アイコンはHTMLで描画されるため、ここでは描画しない
     // オプションポップアップもHTMLで描画されるため、ここでは描画しない
     requestAnimationFrame(animate);
