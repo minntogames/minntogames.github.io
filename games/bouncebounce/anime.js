@@ -897,6 +897,7 @@ if (rightButton) {
 let gameState = "title"; // "title", "playing", "gameover"
 let isNightmareMode = false; // ナイトメアモード状態
 let nightmareUnlocked = false; // ナイトメアモード開放フラグ
+let dbnightmareUnlocked = false; // データベースから読み込んだナイトメアモード開放状態
 let initialMaxAltitude = 0; // ゲーム開始時の最高到達点を保存する変数
 let initialNightmareMaxAltitude = 0; // ゲーム開始時のナイトメアモード最高到達点を保存する変数
 let currentReachedAltitude = 0; // ゲームオーバー時に到達した高度を保存する変数
@@ -1858,7 +1859,7 @@ function animate() {
 
                 } else {
                     // ナイトメアモード開放フラグを含めてデータ送信
-                    if(nightmareUnlocked){
+                    if(dbnightmareUnlocked){
                         shouldUnlockNightmare = null; // 既に開放済みならnull
                     }
                     saveUserData(userId, null, Math.floor(currentReachedAltitude), Math.floor(maxAltitude), null, shouldUnlockNightmare, null, null)
@@ -3175,6 +3176,7 @@ function getnightmare() {
     const data = fetchUData(userId)
     if (data) {
         nightmareUnlocked = data.nightmare
+        dbnightmareUnlocked = nightmareUnlocked; // データベースからの値を保存
     }
     updateModeToggleButton();
 }
