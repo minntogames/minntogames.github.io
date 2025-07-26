@@ -1858,6 +1858,9 @@ function animate() {
 
                 } else {
                     // ナイトメアモード開放フラグを含めてデータ送信
+                    if(nightmareUnlocked){
+                        shouldUnlockNightmare = null; // 既に開放済みならnull
+                    }
                     saveUserData(userId, null, Math.floor(currentReachedAltitude), Math.floor(maxAltitude), null, shouldUnlockNightmare, null, null)
                 }
                 
@@ -2450,45 +2453,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnIFelFfJmUuWD1ywIhqvCtYXdOvX-MKUZVYb3wEowVmeOMrzm7L/exec'; 
 //v22
-// Google Sheetにスコアを送信する関数
-function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userName, unlockNightmare = false, nightmareAltitude = null, isNightmare) { // パラメータ追加
-
-    if (gasWebAppUrl === 'YOUR_DEPLOYED_GAS_WEB_APP_URL_HERE') {
-        console.warn("Google Apps ScriptのウェブアプリURLが設定されていません。データを送信できません。");
-        return;
-    }
-
-    console.log(currentScore, maxReachedAltitude, userId, userName)
-
-    const formData = new URLSearchParams();
-    formData.append("score", currentScore); // 現在の到達高度
-    formData.append("altitude", maxReachedAltitude); // 最高到達点
-    formData.append("userId", userId);
-    formData.append("userName", userName); // ユーザー名を追加
-    formData.append("coins", playerCoins); // コイン数を追加
-    formData.append("unlockedSkins", unlockedSkins.join(',')); // 解放済みスキンをカンマ区切り文字列で追加
-    if (isNightmare == false) {
-        formData.append("nightmare", unlockNightmare ? 'true' : 'false'); // ナイトメアモード開放フラグ
-    }
-    
-    // ナイトメアモードの最高到達点（通常モードまたはナイトメアモード用）
-    if (isNightmareMode && nightmareAltitude !== null) {
-        formData.append("n-altitude", nightmareAltitude); // ナイトメアモードの最高到達点
-    } else {
-        formData.append("altitude", maxReachedAltitude); // 通常は最高到達点と同じ
-    }
-
-    fetch(gasWebAppUrl, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: formData
-    })
-    .then(res => res.json())
-    .then(data => console.log("成功:", data))
-    .catch(err => console.error("エラー:", err));
-}
 
 /**
  * データ保存関数
