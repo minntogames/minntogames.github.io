@@ -652,6 +652,19 @@ function savePlayerSkin() {
     localStorage.setItem('jump_player_skin', currentPlayerSkin);
 }
 
+// FPS表示設定をローカルストレージから読み込み
+function loadFpsSettings() {
+    const savedFpsSettings = localStorage.getItem('game_show_fps');
+    if (savedFpsSettings !== null) {
+        showFps = savedFpsSettings === 'true';
+    }
+}
+
+// FPS表示設定をローカルストレージに保存
+function saveFpsSettings() {
+    localStorage.setItem('game_show_fps', showFps.toString());
+}
+
 // プレイヤー画像の読み込み
 const playerImages = {
     normal: new Image(),
@@ -681,6 +694,8 @@ function changePlayerSkin(skinName) {
 
 // 初期化時に見た目を読み込み
 loadPlayerSkin();
+// 初期化時にFPS設定を読み込み
+loadFpsSettings();
 loadPlayerCoins();
 loadUnlockedSkins();
 updatePlayerImages();
@@ -2637,6 +2652,13 @@ function toggleOptionsPopup() {
         userNameInput.value = tempUserName; // 入力欄に表示
         displayUserId.textContent = userId; // ユーザーIDを表示
         initializeSkinSelection(); // 見た目選択UIを初期化
+        
+        // FPSチェックボックスの状態を設定
+        const fpsToggle = document.getElementById('fpsToggle');
+        if (fpsToggle) {
+            fpsToggle.checked = showFps;
+        }
+        
         optionsPopupOverlay.classList.add('show'); // ポップアップを表示
         // オプションポップアップ表示中は他のポップアップを閉じる
         rankingPopupOverlay.classList.remove('show');
@@ -2912,6 +2934,16 @@ if (applyOptionsButton) {
         userName = userNameInput.value; // 名前を反映
         localStorage.setItem('game_user_name', userName); // ローカルストレージに保存
         toggleOptionsPopup(); // ポップアップを閉じる
+    });
+}
+
+// FPSチェックボックスのイベントリスナー
+const fpsToggle = document.getElementById('fpsToggle');
+if (fpsToggle) {
+    fpsToggle.addEventListener('change', () => {
+        showFps = fpsToggle.checked;
+        saveFpsSettings();
+        console.log(`FPS表示: ${showFps ? 'ON' : 'OFF'}`);
     });
 }
 

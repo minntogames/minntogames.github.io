@@ -468,6 +468,38 @@
             font-weight: 500;
         }
 
+        /* FPS表示設定のスタイル */
+        .fps-setting {
+            border-top: 1px solid #555;
+            padding-top: 15px;
+        }
+
+        .fps-control {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .fps-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .fps-checkbox {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #00b894;
+        }
+
+        .fps-text {
+            user-select: none;
+        }
+
         /* ガチャポップアップのスタイル */
         .gacha-popup {
             max-width: 500px;
@@ -784,6 +816,17 @@
                                 <img src="img/shadow/cat_normal.PNG" alt="シャドウ">
                                 <span>シャドウ</span>
                             </button>
+                        </div>
+                    </div>
+                    
+                    <!-- FPS表示設定セクション -->
+                    <div class="fps-setting mb-4">
+                        <h3 class="text-lg font-semibold mb-3">表示設定</h3>
+                        <div class="fps-control">
+                            <label class="fps-label">
+                                <input type="checkbox" id="fpsToggle" class="fps-checkbox">
+                                <span class="fps-text">FPS表示</span>
+                            </label>
                         </div>
                     </div>
                     
