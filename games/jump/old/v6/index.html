@@ -201,16 +201,6 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            flex: 1;
-            min-width: 0; /* flexboxでの省略表示のために必要 */
-        }
-
-        .ranking-user-info span {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            flex: 1;
-            min-width: 0;
         }
 
         .ranking-user-icon {
@@ -450,18 +440,9 @@
 
         .skin-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
             margin-top: 10px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        @media (max-width: 600px) {
-            .skin-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 8px;
-            }
         }
 
         .skin-button {
@@ -671,8 +652,8 @@
 
         .gacha-result-image-container {
             position: relative;
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             overflow: hidden;
             display: flex;
@@ -682,8 +663,8 @@
         }
 
         .gacha-result-image {
-            width: 45px;
-            height: 45px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
             border-radius: 50%;
         }
@@ -730,44 +711,6 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
 
-        .gacha-result.new-skin.rare {
-            background: linear-gradient(135deg, #fd79a8, #6c5ce7);
-            animation: pulse-rare 2s ease-in-out infinite;
-        }
-
-        .gacha-result.new-skin.secret-rare {
-            background: linear-gradient(135deg, #a29bfe, #6c5ce7, #fd79a8);
-            background-size: 300% 300%;
-            animation: gradient-shift 2s ease infinite, pulse-secret 2s ease-in-out infinite;
-        }
-
-        .gacha-result.new-skin.ultra-rare {
-            background: linear-gradient(135deg, #fdcb6e, #e17055, #fd79a8, #6c5ce7);
-            background-size: 400% 400%;
-            animation: gradient-shift 3s ease infinite, pulse-ultra-rare 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-rare {
-            0%, 100% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
-            50% { transform: scale(1.05); box-shadow: 0 10px 25px rgba(253, 121, 168, 0.5); }
-        }
-
-        @keyframes pulse-secret {
-            0%, 100% { transform: scale(1); box-shadow: 0 8px 20px rgba(108, 92, 231, 0.5); }
-            50% { transform: scale(1.06); box-shadow: 0 12px 30px rgba(162, 155, 254, 0.6); }
-        }
-
-        @keyframes pulse-ultra-rare {
-            0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(225, 112, 85, 0.5); }
-            50% { transform: scale(1.08); box-shadow: 0 15px 40px rgba(253, 203, 110, 0.7); }
-        }
-
-        @keyframes gradient-shift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
         .gacha-result.duplicate {
             background: linear-gradient(135deg, #74b9ff, #0984e3);
             color: white;
@@ -811,324 +754,8 @@
             box-shadow: none;
         }
 
-        /* ガチャボタンコンテナ */
-        .gacha-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .gacha-button.gacha10 {
-            background: linear-gradient(135deg, #fd79a8, #6c5ce7);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
-        }
-
-        .gacha-button.gacha10:hover {
-            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4);
-        }
-
-        /* 10連ガチャ結果エリア */
-        .gacha10-result-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
-        }
-
-        .gacha10-animation {
-            text-align: center;
-            color: white;
-        }
-
-        .gacha10-progress {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 30px;
-            min-width: 300px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .gacha10-counter {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #fdcb6e;
-        }
-
-        .gacha10-current-result {
-            margin: 20px 0;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .gacha10-current-result img {
-            width: 100px;
-            height: 125px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .gacha10-controls {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .gacha10-button {
-            background: linear-gradient(135deg, #00b894, #00a085);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .gacha10-button.skip {
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
-        }
-
-        .gacha10-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        /* 10連ガチャ最終結果 */
-        .gacha10-final-result {
-            text-align: center;
-            color: white;
-            padding: 20px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .gacha10-final-result h3 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #fdcb6e;
-        }
-
-        .gacha10-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin: 20px 0;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .gacha10-item {
-            position: relative;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .gacha10-item.new {
-            border-color: #fdcb6e;
-            background: rgba(253, 203, 110, 0.2);
-            box-shadow: 0 0 15px rgba(253, 203, 110, 0.5);
-        }
-
-        .gacha10-item.secret {
-            border-color: #6c5ce7;
-            background: rgba(108, 92, 231, 0.2);
-            box-shadow: 0 0 15px rgba(108, 92, 231, 0.5);
-        }
-
-        .gacha10-item.miss {
-            border-color: #636e72;
-            background: rgba(99, 110, 114, 0.2);
-        }
-
-        .gacha10-item img {
-            width: 35px;
-            height: 52px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-
-        .gacha10-item-name {
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-        }
-
-        .gacha10-new-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #e17055;
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .gacha10-close-button {
-            background: linear-gradient(135deg, #fd79a8, #6c5ce7);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
-            backdrop-filter: blur(5px);
-        }
-
-        .gacha10-close-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
-        }
-
         .gacha-button-icon {
             font-size: 24px;
-        }
-
-        /* 排出確率表示ボタン */
-        .rates-button {
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 10px auto 0;
-        }
-
-        .rates-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 15px rgba(9, 132, 227, 0.4);
-        }
-
-        /* 排出確率ポップアップ */
-        .rates-popup {
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .rates-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .rates-section {
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            padding: 15px;
-            background: #f8f9fa;
-        }
-
-        .rates-section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-align: center;
-            padding: 8px;
-            border-radius: 8px;
-            color: white;
-        }
-
-        .normal-section {
-            background: linear-gradient(135deg, #00b894, #00a085);
-        }
-
-        .rare-section {
-            background: linear-gradient(135deg, #e17055, #d63031);
-        }
-
-        .secret-section {
-            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-        }
-
-        .miss-section {
-            background: linear-gradient(135deg, #636e72, #2d3436);
-        }
-
-        .rates-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .rate-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .rate-name {
-            font-weight: 500;
-            color: #333;
-        }
-
-        .rate-percent {
-            font-weight: bold;
-            color: #e17055;
-        }
-
-        .secret-note {
-            font-size: 12px;
-            color: #666;
-            font-style: italic;
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .gacha-info {
-            margin-top: 15px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
         }
 
         .gacha-rates {
@@ -1434,26 +1061,6 @@
                                 <img src="img/shadow/cat_normal.PNG" alt="シャドウ">
                                 <span>シャドウ</span>
                             </button>
-                            <button class="skin-button" data-skin="black-dark">
-                                <img src="img/black-dark/cat_normal.PNG" alt="ダークブラック">
-                                <span>ダークブラック</span>
-                            </button>
-                            <button class="skin-button" data-skin="brown-pirates">
-                                <img src="img/brown-pirates/cat_normal.PNG" alt="パイレーツ">
-                                <span>パイレーツ</span>
-                            </button>
-                            <button class="skin-button" data-skin="mike-party">
-                                <img src="img/mike-party/cat_normal.PNG" alt="パーティーミケ">
-                                <span>パーティーミケ</span>
-                            </button>
-                            <button class="skin-button" data-skin="normal-fish">
-                                <img src="img/normal-fish/cat_normal.PNG" alt="フィッシュ">
-                                <span>フィッシュ</span>
-                            </button>
-                            <button class="skin-button" data-skin="normal-golden">
-                                <img src="img/normal-golden/cat_normal.PNG" alt="ゴールデン">
-                                <span>ゴールデン</span>
-                            </button>
                         </div>
                         <p style="color: #666; font-size: 12px; margin-top: 10px;">
                             ※ガチャで新しいスキンを獲得できます
@@ -1540,18 +1147,6 @@
                         <span class="coin-text">コイン</span>
                     </div>
                     
-                    <!-- おさかなコイン表示とコンバート -->
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;">
-                        <div style="display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #74b9ff, #0984e3); border-radius: 15px; padding: 8px 15px; color: white; font-weight: bold;">
-                            <span style="font-size: 18px;">🐟</span>
-                            <span id="fishCoinAmount" style="font-size: 16px;">0</span>
-                            <span style="font-size: 14px;">おさかなコイン</span>
-                        </div>
-                        <button onclick="convertFishCoins()" style="background: linear-gradient(135deg, #00b894, #00a085); color: white; border: none; border-radius: 20px; padding: 8px 16px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-                            10枚→1コイン
-                        </button>
-                    </div>
-                    
                     <!-- ガチャ結果表示エリア -->
                     <div id="gachaResultArea" class="gacha-result-area" style="display: none;">
                         <div id="gachaAnimation" class="gacha-animation">
@@ -1560,88 +1155,39 @@
                         <div id="gachaResult" class="gacha-result"></div>
                     </div>
                     
-                    <!-- 10連ガチャ結果表示エリア -->
-                    <div id="gacha10ResultArea" class="gacha10-result-area" style="display: none;">
-                        <div id="gacha10Animation" class="gacha10-animation">
-                            <div class="gacha10-progress">
-                                <div class="gacha10-counter"><span id="gacha10Count">1</span>/10</div>
-                                <div class="gacha10-current-result" id="gacha10CurrentResult"></div>
-                                <div class="gacha10-controls">
-                                    <button id="gacha10NextButton" class="gacha10-button">次へ</button>
-                                    <button id="gacha10SkipButton" class="gacha10-button skip">スキップ</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="gacha10FinalResult" class="gacha10-final-result" style="display: none;">
-                            <h3>10連ガチャ結果</h3>
-                            <div id="gacha10Grid" class="gacha10-grid">
-                                <!-- 10個のアイテムブロックがここに表示される -->
-                            </div>
-                            <button id="gacha10CloseButton" class="gacha10-close-button">閉じる</button>
-                        </div>
-                    </div>
-                    
                     <!-- ガチャボタン -->
-                    <div class="gacha-buttons">
-                        <button id="gachaButton" class="gacha-button">
-                            <span class="gacha-button-icon">🎰</span>
-                            <span class="gacha-button-text">ガチャを引く (10コイン)</span>
-                        </button>
-                        
-                        <button id="gacha10Button" class="gacha-button gacha10">
-                            <span class="gacha-button-icon">🎰✨</span>
-                            <span class="gacha-button-text">10連ガチャ (100コイン)</span>
-                        </button>
-                    </div>
-                    
-                    <!-- 排出率表示ボタン -->
-                    <button id="showRatesButton" class="rates-button">
-                        📊 排出確率を確認
+                    <button id="gachaButton" class="gacha-button">
+                        <span class="gacha-button-icon">🎰</span>
+                        <span class="gacha-button-text">ガチャを引く (10コイン)</span>
                     </button>
                     
-                    <div class="gacha-info">
-                        <p>💰 高度1000mで1コイン獲得！</p>
-                        <p>🎯 新しいスキンを手に入れよう！</p>
-                        <p>🐟 被ったスキンやハズレでおさかなコイン獲得！</p>
-                        <p style="font-size: 12px; color: #999;">ノーマル・ハズレ: 1枚 / レア: 3枚 / シークレット: 5枚</p>
-                        <p style="font-size: 12px; color: #999;">おさかなコイン10枚 = 通常コイン1枚に変換可能</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 排出確率ポップアップ -->
-            <div id="rates-popup-overlay" class="popup-overlay">
-                <div class="popup-content rates-popup">
-                    <button id="closeRatesButton" class="popup-close-button">×</button>
-                    <h2 class="text-2xl font-bold mb-4">📊 ガチャ排出確率</h2>
-                    
-                    <div class="rates-container">
-                        <div class="rates-section">
-                            <h3 class="rates-section-title normal-section">ノーマル</h3>
-                            <div class="rates-list" id="normalRatesList">
-                                <!-- JavaScriptで動的に生成 -->
+                    <!-- 排出率表示 -->
+                    <div class="gacha-rates">
+                        <h3>排出率</h3>
+                        <div class="rate-list">
+                            <div class="rate-item">
+                                <span class="rate-skin">🐱 ミケ</span>
+                                <span class="rate-percent">15%</span>
                             </div>
-                        </div>
-                        
-                        <div class="rates-section">
-                            <h3 class="rates-section-title rare-section">レア</h3>
-                            <div class="rates-list" id="rareRatesList">
-                                <!-- JavaScriptで動的に生成 -->
+                            <div class="rate-item">
+                                <span class="rate-skin">🖤 クロ</span>
+                                <span class="rate-percent">15%</span>
                             </div>
-                        </div>
-                        
-                        <div class="rates-section">
-                            <h3 class="rates-section-title secret-section">シークレット</h3>
-                            <div class="rates-list" id="secretRatesList">
-                                <!-- JavaScriptで動的に生成 -->
+                            <div class="rate-item">
+                                <span class="rate-skin">🤎 チャチャ</span>
+                                <span class="rate-percent">15%</span>
                             </div>
-                            <p class="secret-note">※シークレットスキンの名前は獲得するまで秘密です</p>
-                        </div>
-                        
-                        <div class="rates-section">
-                            <h3 class="rates-section-title miss-section">その他</h3>
-                            <div class="rates-list" id="missRatesList">
-                                <!-- JavaScriptで動的に生成 -->
+                            <div class="rate-item">
+                                <span class="rate-skin">❔ シークレット</span>
+                                <span class="rate-percent">15%</span>
+                            </div>
+                            <div class="rate-item">
+                                <span class="rate-skin">❔ シークレット</span>
+                                <span class="rate-percent">10%</span>
+                            </div>
+                            <div class="rate-item">
+                                <span class="rate-skin">❌ ハズレ</span>
+                                <span class="rate-percent">30%</span>
                             </div>
                         </div>
                     </div>

@@ -575,7 +575,12 @@ const playerSkins = {
     black: { name: "クロ", folder: "black" },
     brown: { name: "チャチャ", folder: "brown" },
     mint: { name: "ミント", folder: "mint" },
-    shadow: { name: "シャドウ", folder: "shadow" }
+    shadow: { name: "シャドウ", folder: "shadow" },
+    "black-dark": { name: "クロ(深淵)", folder: "black-dark" },
+    "brown-pirates": { name: "チャチャ(海賊)", folder: "brown-pirates" },
+    "mike-party": { name: "ミケ(パーティー)", folder: "mike-party" },
+    "normal-fish": { name: "シロ(おさかな)", folder: "normal-fish" },
+    "normal-golden": { name: "シロ(ゴールデン)", folder: "normal-golden" }
 };
 
 // 現在の見た目設定
@@ -586,17 +591,38 @@ let currentUserIcon = "normal"; // デフォルトアイコン
 
 // ガチャ・コイン管理
 let playerCoins = 10000;
+let fishCoins = 0; // おさかなコイン
 let unlockedSkins = ["normal"]; // デフォルトでnormalはアンロック済み
 let currentGameCoins = 0; // 今回のゲームで獲得したコイン数
 
 // ガチャの排出率設定
 const gachaRates = {
-    mike: 0.15,    // 15%
-    black: 0.15,   // 15%
-    brown: 0.15,   // 15%
-    mint: 0.15,    // 15%
-    shadow: 0.10,  // 10%
-    miss: 0.30     // 30% (ハズレ)
+    mike: 0.15,              // 15%
+    black: 0.15,             // 15%
+    brown: 0.15,             // 15%
+    "black-dark": 0.08,      // 8% (レア)
+    "brown-pirates": 0.08,   // 8% (レア)
+    "mike-party": 0.08,      // 8% (レア)
+    "normal-fish": 0.08,     // 8% (レア)
+    mint: 0.04,              // 4% (シークレットレア)
+    shadow: 0.04,            // 4% (シークレットレア)
+    "normal-golden": 0.01,   // 1% (シークレットレア)
+    miss: 0.14               // 14% (ハズレ)
+};
+
+// 排出確率表示用の情報（シークレットレアは名前を伏せる）
+const gachaRateDisplay = {
+    mike: { name: "ミケ", rate: "15%", rarity: "ノーマル" },
+    black: { name: "クロ", rate: "15%", rarity: "ノーマル" },
+    brown: { name: "チャチャ", rate: "15%", rarity: "ノーマル" },
+    "black-dark": { name: "クロ(深淵)", rate: "8%", rarity: "レア" },
+    "brown-pirates": { name: "チャチャ(海賊)", rate: "8%", rarity: "レア" },
+    "mike-party": { name: "ミケ(パーティー)", rate: "8%", rarity: "レア" },
+    "normal-fish": { name: "シロ(おさかな)", rate: "8%", rarity: "レア" },
+    mint: { name: "???", rate: "4%", rarity: "シークレット" },
+    shadow: { name: "???", rate: "4%", rarity: "シークレット" },
+    "normal-golden": { name: "???", rate: "1%", rarity: "シークレット" },
+    miss: { name: "ハズレ", rate: "14%", rarity: "ハズレ" }
 };
 
 // コイン数をローカルストレージから読み込み
@@ -605,13 +631,20 @@ function loadPlayerCoins() {
     if (savedCoins) {
         playerCoins = parseInt(savedCoins);
     }
+    
+    // おさかなコインも読み込み
+    const savedFishCoins = localStorage.getItem('jump_fish_coins');
+    if (savedFishCoins) {
+        fishCoins = parseInt(savedFishCoins);
+    }
 }
 
 // コイン数をローカルストレージに保存
 function savePlayerCoins() {
     localStorage.setItem('jump_player_coins', playerCoins.toString());
+    localStorage.setItem('jump_fish_coins', fishCoins.toString());
 
-    saveUserData(userId,null,null,null,null,null,playerCoins);
+    saveUserData(userId,null,null,null,null,null,playerCoins,null,null,fishCoins);
 }
 
 // アンロック済みスキンをローカルストレージから読み込み
@@ -1004,10 +1037,25 @@ async function loadCoinsAndSkins(userId) {
             // コイン数の読み込み（複数のフィールド名に対応）
             if (data.coins !== undefined) {
                 playerCoins = parseInt(data.coins) || 0;
-                updateCoinDisplay();
+                // DOM要素が存在する場合のみ更新
+                if (typeof updateCoinDisplay === 'function') {
+                    updateCoinDisplay();
+                }
             } else if (data.coins !== undefined) {
                 playerCoins = parseInt(data.coin) || 0;
-                updateCoinDisplay();
+                // DOM要素が存在する場合のみ更新
+                if (typeof updateCoinDisplay === 'function') {
+                    updateCoinDisplay();
+                }
+            }
+            
+            // おさかなコインの読み込み
+            if (data.fishCoins !== undefined) {
+                fishCoins = parseInt(data.fishCoins) || 0;
+                // DOM要素が存在する場合のみ更新
+                if (typeof updateFishCoinDisplay === 'function') {
+                    updateFishCoinDisplay();
+                }
             }
             
             // 解放済みスキンの読み込み（カンマ区切り文字列形式）
@@ -2526,14 +2574,14 @@ const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnI
  * @param {String} unlockedSkins 
  * @returns 
  */
-function saveUserData(userId, username=null, score=null, altitude=null, nightmareAltitude=null, nightmare=null, coins=null, unlockedSkins=null, userIcon=null) {
+function saveUserData(userId, username=null, score=null, altitude=null, nightmareAltitude=null, nightmare=null, coins=null, unlockedSkins=null, userIcon=null, fishCoins=null) {
     if (!userId) {
         console.warn("ユーザーIDが指定されていません。データを保存できません。");
         return;
     }
 
-    console.log({ userId, username, score, altitude, nightmareAltitude, nightmare, coins, unlockedSkins, userIcon });
-    console.log(score !== null, altitude !== null, nightmareAltitude !== null, nightmare !== null, coins !== null, unlockedSkins !== null, userIcon !== null);
+    console.log({ userId, username, score, altitude, nightmareAltitude, nightmare, coins, unlockedSkins, userIcon, fishCoins });
+    console.log(score !== null, altitude !== null, nightmareAltitude !== null, nightmare !== null, coins !== null, unlockedSkins !== null, userIcon !== null, fishCoins !== null);
 
     const formData = new URLSearchParams();
     formData.append("userId", userId);
@@ -2545,6 +2593,7 @@ function saveUserData(userId, username=null, score=null, altitude=null, nightmar
     if (coins !== null) formData.append("coins", coins);
     if (unlockedSkins !== null) formData.append("unlockedSkins", Array.isArray(unlockedSkins) ? unlockedSkins.join(',') : unlockedSkins);
     if (userIcon !== null) formData.append("userIcon", userIcon);
+    if (fishCoins !== null) formData.append("fishCoins", fishCoins);
 
     fetch(gasWebAppUrl, {
         method: "POST",
@@ -2657,6 +2706,10 @@ const gachaResultArea = document.getElementById('gachaResultArea');
 const gachaAnimation = document.getElementById('gachaAnimation');
 const gachaResult = document.getElementById('gachaResult');
 
+// 初期表示を更新
+updateCoinDisplay();
+updateFishCoinDisplay();
+
 // ガチャリザルト用の画像を事前にロード
 const gachaResultImages = {};
 function preloadGachaImages() {
@@ -2758,20 +2811,59 @@ function toggleGachaPopup() {
 
 // コイン表示を更新
 function updateCoinDisplay() {
-    if (coinAmount) {
-        coinAmount.textContent = playerCoins.toString();
+    const coinAmountElement = document.getElementById('coinAmount');
+    if (coinAmountElement) {
+        coinAmountElement.textContent = playerCoins.toString();
+    }
+}
+
+// おさかなコイン表示を更新
+function updateFishCoinDisplay() {
+    const fishCoinElement = document.getElementById('fishCoinAmount');
+    if (fishCoinElement) {
+        fishCoinElement.textContent = fishCoins.toString();
+    }
+}
+
+// おさかなコイン変換機能
+function convertFishCoins() {
+    if (fishCoins >= 10) {
+        const convertCount = Math.floor(fishCoins / 10);
+        fishCoins -= convertCount * 10;
+        playerCoins += convertCount;
+        
+        updateCoinDisplay();
+        updateFishCoinDisplay();
+        savePlayerCoins();
+        
+        alert(`おさかなコイン${convertCount * 10}枚をコイン${convertCount}枚に変換しました！`);
+    } else {
+        alert('おさかなコインが10枚未満のため変換できません。');
     }
 }
 
 // ガチャボタンの状態を更新
 function updateGachaButton() {
+    const gachaButton = document.getElementById('gachaButton');
+    const gacha10Button = document.getElementById('gacha10Button');
+    
     if (gachaButton) {
-        if (playerCoins >= 1) {
+        if (playerCoins >= 10) {
             gachaButton.disabled = false;
             gachaButton.style.opacity = '1';
         } else {
             gachaButton.disabled = true;
             gachaButton.style.opacity = '0.5';
+        }
+    }
+    
+    if (gacha10Button) {
+        if (playerCoins >= 100) {
+            gacha10Button.disabled = false;
+            gacha10Button.style.opacity = '1';
+        } else {
+            gacha10Button.disabled = true;
+            gacha10Button.style.opacity = '0.5';
         }
     }
 }
@@ -2798,6 +2890,178 @@ function performGacha() {
     }, 2000);
 }
 
+// 10連ガチャを実行
+function performGacha10() {
+    if (playerCoins < 100) {
+        return;
+    }
+    
+    // コインを消費
+    playerCoins -= 100;
+    savePlayerCoins();
+    updateCoinDisplay();
+    updateGachaButton();
+    
+    // 10連ガチャの結果を生成
+    const results = [];
+    for (let i = 0; i < 10; i++) {
+        results.push(drawGacha());
+    }
+    
+    // 10連ガチャアニメーション開始
+    showGacha10Animation(results);
+}
+
+// 10連ガチャのグローバル変数
+let gacha10Results = [];
+let gacha10CurrentIndex = 0;
+
+// 10連ガチャアニメーションを表示
+function showGacha10Animation(results) {
+    gacha10Results = results;
+    gacha10CurrentIndex = 0;
+    
+    const gacha10ResultArea = document.getElementById('gacha10ResultArea');
+    const gacha10Animation = document.getElementById('gacha10Animation');
+    const gacha10FinalResult = document.getElementById('gacha10FinalResult');
+    
+    if (gacha10ResultArea && gacha10Animation && gacha10FinalResult) {
+        gacha10ResultArea.style.display = 'flex';
+        gacha10Animation.style.display = 'block';
+        gacha10FinalResult.style.display = 'none';
+        
+        // ガチャボタンを無効化
+        const gachaButton = document.getElementById('gachaButton');
+        const gacha10Button = document.getElementById('gacha10Button');
+        if (gachaButton) gachaButton.disabled = true;
+        if (gacha10Button) gacha10Button.disabled = true;
+        
+        // 最初の結果を表示
+        showGacha10CurrentResult();
+    }
+}
+
+// 現在の10連ガチャ結果を表示
+function showGacha10CurrentResult() {
+    const gacha10Count = document.getElementById('gacha10Count');
+    const gacha10CurrentResult = document.getElementById('gacha10CurrentResult');
+    
+    if (gacha10Count && gacha10CurrentResult && gacha10CurrentIndex < gacha10Results.length) {
+        gacha10Count.textContent = gacha10CurrentIndex + 1;
+        
+        const result = gacha10Results[gacha10CurrentIndex];
+        let resultHtml = '';
+        
+        if (result.type === 'miss') {
+            resultHtml = `
+                <div class="gacha10-current-item miss">
+                    <div style="font-size: 48px; margin-bottom: 10px;">😞</div>
+                    <div style="font-size: 18px; font-weight: bold;">ハズレ</div>
+                    <div style="font-size: 14px; color: #fdcb6e;">🐟 おさかなコイン+${result.fishCoin || 1}</div>
+                </div>
+            `;
+        } else {
+            const skinName = playerSkins[result.skin].name;
+            const isSecret = ['mint', 'shadow', 'normal-golden'].includes(result.skin);
+            const fishCoinText = result.type === 'duplicate' ? `<div style="font-size: 14px; color: #fdcb6e;">🐟 おさかなコイン+${result.fishCoin || 1}</div>` : '';
+            
+            resultHtml = `
+                <div class="gacha10-current-item ${result.type === 'new' ? 'new' : 'duplicate'} ${isSecret ? 'secret' : ''}">
+                    <img src="img/${result.skin}/cat_normal.PNG" alt="${skinName}">
+                    <div style="font-size: 16px; font-weight: bold; margin-top: 10px;">${skinName}</div>
+                    <div style="font-size: 14px; color: #ccc;">${result.type === 'new' ? '✨ NEW!' : '重複'}</div>
+                    ${fishCoinText}
+                </div>
+            `;
+        }
+        
+        gacha10CurrentResult.innerHTML = resultHtml;
+    }
+}
+
+// 10連ガチャの次へボタン
+function gacha10Next() {
+    gacha10CurrentIndex++;
+    
+    if (gacha10CurrentIndex >= gacha10Results.length) {
+        // 全て表示完了したら最終結果を表示
+        showGacha10FinalResult();
+    } else {
+        // 次の結果を表示
+        showGacha10CurrentResult();
+    }
+}
+
+// 10連ガチャのスキップボタン
+function gacha10Skip() {
+    // 最終結果を直接表示
+    showGacha10FinalResult();
+}
+
+// 10連ガチャの最終結果を表示
+function showGacha10FinalResult() {
+    const gacha10Animation = document.getElementById('gacha10Animation');
+    const gacha10FinalResult = document.getElementById('gacha10FinalResult');
+    const gacha10Grid = document.getElementById('gacha10Grid');
+    
+    if (gacha10Animation && gacha10FinalResult && gacha10Grid) {
+        gacha10Animation.style.display = 'none';
+        gacha10FinalResult.style.display = 'block';
+        
+        // グリッドに結果を表示
+        gacha10Grid.innerHTML = '';
+        
+        gacha10Results.forEach((result, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'gacha10-item';
+            
+            if (result.type === 'miss') {
+                itemDiv.classList.add('miss');
+                itemDiv.innerHTML = `
+                    <div style="font-size: 24px; margin-bottom: 8px;">😞</div>
+                    <div class="gacha10-item-name">ハズレ</div>
+                `;
+            } else {
+                const skinName = playerSkins[result.skin].name;
+                const isSecret = ['mint', 'shadow', 'normal-golden'].includes(result.skin);
+                const isNew = result.type === 'new';
+                
+                if (isSecret) itemDiv.classList.add('secret');
+                if (isNew) itemDiv.classList.add('new');
+                
+                itemDiv.innerHTML = `
+                    <img src="img/${result.skin}/cat_normal.PNG" alt="${skinName}">
+                    <div class="gacha10-item-name">${skinName}</div>
+                    ${isNew ? '<div class="gacha10-new-badge">NEW</div>' : ''}
+                `;
+            }
+            
+            gacha10Grid.appendChild(itemDiv);
+        });
+        
+        // 新しいスキンが獲得されたので見た目選択UIを更新
+        setTimeout(() => {
+            initializeSkinSelection();
+        }, 100);
+    }
+}
+
+// 10連ガチャを閉じる
+function closeGacha10() {
+    const gacha10ResultArea = document.getElementById('gacha10ResultArea');
+    if (gacha10ResultArea) {
+        gacha10ResultArea.style.display = 'none';
+    }
+    
+    // ガチャボタンを有効化
+    const gachaButton = document.getElementById('gachaButton');
+    const gacha10Button = document.getElementById('gacha10Button');
+    if (gachaButton) gachaButton.disabled = false;
+    if (gacha10Button) gacha10Button.disabled = false;
+    
+    updateGachaButton();
+}
+
 // ガチャアニメーションを表示
 function showGachaAnimation() {
     gachaResultArea.style.display = 'block';
@@ -2815,7 +3079,11 @@ function drawGacha() {
         cumulative += rate;
         if (random <= cumulative) {
             if (skin === 'miss') {
-                return { type: 'miss', skin: null };
+                // ハズレの場合はおさかなコイン1枚
+                fishCoins += 1;
+                updateFishCoinDisplay();
+                savePlayerCoins();
+                return { type: 'miss', skin: null, fishCoin: 1 };
             } else {
                 const isNew = !unlockedSkins.includes(skin);
                 if (isNew) {
@@ -2825,14 +3093,32 @@ function drawGacha() {
                     console.log(`スキン保存開始`);
                     console.log(unlockedSkins);
                     saveUserData(userId, null, null, null, null, null, null, unlockedSkins);
+                    return { type: 'new', skin: skin };
+                } else {
+                    // 被りの場合はレア度に応じておさかなコインを獲得
+                    let fishCoinReward = 2; // デフォルト（ノーマル）
+                    
+                    // レア度判定
+                    if (['mint', 'shadow', 'normal-golden'].includes(skin)) {
+                        fishCoinReward = 5; // シークレット
+                    } else if (['black-dark', 'brown-pirates', 'mike-party', 'normal-fish'].includes(skin)) {
+                        fishCoinReward = 3; // レア
+                    }
+                    
+                    fishCoins += fishCoinReward;
+                    updateFishCoinDisplay();
+                    savePlayerCoins();
+                    return { type: 'duplicate', skin: skin, fishCoin: fishCoinReward };
                 }
-                return { type: isNew ? 'new' : 'duplicate', skin: skin };
             }
         }
     }
     
     // フォールバック（通常は到達しない）
-    return { type: 'miss', skin: null };
+    fishCoins += 1;
+    updateFishCoinDisplay();
+    savePlayerCoins();
+    return { type: 'miss', skin: null, fishCoin: 1 };
 }
 
 // ガチャ結果を表示
@@ -2849,8 +3135,28 @@ function showGachaResult(result) {
         className = 'miss';
     } else if (result.type === 'new') {
         const skinName = playerSkins[result.skin].name;
-        message = `🎉 新しいスキン獲得！<br>「${skinName}」`;
-        className = 'new-skin';
+        let rarity = '';
+        let rarityClass = '';
+        
+        // レア度判定
+        if (['mint', 'shadow', 'normal-golden'].includes(result.skin)) {
+            if (result.skin === 'normal-golden') {
+                rarity = '✨✨✨ シークレット(超レア) ✨✨✨';
+                rarityClass = 'ultra-rare';
+            } else {
+                rarity = '🔮🔮 シークレット 🔮🔮';
+                rarityClass = 'secret-rare';
+            }
+        } else if (['black-dark', 'brown-pirates', 'mike-party', 'normal-fish'].includes(result.skin)) {
+            rarity = '⭐⭐ レア ⭐⭐';
+            rarityClass = 'rare';
+        } else {
+            rarity = '⭐ ノーマル ⭐';
+            rarityClass = 'normal-rarity';
+        }
+        
+        message = `🎉 新しいスキン獲得！<br>${rarity}<br>「${skinName}」`;
+        className = `new-skin ${rarityClass}`;
         skinImage = `<div class="gacha-result-image-container shine-effect">
                         <img src="img/${result.skin}/cat_normal.PNG" alt="${skinName}" class="gacha-result-image">
                         <div class="shine-overlay"></div>
@@ -2861,11 +3167,17 @@ function showGachaResult(result) {
         }, 100);
     } else if (result.type === 'duplicate') {
         const skinName = playerSkins[result.skin].name;
-        message = `✨ 既に持っているスキン<br>「${skinName}」`;
+        message = `✨ 既に持っているスキン<br>「${skinName}」<br>🐟 おさかなコイン+${result.fishCoin}`;
         className = 'duplicate';
         skinImage = `<div class="gacha-result-image-container">
                         <img src="img/${result.skin}/cat_normal.PNG" alt="${skinName}" class="gacha-result-image">
                      </div>`;
+    }
+    
+    // ハズレの場合のメッセージにもおさかなコインを含める
+    if (result.type === 'miss') {
+        message = `😞 ハズレ...<br>🐟 おさかなコイン+${result.fishCoin}`;
+        className = 'miss';
     }
     
     gachaResult.innerHTML = skinImage + '<div class="gacha-result-text">' + message + '</div>';
@@ -2916,6 +3228,14 @@ async function displayRanking(mode = currentRankingMode) {
 
             console.table(allData); // デバッグ用に全データを表示
 
+            // 名前を省略する関数
+            function truncateName(name, maxLength = 10) {
+                if (name.length <= maxLength) {
+                    return name;
+                }
+                return name.substring(0, maxLength) + '…';
+            }
+
             rankingList.innerHTML = ''; // リストをクリア
 
             if (allData.length === 0) {
@@ -2939,10 +3259,13 @@ async function displayRanking(mode = currentRankingMode) {
                 const userIcon = data.userIcon || 'normal';
                 const iconPath = `img/${userIcon}/icon.PNG`;
 
+                // 名前を省略
+                const displayName = truncateName(userName);
+
                 listItem.innerHTML = `
                     <div class="ranking-user-info">
                         <img src="${iconPath}" alt="${userName}" class="ranking-user-icon">
-                        <span>${rank}. ${userName}</span>
+                        <span>${rank}. ${displayName}</span>
                     </div>
                     <span>${altitude} m</span>
                 `;
@@ -3172,6 +3495,114 @@ if (gachaButton) {
     console.log("Gacha button event listener added"); // デバッグ用
 } else {
     console.error("gachaButton not found"); // デバッグ用
+}
+
+// 10連ガチャボタンのイベントリスナー
+const gacha10Button = document.getElementById('gacha10Button');
+if (gacha10Button) {
+    gacha10Button.addEventListener('click', performGacha10);
+    console.log("Gacha10 button event listener added"); // デバッグ用
+} else {
+    console.error("gacha10Button not found"); // デバッグ用
+}
+
+// 10連ガチャの制御ボタンのイベントリスナー
+const gacha10NextButton = document.getElementById('gacha10NextButton');
+const gacha10SkipButton = document.getElementById('gacha10SkipButton');
+const gacha10CloseButton = document.getElementById('gacha10CloseButton');
+
+if (gacha10NextButton) {
+    gacha10NextButton.addEventListener('click', gacha10Next);
+    console.log("Gacha10 next button event listener added");
+}
+
+if (gacha10SkipButton) {
+    gacha10SkipButton.addEventListener('click', gacha10Skip);
+    console.log("Gacha10 skip button event listener added");
+}
+
+if (gacha10CloseButton) {
+    gacha10CloseButton.addEventListener('click', closeGacha10);
+    console.log("Gacha10 close button event listener added");
+}
+
+// 排出確率ポップアップの要素を取得
+const showRatesButton = document.getElementById('showRatesButton');
+const ratesPopupOverlay = document.getElementById('rates-popup-overlay');
+const closeRatesButton = document.getElementById('closeRatesButton');
+
+// 排出確率ポップアップの表示・非表示
+function toggleRatesPopup() {
+    if (ratesPopupOverlay) {
+        if (ratesPopupOverlay.classList.contains('show')) {
+            ratesPopupOverlay.classList.remove('show');
+        } else {
+            ratesPopupOverlay.classList.add('show');
+            populateRatesPopup(); // 表示時に確率データを更新
+        }
+    }
+}
+
+// 排出確率データをポップアップに表示
+function populateRatesPopup() {
+    const normalList = document.getElementById('normalRatesList');
+    const rareList = document.getElementById('rareRatesList');
+    const secretList = document.getElementById('secretRatesList');
+    const missList = document.getElementById('missRatesList');
+
+    // リストをクリア
+    if (normalList) normalList.innerHTML = '';
+    if (rareList) rareList.innerHTML = '';
+    if (secretList) secretList.innerHTML = '';
+    if (missList) missList.innerHTML = '';
+
+    // 排出確率データを各カテゴリに分類して表示
+    Object.entries(gachaRateDisplay).forEach(([skinKey, data]) => {
+        const rateItem = document.createElement('div');
+        rateItem.className = 'rate-item';
+        
+        // シークレットレアの場合、獲得済みなら本名を表示
+        let displayName = data.name;
+        if (data.rarity === 'シークレット' && unlockedSkins.includes(skinKey)) {
+            displayName = playerSkins[skinKey]?.name || data.name;
+        }
+        
+        rateItem.innerHTML = `
+            <span class="rate-name">${displayName}</span>
+            <span class="rate-percent">${data.rate}</span>
+        `;
+
+        // カテゴリ別に追加
+        switch(data.rarity) {
+            case 'ノーマル':
+                if (normalList) normalList.appendChild(rateItem);
+                break;
+            case 'レア':
+                if (rareList) rareList.appendChild(rateItem);
+                break;
+            case 'シークレット':
+                if (secretList) secretList.appendChild(rateItem);
+                break;
+            case 'ハズレ':
+                if (missList) missList.appendChild(rateItem);
+                break;
+        }
+    });
+}
+
+// 排出確率ポップアップのイベントリスナー
+if (showRatesButton) {
+    showRatesButton.addEventListener('click', toggleRatesPopup);
+    console.log("Show rates button event listener added");
+} else {
+    console.error("showRatesButton not found");
+}
+
+if (closeRatesButton) {
+    closeRatesButton.addEventListener('click', toggleRatesPopup);
+    console.log("Close rates button event listener added");
+} else {
+    console.error("closeRatesButton not found");
 }
 
 // 音量調節UIの要素を取得
