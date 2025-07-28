@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ばうんすばうんす</title>
+        <meta property="og:image" content="https://minntogames.github.io/image/bounce.png">
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Minnteluaのお部屋" />
+        <meta property="og:title" content="ばうんすばうんす">
+        <meta property="og:description" content="ねこちゃんはでんせつのにぼし星にむかってだいぼうけん！迫りくるタカッケイを避けながら突き進もう！！！！">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="theme-color" content="#0000cd" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* スクロールバーを非表示にする */
+        }
+        body {
+            height: 100%;
+            width: 100%;
+            background: #1b98c9;
+            margin: 0;
+            display: flex; /* Flexboxを使って中央に配置 */
+            flex-direction: column; /* 縦方向に要素を並べる */
+            justify-content: center; /* 垂直方向中央揃え */
+            align-items: center; /* 水平方向中央揃え */
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%; /* 親要素の高さに合わせる */
+            width: 100%; /* 親要素の幅に合わせる */
+        }
+        #bg-canvas {
+            display: block;
+            margin: 0 auto;
+            background: #87ceeb;
+            /* デフォルトサイズ */
+            width: 600px;
+            height: 800px;
+            max-width: 100%;
+            max-height: calc(100vh - 120px); /* ボタンの高さとマージンを考慮 */
+            touch-action: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); /* 影を追加 */
+            /* パフォーマンス最適化 */
+            will-change: transform;
+            transform: translateZ(0);
+        }
+        /* オプションポップアップのスタイル */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .popup-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .popup-content {
+            background-color: #333;
+            border: 3px solid #fff;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+            width: 90%; /* レスポンシブ対応 */
+            max-width: 400px; /* 最大幅 */
+            max-height: 80vh; /* ランキングリストが長くなる可能性があるので高さを制限 */
+            overflow-y: auto; /* コンテンツが溢れたらスクロール */
+        }
+        .popup-close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #f00;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-input {
+            width: calc(100% - 20px); /* パディング考慮 */
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            color: #333;
+        }
+        .popup-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: background-color 0.2s ease;
+        }
+        .popup-button:hover {
+            background-color: #0056b3;
+        }
+        /* 歯車アイコンのスタイル */
+        .gear-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            z-index: 10; /* Canvasより手前に表示 */
+        }
+        .gear-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: #ccc; /* 歯車の色 */
+            stroke: #333; /* 歯車の枠線 */
+            stroke-width: 2;
+        }
+        .gear-icon svg .center-circle {
+            fill: #666; /* 中央の穴の色 */
+        }
+                /* アイコンのスタイル */
+        .icon-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* アイコン間のスペース */
+            z-index: 10;
+        }
+        .icon-container .icon-button {
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            display: block; /* ブロック要素にして縦に並べる */
+        }
+        .icon-container .icon-button svg {
+            width: 100%;
+            height: 100%;
+            fill: #ccc; /* アイコンの色 */
+            stroke: #333; /* アイコンの枠線 */
+            stroke-width: 2;
+        }
+        .icon-container .icon-button svg .center-circle {
+            fill: #666; /* 中央の穴の色 */
+        }
+        .icon-container .icon-button#ranking-icon-html svg {
+            fill: gold; /* ランキングアイコンの色 */
+            stroke: #a0522d; /* ランキングアイコンの枠線 */
+        }
+
+                /* ランキングリストのスタイル */
+        #rankingList {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+            text-align: left;
+        }
+        #rankingList li {
+            background-color: #444;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1em;
+        }
+
+        .ranking-user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ranking-user-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        #rankingList li:nth-child(1) {
+            background-color: #ffd700; /* Gold for 1st place */
+            color: #333;
+            font-weight: bold;
+        }
+        #rankingList li:nth-child(2) {
+            background-color: #c0c0c0; /* Silver for 2nd place */
+            color: #333;
+            font-weight: bold;
+        }
+        #rankingList li:nth-child(3) {
+            background-color: #cd7f32; /* Bronze for 3rd place */
+            color: #333;
+            font-weight: bold;
+        }
+
+        /* ランキングタブのスタイル */
+        .ranking-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #555;
+        }
+        .ranking-tab {
+            background: none;
+            border: none;
+            color: #bbb;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .ranking-tab:hover {
+            color: #fff;
+        }
+        .ranking-tab.active {
+            color: #fff;
+            border-bottom-color: #0891b2;
+        }
+
+        /* 読み込み中表示のスタイル */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1b98c9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: #fff;
+            font-family: sans-serif;
+        }
+        
+        #loading-overlay.hidden {
+            display: none;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* ボタンコンテナのスタイル */
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px; /* ボタン間のスペース */
+            margin-top: 20px; /* キャンバスとの間隔 */
+            width: 100%;
+            max-width: 600px; /* キャンバスの幅に合わせる */
+        }
+
+        /* ボタンの基本スタイル */
+        .control-button {
+            background-color: #4CAF50; /* 緑色 */
+            color: white;
+            padding: 20px 30px;
+            border: none;
+            border-radius: 50%; /* 円形にする */
+            font-size: 2.5em; /* アイコンのサイズ */
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); /* 影 */
+            transition: all 0.2s ease; /* ホバー/アクティブ時のアニメーション */
+            width: 80px; /* ボタンの幅 */
+            height: 80px; /* ボタンの高さ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', sans-serif; /* フォント */
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3); /* テキストの影 */
+            background-image: linear-gradient(to bottom, #6ddb71, #4CAF50); /* グラデーション */
+            border: 3px solid #3a8a3e; /* 枠線 */
+        }
+
+        .control-button:active {
+            transform: translateY(2px); /* 押した時のエフェクト */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            background-image: linear-gradient(to bottom, #4CAF50, #6ddb71); /* グラデーション反転 */
+        }
+
+        /* モバイル版のみボタンを表示 */
+        #controls {
+            display: none; /* デフォルトでは非表示 */
+        }
+
+        @media (max-width: 700px), (max-height: 900px) {
+            #bg-canvas {
+                /* スマホや小さい画面では画面いっぱいに拡大 */
+                width: auto;
+                height: auto;
+                max-height: calc(100vh - 100px); /* ボタンの高さとマージンを考慮 */
+            }
+            #controls {
+                display: flex; /* モバイル版で表示 */
+            }
+        }
+
+        /* 音量調節のスタイル */
+        .audio-controls {
+            border-top: 1px solid #ddd;
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mute-button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .mute-button:hover {
+            background: #45a049;
+        }
+
+        .mute-button.muted {
+            background: #f44336;
+        }
+
+        .mute-button.muted svg {
+            opacity: 0.6;
+        }
+
+        .volume-label {
+            width: 60px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .volume-value {
+            width: 45px;
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 見た目選択のスタイル */
+        .skin-selection {
+            border-top: 1px solid #ddd;
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .skin-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .skin-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .skin-button:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+
+        .skin-button.active {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .skin-button img {
+            width: 40px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+
+        .skin-button span {
+            font-weight: 500;
+        }
+
+        /* アイコン選択のスタイル */
+        .icon-selection {
+            border-top: 1px solid #ddd;
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .icon-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 10px;
+            color: #333;
+            position: relative;
+        }
+
+        .icon-button:hover {
+            border-color: #2196F3;
+            background: #f0f4ff;
+        }
+
+        .icon-button.active {
+            border-color: #2196F3;
+            background: #e3f2fd;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        .icon-button.locked {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        .icon-button.locked:hover {
+            border-color: #ddd;
+            background: #f5f5f5;
+        }
+
+        .icon-button img {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 2px;
+        }
+
+        .icon-button span {
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .lock-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #999;
+        }
+
+        /* FPS表示設定のスタイル */
+        .fps-setting {
+            border-top: 1px solid #555;
+            padding-top: 15px;
+        }
+
+        .fps-control {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .fps-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .fps-checkbox {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #00b894;
+        }
+
+        .fps-text {
+            user-select: none;
+        }
+
+        /* ガチャポップアップのスタイル */
+        .gacha-popup {
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .coin-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .coin-icon {
+            font-size: 24px;
+        }
+
+        .coin-amount {
+            font-size: 24px;
+            color: #b8860b;
+        }
+
+        .gacha-result-area {
+            text-align: center;
+            margin: 20px 0;
+            min-height: 120px;
+        }
+
+        .gacha-animation {
+            margin-bottom: 20px;
+        }
+
+        .gacha-ball {
+            font-size: 48px;
+            animation: bounce 0.6s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .gacha-result {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gacha-result-image-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .gacha-result-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .shine-effect {
+            animation: shine 2s infinite;
+        }
+
+        .shine-overlay {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: shineMove 2s infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 
+                           0 0 40px rgba(255, 215, 0, 0.6),
+                           0 0 60px rgba(255, 215, 0, 0.4);
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(255, 215, 0, 1), 
+                           0 0 60px rgba(255, 215, 0, 0.8),
+                           0 0 90px rgba(255, 215, 0, 0.6);
+            }
+        }
+
+        @keyframes shineMove {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .gacha-result-text {
+            text-align: center;
+        }
+
+        .gacha-result.new-skin {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .gacha-result.duplicate {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+        }
+
+        .gacha-result.miss {
+            background: linear-gradient(135deg, #636e72, #2d3436);
+            color: white;
+        }
+
+        .gacha-button {
+            background: linear-gradient(135deg, #e17055, #d63031);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(214, 48, 49, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+
+        .gacha-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(214, 48, 49, 0.4);
+        }
+
+        .gacha-button:active {
+            transform: translateY(0);
+        }
+
+        .gacha-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .gacha-button-icon {
+            font-size: 24px;
+        }
+
+        .gacha-rates {
+            margin-top: 20px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .gacha-rates h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .rate-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .rate-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .rate-item:last-child {
+            border-bottom: none;
+        }
+
+        .rate-skin {
+            font-weight: 500;
+            color: black;
+        }
+
+        .rate-percent {
+            color: #6c757d;
+            font-weight: bold;
+        }
+
+        /* モード切り替えボタンのスタイル */
+        .mode-toggle-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 8px 16px;
+            background: linear-gradient(to bottom, #ff6b6b, #d63031);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            z-index: 20;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .mode-toggle-button:hover {
+            background: linear-gradient(to bottom, #fd79a8, #e84393);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        .mode-toggle-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .mode-toggle-button.disabled {
+            background: linear-gradient(to bottom, #aaa, #888);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .mode-toggle-button.disabled:hover {
+            transform: none;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 設定タブのスタイル */
+        .settings-tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .settings-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .settings-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .settings-tabs::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 2px;
+        }
+
+        .settings-tab {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            margin-right: 4px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .settings-tab:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .settings-tab.active {
+            background: #007bff;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+        }
+
+        .settings-tab-content {
+            display: none;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .settings-tab-content.active {
+            display: block;
+        }
+
+        .settings-tab-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .settings-tab-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .settings-tab-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .settings-tab-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        </style>
+        <!-- Font Awesome for icons -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
+    <body>
+        <!-- 読み込み中表示 -->
+        <div id="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">読み込み中...</div>
+        </div>
+        
+        <div id="game-container">
+            <canvas id="bg-canvas" width="600" height="800"></canvas>
+            
+            <!-- モード切り替えボタン -->
+            <button id="mode-toggle-button" class="mode-toggle-button">
+                ノーマルモード
+            </button>
+            
+            <!-- アイコンコンテナ -->
+            <div class="icon-container">
+                <!-- 歯車アイコン (HTML要素として) -->
+                <button id="gear-icon-html" class="icon-button">
+                    <svg viewBox="0 0 100 100">
+                        <!-- 歯車の外形 -->
+                        <path d="M50,10 L65,25 L80,20 L75,35 L90,50 L75,65 L80,80 L65,75 L50,90 L35,75 L20,80 L25,65 L10,50 L25,35 L20,20 L35,25 Z" />
+                        <!-- 中央の穴 -->
+                        <circle class="center-circle" cx="50" cy="50" r="20" />
+                    </svg>
+                </button>
+
+                <!-- ランキングアイコン (HTML要素として) -->
+                <button id="ranking-icon-html" class="icon-button">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                </button>
+
+                <!-- ガチャアイコン (HTML要素として) -->
+                <button id="gacha-icon-html" class="icon-button">
+                    <svg viewBox="0 0 100 100" fill="currentColor">
+                        <!-- ガチャポンの球体部分 -->
+                        <circle cx="50" cy="45" r="30" fill="#ff6b6b" opacity="0.8"/>
+                        <!-- ガチャポンの下部分 -->
+                        <rect x="25" y="70" width="50" height="20" rx="25" fill="#4ecdc4"/>
+                        <!-- ガチャポンの取っ手 -->
+                        <rect x="75" y="35" width="8" height="20" rx="4" fill="#95a5a6"/>
+                        <!-- 中身のカプセル -->
+                        <circle cx="50" cy="45" r="15" fill="#fff" opacity="0.6"/>
+                        <text x="50" y="95" text-anchor="middle" font-size="8" fill="currentColor">ガチャ</text>
+                    </svg>
+                </button>
+            </div>
+            <!-- オプションポップアップ (HTML要素として) -->
+            <div id="options-popup-overlay" class="popup-overlay">
+                <div class="popup-content">
+                    <button id="closeOptionsButton" class="popup-close-button">×</button>
+                    <h2 class="text-2xl font-bold mb-4">オプション</h2>
+                    
+                    <!-- タブナビゲーション -->
+                    <div class="settings-tabs">
+                        <button class="settings-tab active" onclick="showSettingsTab('game')">ゲーム設定</button>
+                        <button class="settings-tab" onclick="showSettingsTab('skin')">スキン</button>
+                        <button class="settings-tab" onclick="showSettingsTab('icon')">アイコン</button>
+                    </div>
+
+                    <!-- ゲーム設定タブ -->
+                    <div id="game-tab" class="settings-tab-content active">
+                        <div class="text-lg text-left mb-2">ユーザーID: <span id="displayUserId"></span></div>
+                        <div class="text-lg text-left mb-2">名前:</div>
+                        <input type="text" id="userNameInput" class="popup-input" placeholder="名前を入力">
+                        
+                        <!-- 音量調節セクション -->
+                        <div class="audio-controls mb-4">
+                            <h3 class="text-lg font-semibold mb-3">音量設定</h3>
+                            
+                            <!-- BGM音量 -->
+                            <div class="volume-control mb-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <button id="bgmMuteButton" class="mute-button" title="BGMミュート">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                                        </svg>
+                                    </button>
+                                    <label class="volume-label">BGM</label>
+                                </div>
+                                <input type="range" id="bgmVolumeSlider" class="volume-slider" min="0" max="100" value="60">
+                                <span id="bgmVolumeValue" class="volume-value">60%</span>
+                            </div>
+                            
+                            <!-- SE音量 -->
+                            <div class="volume-control mb-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <button id="seMuteButton" class="mute-button" title="SE ミュート">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                                        </svg>
+                                    </button>
+                                    <label class="volume-label">効果音</label>
+                                </div>
+                                <input type="range" id="seVolumeSlider" class="volume-slider" min="0" max="100" value="70">
+                                <span id="seVolumeValue" class="volume-value">70%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- FPS表示設定セクション -->
+                        <div class="fps-setting mb-4">
+                            <h3 class="text-lg font-semibold mb-3">表示設定</h3>
+                            <div class="fps-control">
+                                <label class="fps-label">
+                                    <input type="checkbox" id="fpsToggle" class="fps-checkbox">
+                                    <span class="fps-text">FPS表示</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- スキンタブ -->
+                    <div id="skin-tab" class="settings-tab-content">
+                        <h3 class="text-lg font-semibold mb-3">プレイヤーの見た目</h3>
+                        <div class="skin-grid">
+                            <button class="skin-button active" data-skin="normal">
+                                <img src="img/normal/cat_normal.PNG" alt="ノーマル">
+                                <span>シロ</span>
+                            </button>
+                            <button class="skin-button" data-skin="mike">
+                                <img src="img/mike/cat_normal.PNG" alt="ミケ">
+                                <span>ミケ</span>
+                            </button>
+                            <button class="skin-button" data-skin="black">
+                                <img src="img/black/cat_normal.PNG" alt="ブラック">
+                                <span>クロ</span>
+                            </button>
+                            <button class="skin-button" data-skin="brown">
+                                <img src="img/brown/cat_normal.PNG" alt="ブラウン">
+                                <span>チャチャ</span>
+                            </button>
+                            <button class="skin-button" data-skin="mint">
+                                <img src="img/mint/cat_normal.PNG" alt="ミント">
+                                <span>ミント</span>
+                            </button>
+                            <button class="skin-button" data-skin="shadow">
+                                <img src="img/shadow/cat_normal.PNG" alt="シャドウ">
+                                <span>シャドウ</span>
+                            </button>
+                        </div>
+                        <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                            ※ガチャで新しいスキンを獲得できます
+                        </p>
+                    </div>
+
+                    <!-- アイコンタブ -->
+                    <div id="icon-tab" class="settings-tab-content">
+                        <h3 class="text-lg font-semibold mb-3">ユーザーアイコン</h3>
+                        <div class="icon-grid">
+                            <!-- 動的に生成される -->
+                        </div>
+                        <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                            ※ランキングに表示されるアイコンです
+                        </p>
+                    </div>
+                    
+                    <button id="howToPlayButton" class="popup-button" style="background: #28a745; margin-right: 10px;">遊び方</button>
+                    <button id="applyOptionsButton" class="popup-button">適用</button>
+                </div>
+            </div>
+
+            <!-- 遊び方ポップアップ (HTML要素として) -->
+            <div id="how-to-play-popup-overlay" class="popup-overlay">
+                <div class="popup-content" style="max-width: 500px;">
+                    <button id="closeHowToPlayButton" class="popup-close-button">×</button>
+                    <h2 class="text-2xl font-bold mb-4">遊び方</h2>
+                    <div class="text-left text-base space-y-3">
+                        <div><strong>🎯 目標:</strong><br>ねこちゃんを操作して、できるだけ高い場所まで到達しよう！</div>
+                        
+                        <div><strong>🎮 操作方法:</strong><br>
+                        • PCの場合: 左右の矢印キー<br>
+                        • スマホの場合: 画面下の左右ボタン</div>
+                        
+                        <div><strong>⚠️ 障害物:</strong><br>
+                        • <span style="color: #d33;">🔴 赤い円</span>: 4方向に小玉を発射<br>
+                        • <span style="color: #39f;">🔵 青い棒</span>: 左右に伸び縮み<br>
+                        • <span style="color: #00a000;">🔺 緑の三角</span>: プレイヤーに向かって衝撃波<br>
+                        • <span style="color: #8a2be2;">🟣 紫六角</span>: 6方向にランダム弾幕 (高度50000+)<br>
+                        • <span style="color: #ff8c00;">🟠 オレンジ五角</span>: クローン生成 (高度50000+)<br>
+                        • <span style="color: #00bfff;">💎 水色ひし形</span>: 突進攻撃 (高度50000+)</div>
+
+                        <strong>⚠️ これらの障害物は風船に当たるとアウトだぞ！</strong>
+                        
+                        <div><strong>💡 コツ:</strong><br>
+                        障害物が白く光った瞬間は攻撃の合図！<br>
+                        タイミングを見計らって避けよう。</div>
+                        
+                        <div class="text-center mt-4">
+                            <strong>頑張って伝説のにぼし星を目指そう！🌟</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ランキングポップアップ (HTML要素として) -->
+            <div id="ranking-popup-overlay" class="popup-overlay">
+                <div class="popup-content">
+                    <button id="closeRankingButton" class="popup-close-button">×</button>
+                    <h2 class="text-2xl font-bold mb-4">ランキング</h2>
+                    
+                    <!-- ランキングタブ -->
+                    <div class="ranking-tabs">
+                        <button id="normal-ranking-tab" class="ranking-tab active">ノーマル</button>
+                        <button id="nightmare-ranking-tab" class="ranking-tab">ナイトメア</button>
+                    </div>
+                    
+                    <ul id="rankingList">
+                        <!-- ランキングデータがここに挿入されます -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ガチャポップアップ (HTML要素として) -->
+            <div id="gacha-popup-overlay" class="popup-overlay">
+                <div class="popup-content gacha-popup">
+                    <button id="closeGachaButton" class="popup-close-button">×</button>
+                    <h2 class="text-2xl font-bold mb-4">🎰 ガシャポン</h2>
+                    
+                    <!-- コイン表示 -->
+                    <div class="coin-display mb-4">
+                        <span class="coin-icon">🪙</span>
+                        <span id="coinAmount" class="coin-amount">0</span>
+                        <span class="coin-text">コイン</span>
+                    </div>
+                    
+                    <!-- ガチャ結果表示エリア -->
+                    <div id="gachaResultArea" class="gacha-result-area" style="display: none;">
+                        <div id="gachaAnimation" class="gacha-animation">
+                            <div class="gacha-ball">🎯</div>
+                        </div>
+                        <div id="gachaResult" class="gacha-result"></div>
+                    </div>
+                    
+                    <!-- ガチャボタン -->
+                    <button id="gachaButton" class="gacha-button">
+                        <span class="gacha-button-icon">🎰</span>
+                        <span class="gacha-button-text">ガチャを引く (10コイン)</span>
+                    </button>
+                    
+                    <!-- 排出率表示 -->
+                    <div class="gacha-rates">
+                        <h3>排出率</h3>
+                        <div class="rate-list">
+                            <div class="rate-item">
+                                <span class="rate-skin">🐱 ミケ</span>
+                                <span class="rate-percent">15%</span>
+                            </div>
+                            <div class="rate-item">
+                                <span class="rate-skin">🖤 クロ</span>
+                                <span class="rate-percent">15%</span>
+                            </div>
+                            <div class="rate-item">
+                                <span class="rate-skin">🤎 チャチャ</span>
+                                <span class="rate-percent">15%</span>
+                            </div>
+                            <div class="rate-item">
+                                <span class="rate-skin">❔ シークレット</span>
+                                <span class="rate-percent">15%</span>
+                            </div>
+                            <div class="rate-item">
+                                <span class="rate-skin">❔ シークレット</span>
+                                <span class="rate-percent">10%</span>
+                            </div>
+                            <div class="rate-item">
+                                <span class="rate-skin">❌ ハズレ</span>
+                                <span class="rate-percent">30%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="controls">
+                <button id="left-button" class="control-button"><i class="fas fa-arrow-left"></i></button>
+                <button id="right-button" class="control-button"><i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+        <script src="anime.js"></script>
+    </body>
+</html>
