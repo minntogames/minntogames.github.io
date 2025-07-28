@@ -3193,7 +3193,10 @@ function showGachaResult(result) {
 
 // コインを追加（ゲームオーバー時に呼び出される）
 function addCoins(altitude) {
-    const newCoins = Math.floor(altitude / 1000);
+    // ナイトメアモードは500mごと、ノーマルモードは1000mごとに1コイン
+    const coinThreshold = isNightmareMode ? 500 : 1000;
+    const newCoins = Math.floor(altitude / coinThreshold);
+    
     if (newCoins > 0) {
         currentGameCoins = newCoins; // 今回獲得したコイン数を記録
         playerCoins += newCoins;
