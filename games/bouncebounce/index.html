@@ -1131,6 +1131,158 @@
             font-size: 14px;
         }
 
+        /* 実績関連のスタイル */
+        .achievements-popup {
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            padding: 10px;
+        }
+
+        .achievement-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .achievement-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .achievement-item.unlocked {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-color: #ffd700;
+        }
+
+        .achievement-item.locked {
+            background: linear-gradient(135deg, #f1f3f4, #dadce0);
+            color: #888;
+        }
+
+        .achievement-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .achievement-icon.locked {
+            font-size: 30px;
+        }
+
+        .achievement-name {
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .achievement-detail-popup {
+            max-width: 400px;
+        }
+
+        .achievement-detail-content {
+            text-align: center;
+        }
+
+        .achievement-detail-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .achievement-detail-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .achievement-detail-description {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .achievement-detail-date {
+            font-size: 14px;
+            color: #999;
+            font-style: italic;
+        }
+
+        /* 実績解放通知のスタイル */
+        .achievement-notifications-container {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            z-index: 10000;
+            pointer-events: none;
+            width: 100%;
+        }
+
+        .achievement-notification {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(0,184,148,0.3);
+            animation: slideInOut 4s ease-in-out;
+            max-width: 350px;
+            transform: translateX(-100%);
+        }
+
+        .achievement-notification-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .achievement-notification-content {
+            flex: 1;
+        }
+
+        .achievement-notification-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .achievement-notification-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        @keyframes slideInOut {
+            0% {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            15% {
+                transform: translateX(20px);
+                opacity: 1;
+            }
+            85% {
+                transform: translateX(20px);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+        }
+
         .gacha-rates {
             margin-top: 20px;
             text-align: left;
@@ -1339,6 +1491,23 @@
                         <!-- 中身のカプセル -->
                         <circle cx="50" cy="45" r="15" fill="#fff" opacity="0.6"/>
                         <text x="50" y="95" text-anchor="middle" font-size="8" fill="currentColor">ガチャ</text>
+                    </svg>
+                </button>
+
+                <!-- 実績アイコン (HTML要素として) -->
+                <button id="achievements-icon-html" class="icon-button">
+                    <svg viewBox="0 0 100 100" fill="currentColor">
+                        <!-- メダルの外周 -->
+                        <circle cx="50" cy="40" r="25" fill="#ffd700" stroke="#ffb347" stroke-width="2"/>
+                        <!-- メダルの内側 -->
+                        <circle cx="50" cy="40" r="18" fill="#fff" opacity="0.9"/>
+                        <!-- 星の形 -->
+                        <polygon points="50,25 53,35 63,35 55,42 58,52 50,47 42,52 45,42 37,35 47,35" fill="#ffd700"/>
+                        <!-- リボン部分 -->
+                        <rect x="45" y="65" width="10" height="20" fill="#ff6b6b"/>
+                        <polygon points="40,75 45,70 45,85 40,80" fill="#ff4757"/>
+                        <polygon points="60,75 55,70 55,85 60,80" fill="#ff4757"/>
+                        <text x="50" y="95" text-anchor="middle" font-size="8" fill="currentColor">実績</text>
                     </svg>
                 </button>
             </div>
@@ -1609,6 +1778,28 @@
                 </div>
             </div>
 
+            <!-- 実績ポップアップ -->
+            <div id="achievements-popup-overlay" class="popup-overlay">
+                <div class="popup-content achievements-popup">
+                    <button id="closeAchievementsButton" class="popup-close-button">×</button>
+                    <h2 class="text-2xl font-bold mb-4">🏆 実績</h2>
+                    
+                    <div class="achievements-grid" id="achievementsGrid">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 実績詳細ポップアップ -->
+            <div id="achievement-detail-popup-overlay" class="popup-overlay">
+                <div class="popup-content achievement-detail-popup">
+                    <button id="closeAchievementDetailButton" class="popup-close-button">×</button>
+                    <div class="achievement-detail-content" id="achievementDetailContent">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                </div>
+            </div>
+
             <!-- 排出確率ポップアップ -->
             <div id="rates-popup-overlay" class="popup-overlay">
                 <div class="popup-content rates-popup">
@@ -1648,6 +1839,10 @@
                 </div>
             </div>
 
+            <!-- 実績解放通知 -->
+            <div id="achievement-notifications" class="achievement-notifications-container">
+                <!-- JavaScriptで動的に生成される通知がここに表示される -->
+            </div>
 
             <div id="controls">
                 <button id="left-button" class="control-button"><i class="fas fa-arrow-left"></i></button>

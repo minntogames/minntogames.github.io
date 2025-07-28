@@ -595,6 +595,275 @@ let fishCoins = 0; // おさかなコイン
 let unlockedSkins = ["normal"]; // デフォルトでnormalはアンロック済み
 let currentGameCoins = 0; // 今回のゲームで獲得したコイン数
 
+// プレイ統計
+let playCount = 0; // プレイ回数
+let missCount = {}; // 障害物別ヒット回数 例: {cycle: 5, stick: 3, triangle: 2}
+let totalScore = 0; // 総上昇距離
+
+// ガチャ統計
+let gachaCount = 0; // 総ガチャ回数
+let tenGachaCount = 0; // 10連ガチャ回数
+let secretCharacterCount = 0; // シークレットキャラ入手回数
+let gachaMissCount = 0; // ハズレ回数
+let goldenCatCount = 0; // normal-golden入手回数
+let duplicateCount = 0; // 重複入手回数
+
+// 実績システム
+const ACHIEVEMENTS = {
+    first_journey: {
+        id: 'first_journey',
+        name: '旅立ち',
+        description: 'ゲームを一回プレイする',
+        icon: '🚀',
+        rarity: 'BRONZE',
+        condition: (stats, data) => stats.playCount >= 1
+    },
+    hit_by_circle: {
+        id: 'hit_by_circle',
+        name: '丸いのに',
+        description: '赤玉にやられる',
+        icon: '🔴',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.circle || 0) >= 1
+    },
+    hit_by_red_bullet: {
+        id: 'hit_by_red_bullet',
+        name: 'クリーンヒット',
+        description: '赤玉の玉にやられる',
+        icon: '🎯',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.red_bullet || 0) >= 1
+    },
+    hit_by_rect: {
+        id: 'hit_by_rect',
+        name: '痒いところに届いた',
+        description: '青棒にやられる',
+        icon: '📦',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.rect || 0) >= 1
+    },
+    hit_by_shockwave: {
+        id: 'hit_by_shockwave',
+        name: 'ソニックブーム',
+        description: '緑三角の衝撃波にやられる',
+        icon: '💥',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.shockwave || 0) >= 1
+    },
+    hit_by_triangle: {
+        id: 'hit_by_triangle',
+        name: '角は痛い',
+        description: '緑三角にやられる',
+        icon: '🔺',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.triangle || 0) >= 1
+    },
+    hit_by_hexagon: {
+        id: 'hit_by_hexagon',
+        name: '今度は割れる',
+        description: '紫六角にやられる',
+        icon: '⬡',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.hexagon || 0) >= 1
+    },
+    hit_by_purple_bullet: {
+        id: 'hit_by_purple_bullet',
+        name: '上位互換',
+        description: '紫六角の紫玉にやられる',
+        icon: '🟣',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.purple_bullet || 0) >= 1
+    },
+    hit_by_diamond: {
+        id: 'hit_by_diamond',
+        name: '彗星とともに',
+        description: '水色ひし形にやられる',
+        icon: '💎',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.diamond || 0) >= 1
+    },
+    hit_by_diamond_mini: {
+        id: 'hit_by_diamond_mini',
+        name: '摩擦熱',
+        description: '水色ひし形のミニひし形にやられる',
+        icon: '💠',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.diamond_mini || 0) >= 1
+    },
+    hit_by_pentagon: {
+        id: 'hit_by_pentagon',
+        name: '自分の力で',
+        description: 'オレンジ五角にやられる',
+        icon: '🔶',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.pentagon || 0) >= 1
+    },
+    hit_by_pentagon_clone: {
+        id: 'hit_by_pentagon_clone',
+        name: 'だましうち',
+        description: 'オレンジ五角のクローンにやられる',
+        icon: '👥',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.pentagon_clone || 0) >= 1
+    },
+    // 50回やられる系の実績
+    hit_by_circle_50: {
+        id: 'hit_by_circle_50',
+        name: '静電気で割れてた',
+        description: '赤玉に50回やられる',
+        icon: '⚡',
+        rarity: 'BRONZE',
+        condition: (stats, data) => (stats.missCount.circle || 0) >= 50
+    },
+    hit_by_red_bullet_50: {
+        id: 'hit_by_red_bullet_50',
+        name: 'リンチ',
+        description: '赤玉の玉に50回やられる',
+        icon: '🎯',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.red_bullet || 0) >= 50
+    },
+    hit_by_rect_50: {
+        id: 'hit_by_rect_50',
+        name: '天井',
+        description: '青棒に50回やられる',
+        icon: '🏢',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.rect || 0) >= 50
+    },
+    hit_by_shockwave_50: {
+        id: 'hit_by_shockwave_50',
+        name: '魔の手',
+        description: '緑三角の衝撃波に50回やられる',
+        icon: '👹',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.shockwave || 0) >= 50
+    },
+    hit_by_triangle_50: {
+        id: 'hit_by_triangle_50',
+        name: '悪魔使い',
+        description: '緑三角に50回やられる',
+        icon: '😈',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.triangle || 0) >= 50
+    },
+    hit_by_hexagon_50: {
+        id: 'hit_by_hexagon_50',
+        name: '多角形の暴力',
+        description: '紫六角に50回やられる',
+        icon: '⚰️',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.hexagon || 0) >= 50
+    },
+    hit_by_purple_bullet_50: {
+        id: 'hit_by_purple_bullet_50',
+        name: '精度高め',
+        description: '紫六角の紫玉に50回やられる',
+        icon: '🔮',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.purple_bullet || 0) >= 50
+    },
+    hit_by_diamond_50: {
+        id: 'hit_by_diamond_50',
+        name: '爆速スペース暴走族',
+        description: '水色ひし形に50回やられる',
+        icon: '🏎️',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.diamond || 0) >= 50
+    },
+    hit_by_diamond_mini_50: {
+        id: 'hit_by_diamond_mini_50',
+        name: '熟練殺し',
+        description: '水色ひし形のミニひし形に50回やられる',
+        icon: '🗡️',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.diamond_mini || 0) >= 50
+    },
+    hit_by_pentagon_50: {
+        id: 'hit_by_pentagon_50',
+        name: 'まだやれる',
+        description: 'オレンジ五角に50回やられる',
+        icon: '💪',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.pentagon || 0) >= 50
+    },
+    hit_by_pentagon_clone_50: {
+        id: 'hit_by_pentagon_clone_50',
+        name: 'イリュージョン',
+        description: 'オレンジ五角のクローンに50回やられる',
+        icon: '🎭',
+        rarity: 'SILVER',
+        condition: (stats, data) => (stats.missCount.pentagon_clone || 0) >= 50
+    },
+    // プレイ回数とガチャ系の実績
+    play_100_times: {
+        id: 'play_100_times',
+        name: 'たくさん頑張った',
+        description: '100回ゲームプレイする',
+        icon: '🏆',
+        rarity: 'SILVER',
+        condition: (stats, data) => stats.playCount >= 100
+    },
+    first_gacha: {
+        id: 'first_gacha',
+        name: 'コスチューム',
+        description: '1回ガチャを引く',
+        icon: '🎰',
+        rarity: 'BRONZE',
+        condition: (stats, data) => data.gachaCount >= 1
+    },
+    ten_gacha: {
+        id: 'ten_gacha',
+        name: '大人買い',
+        description: '10連ガチャを引く',
+        icon: '💰',
+        rarity: 'SILVER',
+        condition: (stats, data) => data.tenGachaCount >= 1
+    },
+    secret_character: {
+        id: 'secret_character',
+        name: '見つかっちゃった！',
+        description: 'シークレットキャラを引く',
+        icon: '🔍',
+        rarity: 'SILVER',
+        condition: (stats, data) => data.secretCharacterCount >= 1
+    },
+    gacha_miss: {
+        id: 'gacha_miss',
+        name: '次があるさ',
+        description: 'ハズレを引く',
+        icon: '😅',
+        rarity: 'BRONZE',
+        condition: (stats, data) => data.gachaMissCount >= 1
+    },
+    golden_cat: {
+        id: 'golden_cat',
+        name: 'ネコをあがめよ',
+        description: 'normal-goldenを引く',
+        icon: '👑',
+        rarity: 'GOLD',
+        condition: (stats, data) => data.goldenCatCount >= 1
+    },
+    duplicate_character: {
+        id: 'duplicate_character',
+        name: 'ダブった',
+        description: 'どれか1回取得済みキャラクターをもう一度引く',
+        icon: '👯',
+        rarity: 'SILVER',
+        condition: (stats, data) => data.duplicateCount >= 1
+    }
+};
+
+let unlockedAchievements = {}; // 解放済み実績 {achievementId: unlockDate}
+
+// 実績レア度とコイン報酬の定義
+const ACHIEVEMENT_RARITY = {
+    BRONZE: { name: 'ブロンズ', coins: 1, color: '#CD7F32' },
+    SILVER: { name: 'シルバー', coins: 10, color: '#C0C0C0' },
+    GOLD: { name: 'ゴールド', coins: 50, color: '#FFD700' },
+    PLATINUM: { name: 'プラチナ', coins: 100, color: '#E5E4E2' }
+};
+
 // ガチャの排出率設定
 const gachaRates = {
     mike: 0.15,              // 15%
@@ -637,6 +906,91 @@ function loadPlayerCoins() {
     if (savedFishCoins) {
         fishCoins = parseInt(savedFishCoins);
     }
+    
+    // 統計データも読み込み
+    loadStatistics();
+}
+
+// 統計データをローカルストレージから読み込み
+function loadStatistics() {
+    const savedPlayCount = localStorage.getItem('jump_play_count');
+    if (savedPlayCount) {
+        playCount = parseInt(savedPlayCount);
+    }
+    
+    const savedMissCount = localStorage.getItem('jump_miss_count');
+    if (savedMissCount) {
+        try {
+            missCount = JSON.parse(savedMissCount);
+        } catch (e) {
+            console.error("Miss count parse error:", e);
+            missCount = {};
+        }
+    }
+    
+    const savedTotalScore = localStorage.getItem('jump_total_score');
+    if (savedTotalScore) {
+        totalScore = parseInt(savedTotalScore);
+    }
+    
+    // ガチャ統計データの読み込み
+    const savedGachaCount = localStorage.getItem('jump_gacha_count');
+    if (savedGachaCount) {
+        gachaCount = parseInt(savedGachaCount);
+    }
+    
+    const savedTenGachaCount = localStorage.getItem('jump_ten_gacha_count');
+    if (savedTenGachaCount) {
+        tenGachaCount = parseInt(savedTenGachaCount);
+    }
+    
+    const savedSecretCharacterCount = localStorage.getItem('jump_secret_character_count');
+    if (savedSecretCharacterCount) {
+        secretCharacterCount = parseInt(savedSecretCharacterCount);
+    }
+    
+    const savedGachaMissCount = localStorage.getItem('jump_gacha_miss_count');
+    if (savedGachaMissCount) {
+        gachaMissCount = parseInt(savedGachaMissCount);
+    }
+    
+    const savedGoldenCatCount = localStorage.getItem('jump_golden_cat_count');
+    if (savedGoldenCatCount) {
+        goldenCatCount = parseInt(savedGoldenCatCount);
+    }
+    
+    const savedDuplicateCount = localStorage.getItem('jump_duplicate_count');
+    if (savedDuplicateCount) {
+        duplicateCount = parseInt(savedDuplicateCount);
+    }
+}
+
+// 統計データをローカルストレージに保存
+function saveStatistics() {
+    localStorage.setItem('jump_play_count', playCount.toString());
+    localStorage.setItem('jump_miss_count', JSON.stringify(missCount));
+    localStorage.setItem('jump_total_score', totalScore.toString());
+    
+    // ガチャ統計もローカルストレージに保存
+    localStorage.setItem('jump_gacha_count', gachaCount.toString());
+    localStorage.setItem('jump_ten_gacha_count', tenGachaCount.toString());
+    localStorage.setItem('jump_secret_character_count', secretCharacterCount.toString());
+    localStorage.setItem('jump_gacha_miss_count', gachaMissCount.toString());
+    localStorage.setItem('jump_golden_cat_count', goldenCatCount.toString());
+    localStorage.setItem('jump_duplicate_count', duplicateCount.toString());
+    
+    // データベースにも保存
+    saveUserData(userId, { 
+        playCount, 
+        missCount, 
+        totalScore,
+        gachaCount,
+        tenGachaCount,
+        secretCharacterCount,
+        gachaMissCount,
+        goldenCatCount,
+        duplicateCount
+    });
 }
 
 // コイン数をローカルストレージに保存
@@ -644,7 +998,242 @@ function savePlayerCoins() {
     localStorage.setItem('jump_player_coins', playerCoins.toString());
     localStorage.setItem('jump_fish_coins', fishCoins.toString());
 
-    saveUserData(userId,null,null,null,null,null,playerCoins,null,null,fishCoins);
+    saveUserData(userId, { coins: playerCoins, fishCoins });
+}
+
+// 実績システム関数
+function loadAchievements() {
+    const saved = localStorage.getItem('jump_achievements');
+    if (saved) {
+        try {
+            unlockedAchievements = JSON.parse(saved);
+        } catch (e) {
+            console.error("Achievements parse error:", e);
+            unlockedAchievements = {};
+        }
+    }
+}
+
+function saveAchievements() {
+    localStorage.setItem('jump_achievements', JSON.stringify(unlockedAchievements));
+    // データベースにも保存（今後実装予定）
+}
+
+// デバッグ用：実績をリセットする関数
+function resetAchievements() {
+    unlockedAchievements = {};
+    localStorage.removeItem('jump_achievements');
+    console.log('Achievements reset');
+}
+
+function checkAchievements() {
+    const stats = { playCount, missCount, totalScore };
+    const gameData = { 
+        maxAltitude, 
+        nightmareMaxAltitude, 
+        playerCoins, 
+        fishCoins,
+        gachaCount,
+        tenGachaCount,
+        secretCharacterCount,
+        gachaMissCount,
+        goldenCatCount,
+        duplicateCount
+    };
+    
+    console.log('Checking achievements with stats:', stats);
+    console.log('Checking achievements with gameData:', gameData);
+    console.log('Current unlocked achievements:', unlockedAchievements);
+    
+    let newAchievements = [];
+    let totalCoinsEarned = 0;
+    
+    for (const [achievementId, achievement] of Object.entries(ACHIEVEMENTS)) {
+        console.log(`Checking achievement: ${achievementId}, unlocked: ${!!unlockedAchievements[achievementId]}`);
+        if (!unlockedAchievements[achievementId] && achievement.condition(stats, gameData)) {
+            // 新しい実績を解放
+            const unlockDate = new Date().toISOString();
+            unlockedAchievements[achievementId] = unlockDate;
+            newAchievements.push(achievement);
+            
+            // コイン報酬を付与
+            const rarityInfo = ACHIEVEMENT_RARITY[achievement.rarity];
+            if (rarityInfo) {
+                playerCoins += rarityInfo.coins;
+                totalCoinsEarned += rarityInfo.coins;
+                console.log(`Achievement unlocked: ${achievement.name} - Coins earned: ${rarityInfo.coins}`);
+            }
+        }
+    }
+    
+    console.log('New achievements:', newAchievements);
+    console.log('Total coins earned from achievements:', totalCoinsEarned);
+    
+    if (newAchievements.length > 0) {
+        saveAchievements();
+        showAchievementNotifications(newAchievements);
+        
+        // コイン獲得も保存
+        if (totalCoinsEarned > 0) {
+            // ローカルストレージにコインを保存
+            savePlayerCoins();
+            
+            // データベースにも保存
+            saveUserData(userId, {
+                icon: currentUserIcon,
+                coins: playerCoins,
+                fishCoins: fishCoins,
+                unlockedSkins: unlockedSkins,
+                maxAltitude: maxAltitude,
+                nightmareMaxAltitude: nightmareMaxAltitude,
+                playCount: playCount,
+                missCount: missCount,
+                totalScore: totalScore,
+                gachaCount: gachaCount,
+                tenGachaCount: tenGachaCount,
+                secretCharacterCount: secretCharacterCount,
+                gachaMissCount: gachaMissCount,
+                goldenCatCount: goldenCatCount,
+                duplicateCount: duplicateCount
+            });
+        }
+    }
+    
+    return newAchievements;
+}
+
+function showAchievementNotifications(achievements) {
+    console.log('showAchievementNotifications called with:', achievements);
+    const container = document.getElementById('achievement-notifications');
+    console.log('Achievement notifications container:', container);
+    if (!container) {
+        console.error('Achievement notifications container not found!');
+        return;
+    }
+    
+    achievements.forEach((achievement, index) => {
+        console.log(`Creating notification for achievement: ${achievement.name}`);
+        setTimeout(() => {
+            const notification = document.createElement('div');
+            notification.className = 'achievement-notification';
+            
+            const rarityInfo = ACHIEVEMENT_RARITY[achievement.rarity];
+            const rarityColor = rarityInfo ? rarityInfo.color : '#CD7F32';
+            const rarityName = rarityInfo ? rarityInfo.name : 'ブロンズ';
+            
+            notification.innerHTML = `
+                <div class="achievement-notification-icon">${achievement.icon}</div>
+                <div class="achievement-notification-content">
+                    <div class="achievement-notification-title">実績を解除しました！</div>
+                    <div class="achievement-notification-name">
+                        <span style="color: ${rarityColor}; font-weight: bold;">${rarityName}</span> ${achievement.name}
+                    </div>
+                </div>
+            `;
+            
+            console.log('Adding notification to container:', notification);
+            
+            // 既存の通知があれば下にずらす
+            const existingNotifications = container.children;
+            notification.style.top = `${existingNotifications.length * 60}px`;
+            
+            container.appendChild(notification);
+            console.log('Notification added successfully');
+            
+            // 4秒後に削除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                    console.log('Notification removed');
+                }
+            }, 4000);
+        }, index * 200); // 0.2秒間隔で表示
+    });
+}
+
+function showAchievementsPopup() {
+    const popup = document.getElementById('achievements-popup-overlay');
+    const grid = document.getElementById('achievementsGrid');
+    
+    if (!popup || !grid) return;
+    
+    // グリッドをクリア
+    grid.innerHTML = '';
+    
+    // 実績アイテムを生成
+    Object.values(ACHIEVEMENTS).forEach(achievement => {
+        const isUnlocked = unlockedAchievements[achievement.id];
+        const item = document.createElement('div');
+        item.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+        
+        // レア度による背景色を設定
+        const rarityInfo = ACHIEVEMENT_RARITY[achievement.rarity];
+        if (isUnlocked && rarityInfo) {
+            item.style.borderColor = rarityInfo.color;
+            item.style.borderWidth = '2px';
+            item.style.borderStyle = 'solid';
+        }
+        
+        item.innerHTML = `
+            <div class="achievement-icon ${isUnlocked ? '' : 'locked'}">
+                ${isUnlocked ? achievement.icon : '❔'}
+            </div>
+            <div class="achievement-name">
+                ${isUnlocked ? achievement.name : '？？？'}
+            </div>
+            ${isUnlocked && rarityInfo ? `
+                <div class="achievement-rarity" style="color: ${rarityInfo.color}; font-size: 10px; font-weight: bold; margin-top: 2px;">
+                    ${rarityInfo.name}
+                </div>
+            ` : ''}
+        `;
+        
+        item.addEventListener('click', () => {
+            showAchievementDetail(achievement, isUnlocked);
+        });
+        
+        grid.appendChild(item);
+    });
+    
+    popup.classList.add('show');
+}
+
+function showAchievementDetail(achievement, isUnlocked) {
+    const popup = document.getElementById('achievement-detail-popup-overlay');
+    const content = document.getElementById('achievementDetailContent');
+    
+    if (!popup || !content) return;
+    
+    const unlockDate = unlockedAchievements[achievement.id];
+    const rarityInfo = ACHIEVEMENT_RARITY[achievement.rarity];
+    const rarityColor = rarityInfo ? rarityInfo.color : '#CD7F32';
+    const rarityName = rarityInfo ? rarityInfo.name : 'ブロンズ';
+    const coinsReward = rarityInfo ? rarityInfo.coins : 1;
+    
+    content.innerHTML = `
+        <div class="achievement-detail-icon">
+            ${isUnlocked ? achievement.icon : '❔'}
+        </div>
+        <div class="achievement-detail-name">
+            ${isUnlocked ? achievement.name : '？？？'}
+        </div>
+        <div class="achievement-detail-description">
+            ${achievement.description}
+        </div>
+        <div class="achievement-detail-rarity" style="color: ${rarityColor}; font-weight: bold; margin-top: 8px;">
+            ${rarityName}
+        </div>
+        <div class="achievement-detail-coins" style="color: #FFD700; font-weight: bold; margin-top: 4px;">
+            報酬: ${coinsReward} コイン
+        </div>
+        ${isUnlocked ? `
+            <div class="achievement-detail-date">
+                取得日: ${new Date(unlockDate).toLocaleDateString('ja-JP')}
+            </div>
+        ` : ''}
+    `;
+    
+    popup.classList.add('show');
 }
 
 // アンロック済みスキンをローカルストレージから読み込み
@@ -753,6 +1342,7 @@ loadUserIcon();
 loadFpsSettings();
 loadPlayerCoins();
 loadUnlockedSkins();
+loadAchievements(); // 実績データを読み込み
 updatePlayerImages();
 
 // 障害物設定
@@ -981,7 +1571,7 @@ function getOrCreateUserId() {
         localStorage.setItem('game_user_id', id);
         newuser = true
 
-        saveUserData(id, "匿名さん", 0, 0, 0, false, 0, ""); // 初期データを保存
+        saveUserData(id, { username: "匿名さん", score: 0, altitude: 0, nightmareAltitude: 0, nightmare: false, coins: 0, unlockedSkins: "" }); // 初期データを保存
     }
     return id;
 }
@@ -1091,6 +1681,26 @@ async function loadCoinsAndSkins(userId) {
             }
             
             saveUserIcon(); // ローカルストレージにも保存
+            
+            // 統計データの読み込み
+            if (data.playCount !== undefined) {
+                playCount = parseInt(data.playCount) || 0;
+            }
+            if (data.missCount !== undefined) {
+                try {
+                    if (typeof data.missCount === 'string') {
+                        missCount = JSON.parse(data.missCount) || {};
+                    } else {
+                        missCount = data.missCount || {};
+                    }
+                } catch (e) {
+                    console.error("Failed to parse missCount:", e);
+                    missCount = {};
+                }
+            }
+            if (data.totalScore !== undefined) {
+                totalScore = parseFloat(data.totalScore) || 0;
+            }
         }
     } catch (error) {
         console.error("Failed to load coins and skins:", error);
@@ -1112,6 +1722,12 @@ async function unlockNightmareMode(userId) {
 }
 
 function startGame() {
+    // 実績アイコンを非表示
+    const achievementIcon = document.getElementById('achievements-icon-html');
+    if (achievementIcon) {
+        achievementIcon.style.display = 'none';
+    }
+    
     // 初期化
     offsetSky = 0;
     offsetMount = 250;
@@ -1141,6 +1757,17 @@ function startGame() {
     isGameOver = false;
     frameCount = 0;
     gameState = "playing";
+    
+    // プレイ回数をカウント
+    playCount++;
+    console.log(`Game started! Play count: ${playCount}`);
+    
+    // ローカルストレージに保存
+    saveStatistics();
+    
+    // 実績チェック（ゲーム開始時）
+    checkAchievements();
+    
     // audioManagerのゲームオーバーフラグもリセット
     audioManager.gameoverPlayed = false;
     initialMaxAltitude = maxAltitude; // ゲーム開始時に現在の最高到達点を記録（スプレッドシートからロードされた値）
@@ -1614,6 +2241,19 @@ function checkCollision(player, obs) {
         let dy = player.y - obs.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
         return dist < player.radius + obs.size;
+    } else if (obs.type === "diamond") {
+        // 水色ひし形との衝突判定（円形近似）
+        let dx = player.x - obs.x;
+        let dy = player.y - obs.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        return dist < player.radius + obs.size;
+    } else if (obs.type === "rect") {
+        // 青棒（横棒）との衝突判定（四角形）
+        let closestX = Math.max(obs.x - obs.width/2, Math.min(player.x, obs.x + obs.width/2));
+        let closestY = Math.max(obs.y - obs.height/2, Math.min(player.y, obs.y + obs.height/2));
+        let dx = player.x - closestX;
+        let dy = player.y - closestY;
+        return (dx*dx + dy*dy) < (player.radius * player.radius);
     }
     return false; // その他の障害物タイプ（全て処理済みだが念のため）
 }
@@ -1941,6 +2581,19 @@ function animate() {
                 gameState = "gameover";
                 currentReachedAltitude = offsetSky; // ゲームオーバー時の高度を記録
                 
+                // 実績アイコンを再表示
+                const achievementIcon = document.getElementById('achievements-icon-html');
+                if (achievementIcon) {
+                    achievementIcon.style.display = 'block';
+                }
+                
+                // 総上昇距離を更新
+                totalScore += currentReachedAltitude;
+                console.log(`Game over! Current altitude: ${currentReachedAltitude}m, Total score: ${totalScore}m`);
+                
+                // ローカルストレージに保存
+                saveStatistics();
+                
                 // コイン獲得（高度1000につき1コイン）
                 addCoins(Math.floor(currentReachedAltitude));
                 
@@ -1956,7 +2609,13 @@ function animate() {
                     console.log("Current reached altitude:", Math.floor(currentReachedAltitude));
                     console.log("Previous nightmare max:", nightmareMaxAltitude);
                     console.log("New nightmare max:", newNightmareMaxAltitude);
-                    saveUserData(userId, null, Math.floor(currentReachedAltitude), null, Math.floor(newNightmareMaxAltitude), null, null, null)
+                    saveUserData(userId, { 
+                        score: Math.floor(currentReachedAltitude), 
+                        nightmareAltitude: Math.floor(newNightmareMaxAltitude), 
+                        playCount, 
+                        missCount, 
+                        totalScore 
+                    });
                     // ローカル変数も更新
                     nightmareMaxAltitude = newNightmareMaxAltitude;
 
@@ -1967,7 +2626,14 @@ function animate() {
                     console.log("Current reached altitude:", Math.floor(currentReachedAltitude));
                     console.log("Previous normal max:", maxAltitude);
                     console.log("New normal max:", newMaxAltitude);
-                    saveUserData(userId, null, Math.floor(currentReachedAltitude), Math.floor(newMaxAltitude), null, shouldUnlockNightmare, null, null)
+                    saveUserData(userId, { 
+                        score: Math.floor(currentReachedAltitude), 
+                        altitude: Math.floor(newMaxAltitude), 
+                        nightmare: shouldUnlockNightmare, 
+                        playCount, 
+                        missCount, 
+                        totalScore 
+                    });
                     // ローカル変数も更新
                     maxAltitude = newMaxAltitude;
                 }
@@ -2405,10 +3071,50 @@ function animate() {
             b.y > -HEXAGON_BULLET_RADIUS && b.y < canvas.height + HEXAGON_BULLET_RADIUS
         );
 
+        // プレイヤー統計を更新する関数
+        function updatePlayerStats(hitObstacle = null, projectileType = null) {
+            if (hitObstacle) {
+                // 障害物の種類を記録
+                let obstacleType = hitObstacle.type || 'unknown';
+                
+                // pentagonのクローンの場合は特別扱い
+                if (obstacleType === 'pentagon' && hitObstacle.isClone) {
+                    obstacleType = 'pentagon_clone';
+                }
+                
+                if (!missCount[obstacleType]) {
+                    missCount[obstacleType] = 0;
+                }
+                missCount[obstacleType]++;
+                console.log(`Hit obstacle: ${obstacleType}, Total hits: ${missCount[obstacleType]}`);
+                
+                // ローカルストレージに即座に保存
+                saveStatistics();
+                
+                // 実績チェック（障害物ヒット時）
+                checkAchievements();
+            } else if (projectileType) {
+                // 投擲物の種類を記録
+                if (!missCount[projectileType]) {
+                    missCount[projectileType] = 0;
+                }
+                missCount[projectileType]++;
+                console.log(`Hit projectile: ${projectileType}, Total hits: ${missCount[projectileType]}`);
+                
+                // ローカルストレージに即座に保存
+                saveStatistics();
+                
+                // 実績チェック（投擲物ヒット時）
+                checkAchievements();
+            }
+        }
+
         // 衝突判定（落下中でない場合のみ）
         if (!player.isDying) {
             for (let obs of obstacles) {
                 if (checkCollision(player, obs)) {
+                    // 統計を更新
+                    updatePlayerStats(obs);
                     // 効果音再生
                     audioManager.playSe('hit');
                     // 落下アニメーション開始
@@ -2445,6 +3151,8 @@ function animate() {
                             }
 
                             if (isInArc) {
+                                // 統計を更新（衝撃波の場合はタイプを'shockwave'として記録）
+                                updatePlayerStats({type: 'shockwave'});
                                 // 効果音再生
                                 audioManager.playSe('hit');
                                 // 落下アニメーション開始
@@ -2462,6 +3170,8 @@ function animate() {
                 let dx = player.x - b.x;
                 let dy = player.y - b.y;
                 if (dx*dx + dy*dy < (player.radius + RED_BULLET_RADIUS) * (player.radius + RED_BULLET_RADIUS)) {
+                    // 統計を更新
+                    updatePlayerStats(null, 'red_bullet');
                     // 効果音再生
                     audioManager.playSe('hit');
                     // 落下アニメーション開始
@@ -2480,6 +3190,8 @@ function animate() {
                     let dx = player.x - mini.x;
                     let dy = player.y - mini.y;
                     if (dx*dx + dy*dy < (player.radius + DIAMOND_MINI_SIZE/2) * (player.radius + DIAMOND_MINI_SIZE/2)) {
+                        // 統計を更新
+                        updatePlayerStats(null, 'diamond_mini');
                         // 効果音再生
                         audioManager.playSe('hit');
                         // 落下アニメーション開始
@@ -2496,6 +3208,8 @@ function animate() {
                 let dx = player.x - b.x;
                 let dy = player.y - b.y;
                 if (dx*dx + dy*dy < (player.radius + HEXAGON_BULLET_RADIUS) * (player.radius + HEXAGON_BULLET_RADIUS)) {
+                    // 統計を更新
+                    updatePlayerStats(null, 'purple_bullet');
                     // 効果音再生
                     audioManager.playSe('hit');
                     // 落下アニメーション開始
@@ -2556,6 +3270,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // DOM要素が読み込まれてから見た目選択イベントリスナーを設定
     setTimeout(() => {
         initializeSkinSelection();
+        
+        // 初期状態（タイトル画面）では実績アイコンを表示
+        const achievementIcon = document.getElementById('achievements-icon-html');
+        if (achievementIcon) {
+            achievementIcon.style.display = 'block';
+        }
     }, 100);
 });
 
@@ -2563,37 +3283,51 @@ const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnI
 //v22
 
 /**
- * データ保存関数
+ * データ保存関数（オブジェクト形式）
  * @param {String} userId 必須
- * @param {String} username 
- * @param {Number} score 
- * @param {Number} altitude 
- * @param {Number} nightmareAltitude 
- * @param {Boolean} nightmare 
- * @param {Number} coins 
- * @param {String} unlockedSkins 
+ * @param {Object} data - 保存するデータオブジェクト
+ * @param {String} data.username 
+ * @param {Number} data.score 
+ * @param {Number} data.altitude 
+ * @param {Number} data.nightmareAltitude 
+ * @param {Boolean} data.nightmare 
+ * @param {Number} data.coins 
+ * @param {String} data.unlockedSkins 
+ * @param {String} data.userIcon
+ * @param {Number} data.fishCoins
+ * @param {Number} data.playCount
+ * @param {Object} data.missCount
+ * @param {Number} data.totalScore
  * @returns 
  */
-function saveUserData(userId, username=null, score=null, altitude=null, nightmareAltitude=null, nightmare=null, coins=null, unlockedSkins=null, userIcon=null, fishCoins=null) {
+function saveUserData(userId, data = {}) {
     if (!userId) {
         console.warn("ユーザーIDが指定されていません。データを保存できません。");
         return;
     }
 
-    console.log({ userId, username, score, altitude, nightmareAltitude, nightmare, coins, unlockedSkins, userIcon, fishCoins });
-    console.log(score !== null, altitude !== null, nightmareAltitude !== null, nightmare !== null, coins !== null, unlockedSkins !== null, userIcon !== null, fishCoins !== null);
+    console.log({ userId, ...data });
 
     const formData = new URLSearchParams();
     formData.append("userId", userId);
-    if (username) formData.append("userName", username);
-    if (score !== null) formData.append("score", score);
-    if (altitude !== null) formData.append("altitude", altitude);
-    if (nightmareAltitude !== null) formData.append("n-altitude", nightmareAltitude);
-    if (nightmare !== null) formData.append("nightmare", nightmare ? 'true' : 'false');
-    if (coins !== null) formData.append("coins", coins);
-    if (unlockedSkins !== null) formData.append("unlockedSkins", Array.isArray(unlockedSkins) ? unlockedSkins.join(',') : unlockedSkins);
-    if (userIcon !== null) formData.append("userIcon", userIcon);
-    if (fishCoins !== null) formData.append("fishCoins", fishCoins);
+    if (data.username) formData.append("userName", data.username);
+    if (data.score !== null && data.score !== undefined) formData.append("score", data.score);
+    if (data.altitude !== null && data.altitude !== undefined) formData.append("altitude", data.altitude);
+    if (data.nightmareAltitude !== null && data.nightmareAltitude !== undefined) formData.append("n-altitude", data.nightmareAltitude);
+    if (data.nightmare !== null && data.nightmare !== undefined) formData.append("nightmare", data.nightmare ? 'true' : 'false');
+    if (data.coins !== null && data.coins !== undefined) formData.append("coins", data.coins);
+    if (data.unlockedSkins !== null && data.unlockedSkins !== undefined) formData.append("unlockedSkins", Array.isArray(data.unlockedSkins) ? data.unlockedSkins.join(',') : data.unlockedSkins);
+    if (data.userIcon !== null && data.userIcon !== undefined) formData.append("userIcon", data.userIcon);
+    if (data.fishCoins !== null && data.fishCoins !== undefined) formData.append("fishCoins", data.fishCoins);
+    if (data.playCount !== null && data.playCount !== undefined) formData.append("playCount", data.playCount);
+    if (data.missCount !== null && data.missCount !== undefined) formData.append("missCount", JSON.stringify(data.missCount));
+    if (data.totalScore !== null && data.totalScore !== undefined) formData.append("totalScore", data.totalScore);
+    if (data.gachaCount !== null && data.gachaCount !== undefined) formData.append("gachaCount", data.gachaCount);
+    if (data.tenGachaCount !== null && data.tenGachaCount !== undefined) formData.append("tenGachaCount", data.tenGachaCount);
+    if (data.secretCharacterCount !== null && data.secretCharacterCount !== undefined) formData.append("secretCharacterCount", data.secretCharacterCount);
+    if (data.gachaMissCount !== null && data.gachaMissCount !== undefined) formData.append("gachaMissCount", data.gachaMissCount);
+    if (data.goldenCatCount !== null && data.goldenCatCount !== undefined) formData.append("goldenCatCount", data.goldenCatCount);
+    if (data.duplicateCount !== null && data.duplicateCount !== undefined) formData.append("duplicateCount", data.duplicateCount);
 
     fetch(gasWebAppUrl, {
         method: "POST",
@@ -2755,7 +3489,7 @@ function toggleOptionsPopup() {
     } else {
         optionsPopupOverlay.classList.remove('show'); // ポップアップを非表示
 
-        saveUserData(userId, userName, null, null, null, null, null, null);
+        saveUserData(userId, { username: userName });
 
         // ゲームを再開するロジック (animate関数内で描画を制御)
     }
@@ -2887,6 +3621,9 @@ function performGacha() {
     setTimeout(() => {
         const result = drawGacha();
         showGachaResult(result);
+        
+        // ガチャ後に実績チェック
+        checkAchievements();
     }, 2000);
 }
 
@@ -2895,6 +3632,9 @@ function performGacha10() {
     if (playerCoins < 100) {
         return;
     }
+    
+    // 10連ガチャ回数を増加
+    tenGachaCount++;
     
     // コインを消費
     playerCoins -= 100;
@@ -2910,6 +3650,9 @@ function performGacha10() {
     
     // 10連ガチャアニメーション開始
     showGacha10Animation(results);
+    
+    // 10連ガチャ後に実績チェック
+    checkAchievements();
 }
 
 // 10連ガチャのグローバル変数
@@ -3072,6 +3815,10 @@ function showGachaAnimation() {
 
 // ガチャの抽選処理
 function drawGacha() {
+    // ガチャ回数を増加
+    gachaCount++;
+    console.log(`ガチャ実行回数: ${gachaCount}`);
+    
     const random = Math.random();
     let cumulative = 0;
     
@@ -3080,21 +3827,40 @@ function drawGacha() {
         if (random <= cumulative) {
             if (skin === 'miss') {
                 // ハズレの場合はおさかなコイン1枚
+                gachaMissCount++; // ハズレ回数増加
                 fishCoins += 1;
                 updateFishCoinDisplay();
                 savePlayerCoins();
+                
+                // ガチャ統計を保存
+                saveStatistics();
                 return { type: 'miss', skin: null, fishCoin: 1 };
             } else {
                 const isNew = !unlockedSkins.includes(skin);
+                
+                // シークレットキャラ判定
+                if (['mint', 'shadow', 'normal-golden'].includes(skin)) {
+                    secretCharacterCount++;
+                    if (skin === 'normal-golden') {
+                        goldenCatCount++;
+                    }
+                }
+                
                 if (isNew) {
                     unlockedSkins.push(skin);
                     saveUnlockedSkins(); // ローカルストレージに保存
                     // データベースにも保存
                     console.log(`スキン保存開始`);
                     console.log(unlockedSkins);
-                    saveUserData(userId, null, null, null, null, null, null, unlockedSkins);
+                    saveUserData(userId, { unlockedSkins });
+                    
+                    // ガチャ統計を保存
+                    saveStatistics();
                     return { type: 'new', skin: skin };
                 } else {
+                    // 被りの場合
+                    duplicateCount++; // 重複回数増加
+                    
                     // 被りの場合はレア度に応じておさかなコインを獲得
                     let fishCoinReward = 2; // デフォルト（ノーマル）
                     
@@ -3108,6 +3874,9 @@ function drawGacha() {
                     fishCoins += fishCoinReward;
                     updateFishCoinDisplay();
                     savePlayerCoins();
+                    
+                    // ガチャ統計を保存
+                    saveStatistics();
                     return { type: 'duplicate', skin: skin, fishCoin: fishCoinReward };
                 }
             }
@@ -3115,9 +3884,13 @@ function drawGacha() {
     }
     
     // フォールバック（通常は到達しない）
+    gachaMissCount++;
     fishCoins += 1;
     updateFishCoinDisplay();
     savePlayerCoins();
+    
+    // ガチャ統計を保存
+    saveStatistics();
     return { type: 'miss', skin: null, fishCoin: 1 };
 }
 
@@ -3434,7 +4207,7 @@ function initializeIconSelection() {
                 saveUserIcon();
                 
                 // データベースに保存
-                saveUserData(userId, null, null, null, null, null, null, null, currentUserIcon);
+                saveUserData(userId, { userIcon: currentUserIcon });
             });
             
             iconGrid.appendChild(button);
@@ -3862,4 +4635,44 @@ function showSettingsTab(tabName) {
 // ページ読み込み時にデフォルトタブを設定
 document.addEventListener('DOMContentLoaded', function() {
     showSettingsTab('game');
+    
+    // 実績関連のイベントリスナー
+    const achievementsIcon = document.getElementById('achievements-icon-html');
+    const achievementsPopup = document.getElementById('achievements-popup-overlay');
+    const achievementDetailPopup = document.getElementById('achievement-detail-popup-overlay');
+    const closeAchievementsButton = document.getElementById('closeAchievementsButton');
+    const closeAchievementDetailButton = document.getElementById('closeAchievementDetailButton');
+    
+    if (achievementsIcon) {
+        achievementsIcon.addEventListener('click', showAchievementsPopup);
+    }
+    
+    if (closeAchievementsButton) {
+        closeAchievementsButton.addEventListener('click', () => {
+            achievementsPopup.classList.remove('show');
+        });
+    }
+    
+    if (closeAchievementDetailButton) {
+        closeAchievementDetailButton.addEventListener('click', () => {
+            achievementDetailPopup.classList.remove('show');
+        });
+    }
+    
+    // ポップアップの外側クリックで閉じる
+    if (achievementsPopup) {
+        achievementsPopup.addEventListener('click', (e) => {
+            if (e.target === achievementsPopup) {
+                achievementsPopup.classList.remove('show');
+            }
+        });
+    }
+    
+    if (achievementDetailPopup) {
+        achievementDetailPopup.addEventListener('click', (e) => {
+            if (e.target === achievementDetailPopup) {
+                achievementDetailPopup.classList.remove('show');
+            }
+        });
+    }
 });
