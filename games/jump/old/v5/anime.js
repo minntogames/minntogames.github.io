@@ -652,6 +652,22 @@ function savePlayerSkin() {
     localStorage.setItem('jump_player_skin', currentPlayerSkin);
 }
 
+// デバッグ用：FPS表示フラグ
+let showFps = false; // trueにするとFPSが表示される
+
+// FPS表示設定をローカルストレージから読み込み
+function loadFpsSettings() {
+    const savedFpsSettings = localStorage.getItem('game_show_fps');
+    if (savedFpsSettings !== null) {
+        showFps = savedFpsSettings === 'true';
+    }
+}
+
+// FPS表示設定をローカルストレージに保存
+function saveFpsSettings() {
+    localStorage.setItem('game_show_fps', showFps.toString());
+}
+
 // プレイヤー画像の読み込み
 const playerImages = {
     normal: new Image(),
@@ -681,6 +697,8 @@ function changePlayerSkin(skinName) {
 
 // 初期化時に見た目を読み込み
 loadPlayerSkin();
+// 初期化時にFPS設定を読み込み
+loadFpsSettings();
 loadPlayerCoins();
 loadUnlockedSkins();
 updatePlayerImages();
@@ -882,6 +900,7 @@ if (rightButton) {
 let gameState = "title"; // "title", "playing", "gameover"
 let isNightmareMode = false; // ナイトメアモード状態
 let nightmareUnlocked = false; // ナイトメアモード開放フラグ
+let dbnightmareUnlocked = false; // データベースから読み込んだナイトメアモード開放状態
 let initialMaxAltitude = 0; // ゲーム開始時の最高到達点を保存する変数
 let initialNightmareMaxAltitude = 0; // ゲーム開始時のナイトメアモード最高到達点を保存する変数
 let currentReachedAltitude = 0; // ゲームオーバー時に到達した高度を保存する変数
@@ -895,8 +914,7 @@ let nightmareMaxAltitude = 0; // ナイトメアモード最高到達点
 // デバッグ用：当たり判定表示フラグ
 let showHitbox = false; // trueにすると当たり判定が表示される
 
-// デバッグ用：FPS表示フラグ
-let showFps = false; // trueにするとFPSが表示される
+// FPS関連変数
 let fps = 0;
 let fpsFrameCount = 0;
 let lastTime = performance.now();
@@ -995,14 +1013,16 @@ async function loadCoinsAndSkins(userId) {
 
 // ナイトメアモードを開放する
 async function unlockNightmareMode(userId) {
+    if (!dbnightmareUnlocked && !nightmareUnlocked){
+        console.log('ナイトメアモードが開放されました！');
+        alert('おめでとうございます！\n高度50,000mに到達し、ナイトメアモードが開放されました！');
+    }
     nightmareUnlocked = true;
     
     // モード切り替えボタンの状態を更新
     updateModeToggleButton();
     
     // アンロック通知表示
-    console.log('ナイトメアモードが開放されました！');
-    alert('おめでとうございます！\n高度50,000mに到達し、ナイトメアモードが開放されました！');
 }
 
 function startGame() {
@@ -1834,7 +1854,8 @@ function animate() {
                 addCoins(Math.floor(currentReachedAltitude));
                 
                 // ナイトメアモード開放判定（高度50000以上到達かつ通常モード）
-                let shouldUnlockNightmare = !isNightmareMode && currentReachedAltitude >= 50000 && !nightmareUnlocked;
+                // データベースから読み込んだ開放状態を使用して判定
+                let shouldUnlockNightmare = (!isNightmareMode && maxAltitude >= 50000) || nightmareUnlocked;
                 
                 // データ送信（ナイトメアモードの場合はn-altitudeに記録）
                 if (isNightmareMode) {
@@ -2435,45 +2456,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnIFelFfJmUuWD1ywIhqvCtYXdOvX-MKUZVYb3wEowVmeOMrzm7L/exec'; 
 //v22
-// Google Sheetにスコアを送信する関数
-function sendScoreToGoogleSheet(currentScore, maxReachedAltitude, userId, userName, unlockNightmare = false, nightmareAltitude = null, isNightmare) { // パラメータ追加
-
-    if (gasWebAppUrl === 'YOUR_DEPLOYED_GAS_WEB_APP_URL_HERE') {
-        console.warn("Google Apps ScriptのウェブアプリURLが設定されていません。データを送信できません。");
-        return;
-    }
-
-    console.log(currentScore, maxReachedAltitude, userId, userName)
-
-    const formData = new URLSearchParams();
-    formData.append("score", currentScore); // 現在の到達高度
-    formData.append("altitude", maxReachedAltitude); // 最高到達点
-    formData.append("userId", userId);
-    formData.append("userName", userName); // ユーザー名を追加
-    formData.append("coins", playerCoins); // コイン数を追加
-    formData.append("unlockedSkins", unlockedSkins.join(',')); // 解放済みスキンをカンマ区切り文字列で追加
-    if (isNightmare == false) {
-        formData.append("nightmare", unlockNightmare ? 'true' : 'false'); // ナイトメアモード開放フラグ
-    }
-    
-    // ナイトメアモードの最高到達点（通常モードまたはナイトメアモード用）
-    if (isNightmareMode && nightmareAltitude !== null) {
-        formData.append("n-altitude", nightmareAltitude); // ナイトメアモードの最高到達点
-    } else {
-        formData.append("altitude", maxReachedAltitude); // 通常は最高到達点と同じ
-    }
-
-    fetch(gasWebAppUrl, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: formData
-    })
-    .then(res => res.json())
-    .then(data => console.log("成功:", data))
-    .catch(err => console.error("エラー:", err));
-}
 
 /**
  * データ保存関数
@@ -2637,6 +2619,13 @@ function toggleOptionsPopup() {
         userNameInput.value = tempUserName; // 入力欄に表示
         displayUserId.textContent = userId; // ユーザーIDを表示
         initializeSkinSelection(); // 見た目選択UIを初期化
+        
+        // FPSチェックボックスの状態を設定
+        const fpsToggle = document.getElementById('fpsToggle');
+        if (fpsToggle) {
+            fpsToggle.checked = showFps;
+        }
+        
         optionsPopupOverlay.classList.add('show'); // ポップアップを表示
         // オプションポップアップ表示中は他のポップアップを閉じる
         rankingPopupOverlay.classList.remove('show');
@@ -2915,6 +2904,16 @@ if (applyOptionsButton) {
     });
 }
 
+// FPSチェックボックスのイベントリスナー
+const fpsToggle = document.getElementById('fpsToggle');
+if (fpsToggle) {
+    fpsToggle.addEventListener('change', () => {
+        showFps = fpsToggle.checked;
+        saveFpsSettings();
+        console.log(`FPS表示: ${showFps ? 'ON' : 'OFF'}`);
+    });
+}
+
 // 見た目選択ボタンのイベントリスナー（動的生成されるボタン用に無効化）
 // document.querySelectorAll('.skin-button').forEach(button => {
 //     button.addEventListener('click', () => {
@@ -3174,13 +3173,22 @@ function updateModeToggleButton() {
         }
     }
 }
-
+async function getnightmare() {
+    // ナイトメアモードの開放状態を取得
+    const data = await fetchUData(userId)
+    if (data) {
+        nightmareUnlocked = data.nightmare
+        dbnightmareUnlocked = data.nightmare; // データベースからの値を保存
+    }
+    updateModeToggleButton();
+}
 
 // アプリ起動時にゲームを初期化
 async function initGame() {
     try {
         userId = getOrCreateUserId(); // ユーザーIDを初期化
         userName = getOrCreateUserName(); // ユーザー名を初期化
+        await getnightmare(); // ナイトメアモードの開放状態を取得
         await loadAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
         await loadCoinsAndSkins(userId); // コインと解放済みスキンを読み込み
         
@@ -3189,10 +3197,6 @@ async function initGame() {
         
         // モード切り替えボタンを初期化
         initModeToggleButton();
-        
-        // ナイトメアモード開放状態に基づいてボタンを更新
-        updateModeToggleButton();
-        
     } catch (error) {
         console.error("ゲーム初期化中にエラーが発生しました:", error);
         // エラーが発生してもゲームを開始

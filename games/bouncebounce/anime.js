@@ -581,6 +581,9 @@ const playerSkins = {
 // 現在の見た目設定
 let currentPlayerSkin = "normal";
 
+// ユーザーアイコン設定
+let currentUserIcon = "normal"; // デフォルトアイコン
+
 // ガチャ・コイン管理
 let playerCoins = 10000;
 let unlockedSkins = ["normal"]; // デフォルトでnormalはアンロック済み
@@ -652,6 +655,20 @@ function savePlayerSkin() {
     localStorage.setItem('jump_player_skin', currentPlayerSkin);
 }
 
+// ユーザーアイコン設定をローカルストレージから読み込み
+// ユーザーアイコン設定をローカルストレージから読み込み
+function loadUserIcon() {
+    const savedIcon = localStorage.getItem('jump_user_icon');
+    if (savedIcon && playerSkins[savedIcon]) {
+        currentUserIcon = savedIcon;
+    }
+}
+
+// ユーザーアイコン設定をローカルストレージに保存
+function saveUserIcon() {
+    localStorage.setItem('jump_user_icon', currentUserIcon);
+}
+
 // デバッグ用：FPS表示フラグ
 let showFps = false; // trueにするとFPSが表示される
 
@@ -697,6 +714,8 @@ function changePlayerSkin(skinName) {
 
 // 初期化時に見た目を読み込み
 loadPlayerSkin();
+// 初期化時にユーザーアイコンを読み込み
+loadUserIcon();
 // 初期化時にFPS設定を読み込み
 loadFpsSettings();
 loadPlayerCoins();
@@ -949,11 +968,15 @@ async function loadAltitudeFromSheet(userId) {
     try {
         const data = await fetchUData(userId);
         if (data && data.altitude !== undefined) {
-            maxAltitude = parseFloat(data.altitude); 
+            maxAltitude = parseFloat(data.altitude) || 0; 
+            console.log("Loaded normal max altitude:", maxAltitude);
         }
         if (data && data['n-altitude'] !== undefined) {
-            nightmareMaxAltitude = parseFloat(data['n-altitude']);
+            nightmareMaxAltitude = parseFloat(data['n-altitude']) || 0;
+            console.log("Loaded nightmare max altitude:", nightmareMaxAltitude);
         }
+        console.log("Current mode:", isNightmareMode ? "Nightmare" : "Normal");
+        console.log("Display altitude:", isNightmareMode ? nightmareMaxAltitude : maxAltitude);
     } catch (error) {
         console.error("Failed to load altitude from sheet:", error);
     }
@@ -1005,6 +1028,21 @@ async function loadCoinsAndSkins(userId) {
                     unlockedSkins = ["normal"];
                 }
             }
+            
+            // ユーザーアイコンの読み込み
+            if (data.userIcon && playerSkins[data.userIcon]) {
+                currentUserIcon = data.userIcon;
+            } else {
+                currentUserIcon = "normal"; // デフォルト
+            }
+            
+            // 現在のアイコンが解放済みかチェック
+            if (!unlockedSkins.includes(currentUserIcon)) {
+                currentUserIcon = "normal"; // 未取得の場合はnormalに戻す
+                console.log("Current user icon was not unlocked, reset to normal");
+            }
+            
+            saveUserIcon(); // ローカルストレージにも保存
         }
     } catch (error) {
         console.error("Failed to load coins and skins:", error);
@@ -1332,18 +1370,8 @@ function drawObstacles() {
                 ctx.lineTo(obs.x - obs.size, obs.y); // 左
                 ctx.closePath();
             } else if (obs.type === "hexagon") {
-                // 六角形の頂点を描画
-                for (let i = 0; i < 6; i++) {
-                    let angle = (Math.PI * 2 / 6) * i - Math.PI / 2; // -90度から開始で上向き
-                    let x = obs.x + Math.cos(angle) * obs.size;
-                    let y = obs.y + Math.sin(angle) * obs.size;
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
-                }
-                ctx.closePath();
+                // 六角形の当たり判定は円形近似なので、円で表示
+                ctx.arc(obs.x, obs.y, obs.size, 0, Math.PI * 2);
             }
             
             ctx.stroke();
@@ -1532,6 +1560,12 @@ function checkCollision(player, obs) {
         let dy = player.y - obs.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
         return dist < player.radius + obs.size;
+    } else if (obs.type === "hexagon") {
+        // 紫六角形との衝突判定（円形近似）
+        let dx = player.x - obs.x;
+        let dy = player.y - obs.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        return dist < player.radius + obs.size;
     }
     return false; // その他の障害物タイプ（全て処理済みだが念のため）
 }
@@ -1587,6 +1621,15 @@ function animate() {
         ctx.font = "bold 24px sans-serif";
         const titleDisplayMaxAltitude = isNightmareMode ? nightmareMaxAltitude : maxAltitude;
         const titleModeText = isNightmareMode ? " (ナイトメア)" : "";
+        
+        // デバッグ: 表示する値をコンソールに出力（開発時のみ）
+        if (Math.random() < 0.01) { // 1%の確率で出力（頻繁すぎないように）
+            console.log("Title screen display - Mode:", isNightmareMode ? "Nightmare" : "Normal");
+            console.log("Title screen display - Max altitude:", titleDisplayMaxAltitude);
+            console.log("Title screen display - Normal max:", maxAltitude);
+            console.log("Title screen display - Nightmare max:", nightmareMaxAltitude);
+        }
+        
         ctx.strokeText(`最高到達点: ${Math.floor(titleDisplayMaxAltitude)} m${titleModeText}`, canvas.width/2, 460);
         ctx.fillText(`最高到達点: ${Math.floor(titleDisplayMaxAltitude)} m${titleModeText}`, canvas.width/2, 460);
         
@@ -1859,12 +1902,26 @@ function animate() {
                 
                 // データ送信（ナイトメアモードの場合はn-altitudeに記録）
                 if (isNightmareMode) {
-                    saveUserData(userId, null, Math.floor(currentReachedAltitude), null, Math.floor(maxAltitude), null, null, null)
-
+                    // ナイトメアモード: n-altitudeを更新、ナイトメア最高到達点も更新
+                    const newNightmareMaxAltitude = Math.max(nightmareMaxAltitude, currentReachedAltitude);
+                    console.log("=== Nightmare Mode Game Over ===");
+                    console.log("Current reached altitude:", Math.floor(currentReachedAltitude));
+                    console.log("Previous nightmare max:", nightmareMaxAltitude);
+                    console.log("New nightmare max:", newNightmareMaxAltitude);
+                    saveUserData(userId, null, Math.floor(currentReachedAltitude), null, Math.floor(newNightmareMaxAltitude), null, null, null)
+                    // ローカル変数も更新
+                    nightmareMaxAltitude = newNightmareMaxAltitude;
 
                 } else {
-                    // ナイトメアモード開放フラグを含めてデータ送信
-                    saveUserData(userId, null, Math.floor(currentReachedAltitude), Math.floor(maxAltitude), null, shouldUnlockNightmare, null, null)
+                    // ノーマルモード: altitudeを更新、ノーマル最高到達点も更新
+                    const newMaxAltitude = Math.max(maxAltitude, currentReachedAltitude);
+                    console.log("=== Normal Mode Game Over ===");
+                    console.log("Current reached altitude:", Math.floor(currentReachedAltitude));
+                    console.log("Previous normal max:", maxAltitude);
+                    console.log("New normal max:", newMaxAltitude);
+                    saveUserData(userId, null, Math.floor(currentReachedAltitude), Math.floor(newMaxAltitude), null, shouldUnlockNightmare, null, null)
+                    // ローカル変数も更新
+                    maxAltitude = newMaxAltitude;
                 }
                 
                 // ナイトメアモード開放処理（UI更新のみ）
@@ -2469,14 +2526,14 @@ const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbzNCJdLk_39Q7H8VnI
  * @param {String} unlockedSkins 
  * @returns 
  */
-function saveUserData(userId, username=null, score=null, altitude=null, nightmareAltitude=null, nightmare=null, coins=null, unlockedSkins=null) {
+function saveUserData(userId, username=null, score=null, altitude=null, nightmareAltitude=null, nightmare=null, coins=null, unlockedSkins=null, userIcon=null) {
     if (!userId) {
         console.warn("ユーザーIDが指定されていません。データを保存できません。");
         return;
     }
 
-    console.log({ userId, username, score, altitude, nightmareAltitude, nightmare, coins, unlockedSkins });
-    console.log(score !== null, altitude !== null, nightmareAltitude !== null, nightmare !== null, coins !== null, unlockedSkins !== null);
+    console.log({ userId, username, score, altitude, nightmareAltitude, nightmare, coins, unlockedSkins, userIcon });
+    console.log(score !== null, altitude !== null, nightmareAltitude !== null, nightmare !== null, coins !== null, unlockedSkins !== null, userIcon !== null);
 
     const formData = new URLSearchParams();
     formData.append("userId", userId);
@@ -2487,6 +2544,7 @@ function saveUserData(userId, username=null, score=null, altitude=null, nightmar
     if (nightmare !== null) formData.append("nightmare", nightmare ? 'true' : 'false');
     if (coins !== null) formData.append("coins", coins);
     if (unlockedSkins !== null) formData.append("unlockedSkins", Array.isArray(unlockedSkins) ? unlockedSkins.join(',') : unlockedSkins);
+    if (userIcon !== null) formData.append("userIcon", userIcon);
 
     fetch(gasWebAppUrl, {
         method: "POST",
@@ -2599,6 +2657,16 @@ const gachaResultArea = document.getElementById('gachaResultArea');
 const gachaAnimation = document.getElementById('gachaAnimation');
 const gachaResult = document.getElementById('gachaResult');
 
+// ガチャリザルト用の画像を事前にロード
+const gachaResultImages = {};
+function preloadGachaImages() {
+    Object.keys(playerSkins).forEach(skinType => {
+        const img = new Image();
+        img.src = `img/${skinType}/cat_normal.PNG`;
+        gachaResultImages[skinType] = img;
+    });
+}
+
 // ガチャ要素の存在確認（デバッグ用）
 console.log("Gacha elements check:");
 console.log("gachaPopupOverlay:", gachaPopupOverlay);
@@ -2619,6 +2687,7 @@ function toggleOptionsPopup() {
         userNameInput.value = tempUserName; // 入力欄に表示
         displayUserId.textContent = userId; // ユーザーIDを表示
         initializeSkinSelection(); // 見た目選択UIを初期化
+        initializeIconSelection(); // アイコン選択UIを初期化
         
         // FPSチェックボックスの状態を設定
         const fpsToggle = document.getElementById('fpsToggle');
@@ -2773,6 +2842,7 @@ function showGachaResult(result) {
     
     let message = '';
     let className = '';
+    let skinImage = '';
     
     if (result.type === 'miss') {
         message = '😞 ハズレ...';
@@ -2781,6 +2851,10 @@ function showGachaResult(result) {
         const skinName = playerSkins[result.skin].name;
         message = `🎉 新しいスキン獲得！<br>「${skinName}」`;
         className = 'new-skin';
+        skinImage = `<div class="gacha-result-image-container shine-effect">
+                        <img src="img/${result.skin}/cat_normal.PNG" alt="${skinName}" class="gacha-result-image">
+                        <div class="shine-overlay"></div>
+                     </div>`;
         // 新しいスキンが獲得されたので見た目選択UIを更新
         setTimeout(() => {
             initializeSkinSelection();
@@ -2789,9 +2863,12 @@ function showGachaResult(result) {
         const skinName = playerSkins[result.skin].name;
         message = `✨ 既に持っているスキン<br>「${skinName}」`;
         className = 'duplicate';
+        skinImage = `<div class="gacha-result-image-container">
+                        <img src="img/${result.skin}/cat_normal.PNG" alt="${skinName}" class="gacha-result-image">
+                     </div>`;
     }
     
-    gachaResult.innerHTML = message;
+    gachaResult.innerHTML = skinImage + '<div class="gacha-result-text">' + message + '</div>';
     gachaResult.className = `gacha-result ${className}`;
     
     // 3秒後にアニメーションエリアを非表示
@@ -2858,8 +2935,15 @@ async function displayRanking(mode = currentRankingMode) {
                 if (altitude === 0) return; // 高度が0のデータは表示しない
                 if (rank > 100) return; // 上位100件のみ表示
 
+                // ユーザーアイコンを取得（デフォルトはnormal）
+                const userIcon = data.userIcon || 'normal';
+                const iconPath = `img/${userIcon}/icon.PNG`;
+
                 listItem.innerHTML = `
-                    <span>${rank}. ${userName}</span>
+                    <div class="ranking-user-info">
+                        <img src="${iconPath}" alt="${userName}" class="ranking-user-icon">
+                        <span>${rank}. ${userName}</span>
+                    </div>
                     <span>${altitude} m</span>
                 `;
                 rankingList.appendChild(listItem);
@@ -2977,6 +3061,57 @@ function initializeSkinSelection() {
             });
             
             skinGrid.appendChild(button);
+        }
+    });
+}
+
+// アイコン選択UIを初期化
+function initializeIconSelection() {
+    const iconGrid = document.querySelector('.icon-grid');
+    if (!iconGrid) {
+        console.error('icon-grid element not found');
+        return;
+    }
+    
+    // 既存のボタンをクリア
+    iconGrid.innerHTML = '';
+    
+    // 解放済みスキンのみボタンを生成
+    unlockedSkins.forEach(skinType => {
+        if (playerSkins[skinType]) {
+            const button = document.createElement('button');
+            button.className = 'icon-button';
+            button.dataset.icon = skinType;
+            
+            // 現在のアイコンの場合はactiveクラスを追加
+            if (skinType === currentUserIcon) {
+                button.classList.add('active');
+            }
+            
+            button.innerHTML = `
+                <img src="img/${skinType}/icon.PNG" alt="${playerSkins[skinType].name}">
+                <span>${playerSkins[skinType].name}</span>
+            `;
+            
+            // クリックイベントリスナーを追加
+            button.addEventListener('click', function() {
+                // 他のボタンからactiveクラスを削除
+                document.querySelectorAll('.icon-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // このボタンにactiveクラスを追加
+                this.classList.add('active');
+                
+                // アイコンを変更
+                currentUserIcon = skinType;
+                saveUserIcon();
+                
+                // データベースに保存
+                saveUserData(userId, null, null, null, null, null, null, null, currentUserIcon);
+            });
+            
+            iconGrid.appendChild(button);
         }
     });
 }
@@ -3140,10 +3275,14 @@ function initModeToggleButton() {
         updateModeToggleButton();
         
         // クリックイベントリスナー
-        modeToggleButton.addEventListener('click', () => {
+        modeToggleButton.addEventListener('click', async () => {
             if (nightmareUnlocked && (gameState === "title" || gameState === "gameover")) {
                 isNightmareMode = !isNightmareMode;
+                // モード切り替え時にデータを再読み込み
+                await loadAltitudeFromSheet(userId);
                 updateModeToggleButton();
+                console.log("Mode switched to:", isNightmareMode ? "Nightmare" : "Normal");
+                console.log("Current max altitude:", isNightmareMode ? nightmareMaxAltitude : maxAltitude);
             }
         });
     }
@@ -3192,11 +3331,22 @@ async function initGame() {
         await loadAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
         await loadCoinsAndSkins(userId); // コインと解放済みスキンを読み込み
         
+        // ガチャリザルト用画像を事前ロード
+        preloadGachaImages();
+        
         // 音量調節UIを初期化
         initVolumeControls();
         
         // モード切り替えボタンを初期化
         initModeToggleButton();
+        
+        // 初期化完了時のデバッグ情報
+        console.log("=== Game initialization completed ===");
+        console.log("Normal max altitude:", maxAltitude);
+        console.log("Nightmare max altitude:", nightmareMaxAltitude);
+        console.log("Current mode:", isNightmareMode ? "Nightmare" : "Normal");
+        console.log("Nightmare unlocked:", nightmareUnlocked);
+        console.log("=====================================");
     } catch (error) {
         console.error("ゲーム初期化中にエラーが発生しました:", error);
         // エラーが発生してもゲームを開始
@@ -3256,4 +3406,26 @@ document.addEventListener('DOMContentLoaded', function() {
         gachaButtonElement.addEventListener('click', performGacha);
         console.log("Gacha button event listener reattached");
     }
+});
+
+// 設定タブ切り替え機能
+function showSettingsTab(tabName) {
+    // すべてのタブとコンテンツを非アクティブにする
+    const tabs = document.querySelectorAll('.settings-tab');
+    const contents = document.querySelectorAll('.settings-tab-content');
+    
+    tabs.forEach(tab => tab.classList.remove('active'));
+    contents.forEach(content => content.classList.remove('active'));
+    
+    // 選択されたタブとコンテンツをアクティブにする
+    const selectedTab = document.querySelector(`.settings-tab[onclick="showSettingsTab('${tabName}')"]`);
+    const selectedContent = document.getElementById(`${tabName}-tab`);
+    
+    if (selectedTab) selectedTab.classList.add('active');
+    if (selectedContent) selectedContent.classList.add('active');
+}
+
+// ページ読み込み時にデフォルトタブを設定
+document.addEventListener('DOMContentLoaded', function() {
+    showSettingsTab('game');
 });

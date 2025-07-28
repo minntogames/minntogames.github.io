@@ -196,6 +196,20 @@
             align-items: center;
             font-size: 1.1em;
         }
+
+        .ranking-user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ranking-user-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
         #rankingList li:nth-child(1) {
             background-color: #ffd700; /* Gold for 1st place */
             color: #333;
@@ -468,6 +482,80 @@
             font-weight: 500;
         }
 
+        /* アイコン選択のスタイル */
+        .icon-selection {
+            border-top: 1px solid #ddd;
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .icon-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 10px;
+            color: #333;
+            position: relative;
+        }
+
+        .icon-button:hover {
+            border-color: #2196F3;
+            background: #f0f4ff;
+        }
+
+        .icon-button.active {
+            border-color: #2196F3;
+            background: #e3f2fd;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        .icon-button.locked {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        .icon-button.locked:hover {
+            border-color: #ddd;
+            background: #f5f5f5;
+        }
+
+        .icon-button img {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 2px;
+        }
+
+        .icon-button span {
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .lock-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #999;
+        }
+
         /* FPS表示設定のスタイル */
         .fps-setting {
             border-top: 1px solid #555;
@@ -556,6 +644,65 @@
             padding: 15px;
             border-radius: 10px;
             margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gacha-result-image-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .gacha-result-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .shine-effect {
+            animation: shine 2s infinite;
+        }
+
+        .shine-overlay {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: shineMove 2s infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 
+                           0 0 40px rgba(255, 215, 0, 0.6),
+                           0 0 60px rgba(255, 215, 0, 0.4);
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(255, 215, 0, 1), 
+                           0 0 60px rgba(255, 215, 0, 0.8),
+                           0 0 90px rgba(255, 215, 0, 0.6);
+            }
+        }
+
+        @keyframes shineMove {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .gacha-result-text {
+            text-align: center;
         }
 
         .gacha-result.new-skin {
@@ -693,6 +840,82 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.3);
         }
 
+        /* 設定タブのスタイル */
+        .settings-tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .settings-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .settings-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .settings-tabs::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 2px;
+        }
+
+        .settings-tab {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            margin-right: 4px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .settings-tab:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .settings-tab.active {
+            background: #007bff;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+        }
+
+        .settings-tab-content {
+            display: none;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .settings-tab-content.active {
+            display: block;
+        }
+
+        .settings-tab-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .settings-tab-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .settings-tab-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .settings-tab-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
         </style>
         <!-- Font Awesome for icons -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -751,45 +974,67 @@
                 <div class="popup-content">
                     <button id="closeOptionsButton" class="popup-close-button">×</button>
                     <h2 class="text-2xl font-bold mb-4">オプション</h2>
-                    <div class="text-lg text-left mb-2">ユーザーID: <span id="displayUserId"></span></div>
-                    <div class="text-lg text-left mb-2">名前:</div>
-                    <input type="text" id="userNameInput" class="popup-input" placeholder="名前を入力">
                     
-                    <!-- 音量調節セクション -->
-                    <div class="audio-controls mb-4">
-                        <h3 class="text-lg font-semibold mb-3">音量設定</h3>
+                    <!-- タブナビゲーション -->
+                    <div class="settings-tabs">
+                        <button class="settings-tab active" onclick="showSettingsTab('game')">ゲーム設定</button>
+                        <button class="settings-tab" onclick="showSettingsTab('skin')">スキン</button>
+                        <button class="settings-tab" onclick="showSettingsTab('icon')">アイコン</button>
+                    </div>
+
+                    <!-- ゲーム設定タブ -->
+                    <div id="game-tab" class="settings-tab-content active">
+                        <div class="text-lg text-left mb-2">ユーザーID: <span id="displayUserId"></span></div>
+                        <div class="text-lg text-left mb-2">名前:</div>
+                        <input type="text" id="userNameInput" class="popup-input" placeholder="名前を入力">
                         
-                        <!-- BGM音量 -->
-                        <div class="volume-control mb-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                <button id="bgmMuteButton" class="mute-button" title="BGMミュート">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
-                                    </svg>
-                                </button>
-                                <label class="volume-label">BGM</label>
+                        <!-- 音量調節セクション -->
+                        <div class="audio-controls mb-4">
+                            <h3 class="text-lg font-semibold mb-3">音量設定</h3>
+                            
+                            <!-- BGM音量 -->
+                            <div class="volume-control mb-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <button id="bgmMuteButton" class="mute-button" title="BGMミュート">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                                        </svg>
+                                    </button>
+                                    <label class="volume-label">BGM</label>
+                                </div>
+                                <input type="range" id="bgmVolumeSlider" class="volume-slider" min="0" max="100" value="60">
+                                <span id="bgmVolumeValue" class="volume-value">60%</span>
                             </div>
-                            <input type="range" id="bgmVolumeSlider" class="volume-slider" min="0" max="100" value="60">
-                            <span id="bgmVolumeValue" class="volume-value">60%</span>
+                            
+                            <!-- SE音量 -->
+                            <div class="volume-control mb-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <button id="seMuteButton" class="mute-button" title="SE ミュート">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
+                                        </svg>
+                                    </button>
+                                    <label class="volume-label">効果音</label>
+                                </div>
+                                <input type="range" id="seVolumeSlider" class="volume-slider" min="0" max="100" value="70">
+                                <span id="seVolumeValue" class="volume-value">70%</span>
+                            </div>
                         </div>
                         
-                        <!-- SE音量 -->
-                        <div class="volume-control mb-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                <button id="seMuteButton" class="mute-button" title="SE ミュート">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M3 9v6h4l5 5V4L7 9H3zm10-5l-5 5H1v6h7l5 5V4zm3.5 9c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/>
-                                    </svg>
-                                </button>
-                                <label class="volume-label">効果音</label>
+                        <!-- FPS表示設定セクション -->
+                        <div class="fps-setting mb-4">
+                            <h3 class="text-lg font-semibold mb-3">表示設定</h3>
+                            <div class="fps-control">
+                                <label class="fps-label">
+                                    <input type="checkbox" id="fpsToggle" class="fps-checkbox">
+                                    <span class="fps-text">FPS表示</span>
+                                </label>
                             </div>
-                            <input type="range" id="seVolumeSlider" class="volume-slider" min="0" max="100" value="70">
-                            <span id="seVolumeValue" class="volume-value">70%</span>
                         </div>
                     </div>
-                    
-                    <!-- 見た目選択セクション -->
-                    <div class="skin-selection mb-4">
+
+                    <!-- スキンタブ -->
+                    <div id="skin-tab" class="settings-tab-content">
                         <h3 class="text-lg font-semibold mb-3">プレイヤーの見た目</h3>
                         <div class="skin-grid">
                             <button class="skin-button active" data-skin="normal">
@@ -817,17 +1062,20 @@
                                 <span>シャドウ</span>
                             </button>
                         </div>
+                        <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                            ※ガチャで新しいスキンを獲得できます
+                        </p>
                     </div>
-                    
-                    <!-- FPS表示設定セクション -->
-                    <div class="fps-setting mb-4">
-                        <h3 class="text-lg font-semibold mb-3">表示設定</h3>
-                        <div class="fps-control">
-                            <label class="fps-label">
-                                <input type="checkbox" id="fpsToggle" class="fps-checkbox">
-                                <span class="fps-text">FPS表示</span>
-                            </label>
+
+                    <!-- アイコンタブ -->
+                    <div id="icon-tab" class="settings-tab-content">
+                        <h3 class="text-lg font-semibold mb-3">ユーザーアイコン</h3>
+                        <div class="icon-grid">
+                            <!-- 動的に生成される -->
                         </div>
+                        <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                            ※ランキングに表示されるアイコンです
+                        </p>
                     </div>
                     
                     <button id="howToPlayButton" class="popup-button" style="background: #28a745; margin-right: 10px;">遊び方</button>
