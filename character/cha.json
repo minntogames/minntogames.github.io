@@ -22,6 +22,10 @@
                     "Otherworld", "Underworld", "B.comsHACKER's", "Nibiru", "Stock 'Black'", "Other"],
                 "ja": ["ラストライン", "ギャラクティックカンパニー", "メイン組", "宇宙海賊組", "宇宙警察", "亜空間組", 
                     "異世界組", "冥界組", "B.comsHACKER's", "ニビル", "株式「黒」", "その他"]
+            },
+            "calendar": {
+                "en": ["Jagua Calendar", "Star Calendar", "Space Calendar"],
+                "ja": ["ジャグア暦", "星暦", "宇宙暦"]
             }
         },
         "relation": [
@@ -48,42 +52,43 @@
         "fightingStyle": [["Sword", "Magic"], ["Magic"]],
         "attribute": [["Electricity"], ["Darkness"]],
         "height": 190,
-        "age": "100億...？",
+        "age": "不明",
         "birthday": {
-            "year": "不明",
+            "year": "-3 580300389",
             "month": 4,
             "day": 9
         },
         "personality": "意地悪",
         "group": ["Main Group"],
         "img": ["1-0.webp", "1-1.webp"],
-        "imgsize": "100%",
+        "imgsize": "300%",
         "imgThumbsize": ["150%", "200%"],
-        "imageZoomPosition": "0px 30px",
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": ["0px 0px", "0px 0px"],
-        "imgsize_mobile": "120%",
-        "imageZoomPosition_mobile": "-15px 0px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 2,
-        "name": "黒田適当",
+        "name": ["黒田適当","黒田適当(暴)"],
         "name_en": "Kuroda Tekitou",
         "name_Kana": "くろだてきとう",
-        "description": "黒田家の長男。盲目の武闘家で気で空間を認識している。ドクターとは友達でよく振り回されている。",
+        "description": ["黒田家の長男。盲目の武闘家で気で空間を認識している。ドクターとは友達でよく振り回されている。",
+                        "闇に呑まれ暴走してしまった状態。自我はほぼない。"],
         "world": "1",
         "race": ["棒人間"],
-        "fightingStyle": ["Martial Arts"],
-        "attribute": ["None"],
+        "fightingStyle": [["Martial Arts"],["Martial Arts","Magic"]],
+        "attribute": [["None"],["Darkness"]],
         "height": 210,
         "age": 25,
         "birthday": {
-            "year": 2000,
+            "year": "-1 13600",
             "month": 5,
             "day": 20
         },
         "personality": "慎重に行動するタイプ",
         "group": ["Main Group"],
-        "img": "2.webp",
+        "img": ["2-0.webp", "2-1.webp"],
         "imgsize": "140%",
         "imageZoomPosition": "-40px -80px",
         "imgsize_mobile": "150%",
@@ -91,23 +96,24 @@
     },
     {
         "id": 3,
-        "name": "無敵勇者棒人間",
+        "name": ["無敵勇者棒人間","MYB・ゴールデン"],
         "name_en": "Invincible Hero Stickman",
         "name_Kana": "むてきゆうしゃぼうにんげん",
-        "description": "元初代主人公だがドクターにとられた。だが主人公補正がかかっており相当の字実力もある。最近大学を何浪したが卒業した。",
+        "description": ["元初代主人公だがドクターにとられた。だが主人公補正がかかっており相当の字実力もある。最近大学を何浪したが卒業した。",
+                        "天の力が共鳴しその力が発現した姿、通常の倍のスピード、パワーを誇る"],
         "world": "1",
         "race": ["棒人間"],
         "fightingStyle": ["Sword"],
         "attribute": ["Holy"],
         "height": 177,
         "birthday": {
-            "year": "???",
+            "year": "-1 13598",
             "month": 11,
             "day": 3
         },
         "personality": "楽観的",
         "group": ["Main Group"],
-        "img": "3.webp",
+        "img": ["3-0.webp", "3-1.webp"],
         "imgsize": "250%",
         "imageZoomPosition": "-150px -110px",
         "imgsize_mobile": "320%",
@@ -125,7 +131,7 @@
         "attribute": ["Wind"],
         "height": 192,
         "birthday": {
-            "year": 2000,
+            "year": "-1 12329",
             "month": 1,
             "day": 1
         },
@@ -149,7 +155,7 @@
         "attribute": ["None"],
         "height": 185,
         "birthday": {
-            "year": "???",
+            "year": "-1 13589",
             "month": 2,
             "day": 5
         },
@@ -173,7 +179,7 @@
         "attribute": ["None"],
         "height": 171,
         "birthday": {
-            "year": "???",
+            "year": "-1 13590",
             "month": 9,
             "day": 23
         },
@@ -197,7 +203,7 @@
         "attribute": ["None"],
         "height": 171,
         "birthday": {
-            "year": "???",
+            "year": "-1 13597",
             "month": 5,
             "day": 2
         },
@@ -221,7 +227,7 @@
         "attribute": ["None"],
         "height": 170,
         "birthday": {
-            "year": "???",
+            "year": "-1 13597",
             "month": 1,
             "day": 1
         },
@@ -245,7 +251,7 @@
         "attribute": ["None"],
         "height": 179,
         "birthday": {
-            "year": "???",
+            "year": "-1 13595",
             "month": 1,
             "day": 1
         },
@@ -269,7 +275,7 @@
         "attribute": ["None"],
         "height": 185,
         "birthday": {
-            "year": "???",
+            "year": "-1 13599",
             "month": 1,
             "day": 1
         },
@@ -291,13 +297,13 @@
         "race": ["棒人間"],
         "fightingStyle": [""],
         "attribute": ["None"],
-        "height": null,
+        "height": 161,
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-1 13462",
+            "month": 2,
+            "day": 7
         },
-        "personality": "",
+        "personality": "おちゃらけた",
         "group": ["メイン組"],
         "img": "11.webp",
         "imgsize": "180%",
@@ -315,13 +321,13 @@
         "race": ["棒人間"],
         "fightingStyle": ["None"],
         "attribute": ["None"],
-        "height": null,
+        "height": 170,
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-1 13600",
+            "month": 4,
+            "day": 7
         },
-        "personality": "",
+        "personality": "熱心",
         "group": ["メイン組"],
         "img": "12.webp",
         "imgsize": "250%",
@@ -339,13 +345,13 @@
         "race": ["棒人間"],
         "fightingStyle": ["Sword"],
         "attribute": ["None"],
-        "height": null,
+        "height": 175,
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-1 13613",
+            "month": 6,
+            "day": 5
         },
-        "personality": "",
+        "personality": "楽観的",
         "group": ["メイン組"],
         "img": "13.webp",
         "imgsize": "180%",
@@ -363,13 +369,13 @@
         "race": ["棒人間"],
         "fightingStyle": ["Spear", "Magic"],
         "attribute": ["Fire", "Light"],
-        "height": null,
+        "height": 220,
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-1 13570",
+            "month": 1,
+            "day": 2
         },
-        "personality": "",
+        "personality": "正義心",
         "group": ["メイン組"],
         "img": "14.webp",
         "imgsize": "250%",
@@ -387,13 +393,13 @@
         "race": ["棒人間"],
         "fightingStyle": ["Other"],
         "attribute": ["Holy"],
-        "height": null,
+        "height": "ビッグ",
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-2 1年",
+            "month": 2,
+            "day": 28
         },
-        "personality": "",
+        "personality": "楽観的",
         "group": ["メイン組"],
         "img": "15.webp",
         "imgsize": "250%",
@@ -411,13 +417,13 @@
         "race": ["棒人間"],
         "fightingStyle": ["None"],
         "attribute": ["None"],
-        "height": null,
+        "height": 169,
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-1 13619",
+            "month": 3,
+            "day": 14
         },
-        "personality": "",
+        "personality": "真面目",
         "group": ["メイン組"],
         "img": "16.webp",
         "imgsize": "290%",
@@ -435,13 +441,13 @@
         "race": ["棒人間"],
         "fightingStyle": ["None"],
         "attribute": ["None"],
-        "height": null,
+        "height": 170,
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-1 13617",
+            "month": 8,
+            "day": 23
         },
-        "personality": "",
+        "personality": "フレンドリー",
         "group": ["メイン組"],
         "img": "17.webp",
         "imgsize": "290%",
@@ -459,11 +465,11 @@
         "race": ["棒人間"],
         "fightingStyle": ["None"],
         "attribute": ["None"],
-        "height": null,
+        "height": 163,
         "birthday": {
-            "year": "",
-            "month": null,
-            "day": null
+            "year": "-1 13622",
+            "month": 6,
+            "day": 5
         },
         "personality": "",
         "group": ["メイン組"],
@@ -723,9 +729,9 @@
         "race": ["棒人間", "悪魔"],
         "fightingStyle": ["Spear"],
         "attribute": ["Darkness"],
-        "height": null,
+        "height": 225,
         "birthday": {
-            "year": "",
+            "year": "不明",
             "month": null,
             "day": null
         },
@@ -747,9 +753,9 @@
         "race": ["棒人間", "悪魔"],
         "fightingStyle": ["Other"],
         "attribute": ["Darkness"],
-        "height": null,
+        "height": 230,
         "birthday": {
-            "year": "",
+            "year": "不明",
             "month": null,
             "day": null
         },
@@ -774,8 +780,8 @@
         "height": null,
         "birthday": {
             "year": "",
-            "month": null,
-            "day": null
+            "month": 7,
+            "day": 19
         },
         "personality": "仁義",
         "group": ["Other"],
@@ -798,8 +804,8 @@
         "height": null,
         "birthday": {
             "year": "",
-            "month": null,
-            "day": null
+            "month": 9,
+            "day": 9
         },
         "personality": "おとなしい",
         "group": ["その他"],
@@ -822,8 +828,8 @@
         "height": null,
         "birthday": {
             "year": "",
-            "month": null,
-            "day": null
+            "month": 5,
+            "day": 10
         },
         "personality": "活発で元気",
         "group": ["その他"],
@@ -846,8 +852,8 @@
         "height": null,
         "birthday": {
             "year": "",
-            "month": null,
-            "day": null
+            "month": 12,
+            "day": 11
         },
         "personality": "普通",
         "group": ["Other"],
@@ -870,8 +876,8 @@
         "height": null,
         "birthday": {
             "year": "",
-            "month": null,
-            "day": null
+            "month": 3,
+            "day": 3
         },
         "personality": "家族思い",
         "group": ["Other"],
@@ -886,7 +892,7 @@
         "name": "黒田鉄",
         "name_en": "Kuroda Tetsu",
         "name_Kana": "くろだてつ",
-        "description": "黒田家の大黒柱。昔、戦争に参加していた。",
+        "description": "黒田家の大黒柱。昔、戦争に参加していて顔にかなりの重症を負ったが奇跡的な回復力で生きた。",
         "world": "1",
         "race": ["棒人間"],
         "fightingStyle": ["Other"],
@@ -894,8 +900,8 @@
         "height": null,
         "birthday": {
             "year": "",
-            "month": null,
-            "day": null
+            "month": 5,
+            "day": 3
         },
         "personality": "頑固おやじ(ほんとは親バカ)",
         "group": ["Other"],
@@ -915,7 +921,7 @@
         "race": ["その他"],
         "fightingStyle": ["Other"],
         "attribute": ["None"],
-        "height": null,
+        "height": 40,
         "birthday": {
             "year": "",
             "month": null,
@@ -958,16 +964,16 @@
         "name": "ドクタースノー",
         "name_en": "Doctor Snow",
         "name_Kana": "どくたーすのー",
-        "description": "雪国のギャングのリーダー。脱走した囚人を見つけてはシバき倒して刑務所へ送り返している。",
+        "description": "雪国の警備員。脱走した囚人を見つけてはシバき倒して刑務所へ送り返している。",
         "world": "1",
         "race": ["棒人間"],
         "fightingStyle": ["Sword"],
         "attribute": ["Ice"],
-        "height": null,
+        "height": 181,
         "birthday": {
             "year": "",
-            "month": null,
-            "day": null
+            "month": 10,
+            "day": 11
         },
         "personality": "ワル",
         "group": ["その他"],
@@ -1020,10 +1026,10 @@
         "personality": "天然",
         "group": ["Other"],
         "img": "41.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize": "390%",
+        "imageZoomPosition": "-280px -220px",
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-150px -120px"
     },
     {
         "id": 42,

@@ -61,7 +61,7 @@
     <div class="popup-content">
       <span class="close" onclick="toggleFilterPopup()">&times;</span>
       <h3>フィルターオプション</h3>
-      
+            <!-- ▲追加ここまで -->
       <!-- ▼追加：世界線フィルター -->
       <div class="filter-section">
         <h4>世界線</h4>
@@ -88,9 +88,21 @@
         <h4>グループ</h4>
         <div id="groupFilters" class="filter-options"></div>
       </div>
+
+      <!-- ▼追加：お気に入りフィルター -->
+      <div class="filter-section">
+        <h4>お気に入り</h4>
+        <div class="filter-options">
+          <div id="favoritesOnlyBtn" onclick="toggleFilterOption('favorites', 'favorites', this)" class="filter-option">
+            お気に入り (<span id="favoritesCount">0</span>)
+          </div>
+        </div>
+      </div>
+      <!-- ▲追加ここまで -->
       
       <button onclick="applyFilters()" class="buttonRound">適用</button>
       <button onclick="clearFilters()" class="buttonRound">クリア</button>
+      
     </div>
   </div>
 
@@ -114,6 +126,24 @@
   <!-- キャラクターが見つからなかった場合のメッセージ -->
   <div id="noCharactersMessage" class="no-characters-message" style="display: none;">
     対象のキャラが見つかりませんでした
+  </div>
+
+  <!-- キーボードショートカット説明 -->
+  <div class="keyboard-shortcuts-info">
+    <details>
+      <summary>キーボードショートカット</summary>
+      <div class="shortcuts-list">
+        <div><kbd>Ctrl+F</kbd> 検索欄にフォーカス</div>
+        <div><kbd>F</kbd> フィルター</div>
+        <div><kbd>R</kbd> ランダム表示</div>
+        <div><kbd>L</kbd> 言語切り替え</div>
+        <div><kbd>T</kbd> テーマ切り替え</div>
+        <div><kbd>Esc</kbd> ポップアップを閉じる</div>
+        <div class="shortcuts-detail">詳細画面で：</div>
+        <div><kbd>H</kbd> 前のキャラクター</div>
+        <div><kbd>J</kbd> 次のキャラクター</div>
+      </div>
+    </details>
   </div>
 
   <script src="main.js"></script>

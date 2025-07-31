@@ -5,7 +5,8 @@ let activeFilters = {
   fightingStyle: [],
   attribute: [],
   group: [],
-  world: [] // 追加
+  world: [], // 追加
+  favorites: [] // お気に入りフィルター追加
 };
 
 // 現在の表示言語 (ja: 日本語, en: 英語)
@@ -18,13 +19,15 @@ let languageMaps = {
   race: {},
   fightingStyle: {},
   attribute: {},
-  group: {}
+  group: {},
+  calendar: {}
 };
 let displayLanguageMaps = {
   race: { enToJa: {}, enToEn: {} }, // canonical English to Japanese/English for display
   fightingStyle: { enToJa: {}, enToEn: {} },
   attribute: { enToJa: {}, enToEn: {} },
-  group: { enToJa: {}, enToEn: {} }
+  group: { enToJa: {}, enToEn: {} },
+  calendar: { enToJa: {}, enToEn: {} }
 };
 
 // 詳細表示で使う固定テキストの翻訳
@@ -47,6 +50,9 @@ const labels = {
 // cha.json を読み込み、キャラクターデータと設定を初期化
 let relationGroups = []; // relationデータ保持用
 
+// お気に入り機能
+let favorites = JSON.parse(localStorage.getItem('character-favorites') || '[]');
+
 fetch('cha.json')
   .then(res => res.json())
   .then(data => {
@@ -63,6 +69,9 @@ fetch('cha.json')
     
     // 初期表示
     filterCharacters();
+
+    // お気に入り数を初期化
+    updateFavoriteUI();
 
     // 言語切り替えボタンのテキストを初期設定
     document.getElementById('langToggleBtn').textContent = currentDisplayLanguage === 'ja' ? '言語切替 (現在: 日本語)' : '言語 Toggle (Current: English)';
@@ -99,6 +108,41 @@ function createLanguageMaps() {
       }
     }
   }
+}
+
+/**
+ * 年の形式を暦名に変換する
+ * 例: "-3 580300389" -> "宇宙暦 580300389年"
+ * @param {string} yearString - 年の文字列
+ * @returns {string} - 変換された年の文字列
+ */
+function convertYearToCalendar(yearString) {
+  if (!yearString || typeof yearString !== 'string') {
+    return yearString || '';
+  }
+  
+  // "-数字 年数" の形式をパース
+  const match = yearString.match(/^-(\d+)\s+(.+)$/);
+  if (match) {
+    const calendarIndex = parseInt(match[1]) - 1; // 0-based index
+    let yearNumber = match[2];
+    
+    // カレンダー設定から対応する暦名を取得
+    if (settings.calendar && settings.calendar[currentDisplayLanguage] && 
+        calendarIndex >= 0 && calendarIndex < settings.calendar[currentDisplayLanguage].length) {
+      const calendarName = settings.calendar[currentDisplayLanguage][calendarIndex];
+      
+      // 年数に「年」が既に含まれているかチェック
+      if (!yearNumber.endsWith('年')) {
+        yearNumber += '年';
+      }
+      
+      return `${calendarName} ${yearNumber}`;
+    }
+  }
+  
+  // 変換できない場合はそのまま返す
+  return yearString;
 }
 
 /**
@@ -144,17 +188,27 @@ function renderCharacter(char) {
   else if (world === "2") worldClass = "card-world-2";
   else if (world === "3") worldClass = "card-world-3";
 
+  const isFavorite = favorites.includes(char.id);
+
   return `
-    <div class="card ${worldClass}" onclick="showCharacterDetails(${char.id})"
+    <div class="card ${worldClass}" data-char-id="${char.id}"
       onmouseenter="onCardHover(this, ${char.id})"
       onmouseleave="onCardLeave()"
       ontouchstart="onCardHover(this, ${char.id})"
       ontouchend="onCardLeave()"
     >
-      <div class="imgframe">
+      <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" 
+              onclick="event.stopPropagation(); toggleFavorite(${char.id})"
+              title="${isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}"
+              aria-label="${isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="${isFavorite ? '#ff6b00' : 'none'}" stroke="${isFavorite ? '#ff6b00' : '#666'}" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </button>
+      <div class="imgframe" onclick="showCharacterDetails(${char.id})">
         <img src="img/${imgArr[0]}" alt="${nameArr[0]}の画像" onerror="this.src='img/placeholder.png';" style="width:${imgWidth};object-position:${objectPosition};">
       </div>
-      <h2 title="${displayName}">${displayNameShort}</h2>
+      <h2 title="${displayName}" onclick="showCharacterDetails(${char.id})">${displayNameShort}</h2>
     </div>
   `;
 }
@@ -317,7 +371,9 @@ function filterCharacters() {
         });
       const worldMatch = activeFilters.world.length === 0 ||
         activeFilters.world.includes(String(c.world));
-      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch) {
+      const favoritesMatch = activeFilters.favorites.length === 0 ||
+        favorites.includes(c.id);
+      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch && favoritesMatch) {
         filterMatch = true;
         break;
       }
@@ -403,6 +459,17 @@ function setupFilterOptions() {
 function toggleFilterOption(type, value, element) {
   element.classList.toggle('selected');
   
+  // お気に入りフィルターの特別処理
+  if (type === 'favorites') {
+    const index = activeFilters.favorites.indexOf('favorites');
+    if (index === -1) {
+      activeFilters.favorites.push('favorites');
+    } else {
+      activeFilters.favorites.splice(index, 1);
+    }
+    return;
+  }
+  
   // フィルターの表示値(日本語)を正規の英語名に変換してactiveFiltersに格納
   const canonicalValue = type === 'world' ? value : (languageMaps[type][value.toLowerCase()] || value.toLowerCase());
   const index = activeFilters[type].indexOf(canonicalValue);
@@ -439,8 +506,12 @@ function clearFilters() {
     fightingStyle: [],
     attribute: [],
     group: [],
-    world: []
+    world: [],
+    favorites: []
   };
+  
+  // お気に入りフィルターもクリア
+  favoritesOnly = false;
   
   // 選択状態をクリア
   document.querySelectorAll('.filter-option').forEach(option => {
@@ -616,17 +687,27 @@ function showCharacterDetails(charId, imgIndex = 0) {
     const fightingStyle = fightingStyleArr[imgIndex] || fightingStyleArr[0] || [];
     const attribute = attributeArr[imgIndex] || attributeArr[0] || [];
 
-    // ▼キャラ名＋コピーボタン横並び
+    // ▼キャラ名＋コピーボタン＋お気に入りボタン横並び
     const displayName = currentDisplayLanguage === 'en' && nameEn ? nameEn : name;
+    const isFavorite = favorites.includes(charId);
     const titleRowHtml = `
       <div class="character-title-row">
         <h2 style="margin:0;">${displayName}</h2>
-        <button onclick="copyCharacterUrl()" class="buttonCopyIcon" title="URLをコピー">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" fill="none"/>
-            <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
-          </svg>
-        </button>
+        <div class="title-buttons">
+          <button id="detailFavoriteBtn" onclick="toggleFavorite(${charId})" 
+                  class="buttonCopyIcon ${isFavorite ? 'favorited' : ''}" 
+                  title="${isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="${isFavorite ? '#ff6b00' : 'none'}" stroke="${isFavorite ? '#ff6b00' : '#4a88a2'}" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+          <button onclick="copyCharacterUrl()" class="buttonCopyIcon" title="URLをコピー">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" fill="none"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+            </svg>
+          </button>
+        </div>
       </div>
     `;
 
@@ -642,11 +723,15 @@ function showCharacterDetails(charId, imgIndex = 0) {
         <p><strong>${getTranslatedLabel('attribute')}:</strong> ${attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
         ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
-        <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${character.birthday.year}${getTranslatedLabel('year')}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
+        <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
         <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('group')}:</strong> ${character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
       </div>
     `;
+    
+    // データセット属性を設定
+    detailsContainer.dataset.charId = charId;
+    detailsContainer.dataset.imgIndex = imgIndex;
     renderRelatedCharacters(character.group, character.id, false); // ←showAll=falseで初回5件
     renderRelationCharacters(character.id);
     detailsPopup.style.display = 'block';
@@ -1049,6 +1134,229 @@ window.onCardHover = function(cardEl, charId) {
 window.onCardLeave = function() {
   hideMiniPopup();
 };
-window.onCardLeave = function() {
-  hideMiniPopup();
-};
+
+// ===============================================
+// お気に入り機能
+// ===============================================
+
+/**
+ * お気に入りの状態を切り替える
+ * @param {number} charId - キャラクターID
+ */
+function toggleFavorite(charId) {
+  const index = favorites.indexOf(charId);
+  if (index === -1) {
+    favorites.push(charId);
+  } else {
+    favorites.splice(index, 1);
+  }
+  localStorage.setItem('character-favorites', JSON.stringify(favorites));
+  updateFavoriteUI(charId);
+  
+  // もしお気に入りのみ表示中なら再フィルタリング
+  const favOnlyBtn = document.getElementById('favoritesOnlyBtn');
+  if (favOnlyBtn && favOnlyBtn.classList.contains('active')) {
+    showFavoritesOnly();
+  }
+}
+
+/**
+ * お気に入りボタンのUIを更新
+ * @param {number} charId - キャラクターID（省略時は全体を更新）
+ */
+function updateFavoriteUI(charId = null) {
+  if (charId !== null) {
+    // 特定のキャラクターのお気に入りボタンを更新
+    const favBtn = document.querySelector(`[data-char-id="${charId}"] .favorite-btn`);
+    if (favBtn) {
+      const isFavorite = favorites.includes(charId);
+      favBtn.classList.toggle('favorited', isFavorite);
+      favBtn.title = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
+      
+      // SVGの色を更新
+      const svg = favBtn.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', isFavorite ? '#ff6b00' : 'none');
+        svg.setAttribute('stroke', isFavorite ? '#ff6b00' : '#666');
+      }
+    }
+    
+    // 詳細画面のお気に入りボタンも更新
+    const detailFavBtn = document.getElementById('detailFavoriteBtn');
+    if (detailFavBtn) {
+      const isFavorite = favorites.includes(charId);
+      detailFavBtn.classList.toggle('favorited', isFavorite);
+      detailFavBtn.title = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
+      
+      // SVGの色を更新
+      const svg = detailFavBtn.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', isFavorite ? '#ff6b00' : 'none');
+        svg.setAttribute('stroke', isFavorite ? '#ff6b00' : '#4a88a2');
+      }
+    }
+  } else {
+    // 全てのお気に入りボタンを更新
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+      const charId = parseInt(btn.closest('[data-char-id]').getAttribute('data-char-id'));
+      const isFavorite = favorites.includes(charId);
+      btn.classList.toggle('favorited', isFavorite);
+      btn.title = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
+      
+      // SVGの色を更新
+      const svg = btn.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', isFavorite ? '#ff6b00' : 'none');
+        svg.setAttribute('stroke', isFavorite ? '#ff6b00' : '#666');
+      }
+    });
+  }
+  
+  // お気に入り数を更新
+  const favCount = document.getElementById('favoritesCount');
+  if (favCount) {
+    favCount.textContent = favorites.length;
+  }
+}
+
+/**
+ * お気に入りのみを表示
+ */
+function showFavoritesOnly() {
+  const favOnlyBtn = document.getElementById('favoritesOnlyBtn');
+  const isActive = favOnlyBtn.classList.toggle('selected');
+  
+  if (isActive) {
+    favOnlyBtn.innerHTML = 'お気に入り (<span id="favoritesCount">' + favorites.length + '</span>)';
+    const favoriteChars = characters.filter(c => favorites.includes(c.id));
+    const characterListContainer = document.getElementById('characterList');
+    const noCharactersMessage = document.getElementById('noCharactersMessage');
+    
+    if (favoriteChars.length > 0) {
+      characterListContainer.innerHTML = favoriteChars.map(renderCharacter).join('');
+      noCharactersMessage.style.display = 'none';
+    } else {
+      characterListContainer.innerHTML = '';
+      noCharactersMessage.style.display = 'block';
+      noCharactersMessage.textContent = 'お気に入りに登録されたキャラクターがありません';
+    }
+    updateFavoriteUI();
+    
+  } else {
+    favOnlyBtn.innerHTML = 'お気に入り (<span id="favoritesCount">' + favorites.length + '</span>)';
+    
+  }
+}
+
+/**
+ * ランダムにキャラクターを表示
+ */
+function showRandomCharacter() {
+  if (characters.length === 0) return;
+  
+  const randomIndex = Math.floor(Math.random() * characters.length);
+  const randomChar = characters[randomIndex];
+  showCharacterDetails(randomChar.id);
+  document.getElementById('detailsPopup').style.display = 'block';
+  updateHamburgerMenuVisibility();
+}
+
+// ===============================================
+// キーボードショートカット
+// ===============================================
+
+/**
+ * キーボードショートカットの初期化
+ */
+function initKeyboardShortcuts() {
+  document.addEventListener('keydown', function(e) {
+    // ポップアップが開いている時の処理
+    const detailsPopup = document.getElementById('detailsPopup');
+    const isPopupOpen = detailsPopup.style.display === 'block';
+    
+    // Escape でポップアップを閉じる
+    if (e.key === 'Escape' && isPopupOpen) {
+      closeDetailsPopup();
+      return;
+    }
+    
+    // 入力欄にフォーカスがある時はショートカットを無効にする
+    const activeElement = document.activeElement;
+    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+      return;
+    }
+    
+    // Ctrl+F で検索欄にフォーカス
+    if (e.ctrlKey && e.key === 'f') {
+      e.preventDefault();
+      const searchInput = document.getElementById('searchName');
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+      return;
+    }
+    
+    // Ctrl+R でランダム表示
+    if (e.ctrlKey && e.key === 'r') {
+      e.preventDefault();
+      showRandomCharacter();
+      return;
+    }
+    
+    // F でお気に入りのみ表示切り替え
+    if (e.key === 'f' || e.key === 'F') {
+      toggleFilterPopup()
+      return;
+    }
+    
+    // R でランダム表示（Ctrlなし）
+    if (e.key === 'r' || e.key === 'R') {
+      showRandomCharacter();
+      return;
+    }
+    
+    // L で言語切り替え
+    if (e.key === 'l' || e.key === 'L') {
+      toggleLanguage();
+      return;
+    }
+    
+    // T でテーマ切り替え
+    if (e.key === 't' || e.key === 'T') {
+      toggleTheme();
+      return;
+    }
+    
+    // ポップアップが開いている時の追加ショートカット
+    if (isPopupOpen) {
+      const currentCharId = parseInt(document.getElementById('characterDetails').dataset.charId);
+      
+      // H で前のキャラクター、J で次のキャラクター
+      if (e.key === 'h' || e.key === 'H') {
+        const currentIndex = characters.findIndex(c => c.id === currentCharId);
+        if (currentIndex > 0) {
+          const prevChar = characters[currentIndex - 1];
+          showCharacterDetails(prevChar.id);
+        }
+        return;
+      }
+      
+      if (e.key === 'j' || e.key === 'J') {
+        const currentIndex = characters.findIndex(c => c.id === currentCharId);
+        if (currentIndex < characters.length - 1) {
+          const nextChar = characters[currentIndex + 1];
+          showCharacterDetails(nextChar.id);
+        }
+        return;
+      }
+    }
+  });
+}
+
+// ===============================================
+// 初期化時にキーボードショートカットを設定
+// ===============================================
+document.addEventListener('DOMContentLoaded', function() {
+  initKeyboardShortcuts();
+});

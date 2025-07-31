@@ -159,6 +159,71 @@ const audioManager = {
     }
 };
 
+// パフォーマンス監視: FPS更新関数
+function updateFps() {
+    const now = Date.now();
+    const elapsed = now - lastFpsTime;
+    
+    if (elapsed >= 1000) {
+        fpsHistory.push(fps);
+        
+        // 最新10秒間の平均FPSを計算
+        if (fpsHistory.length > 10) {
+            fpsHistory.shift();
+        }
+        averageFps = Math.round(fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length);
+        
+        lastFpsTime = now;
+    }
+}
+
+// FPS値に応じた色を決定する関数
+function getFpsColor(fpsValue) {
+    if (fpsValue >= 50) {
+        return "#00ff00"; // 緑色（良好）
+    } else if (fpsValue >= 30) {
+        return "#ffff00"; // 黄色（普通）
+    } else if (fpsValue >= 20) {
+        return "#ff8800"; // オレンジ色（注意）
+    } else {
+        return "#ff0000"; // 赤色（危険）
+    }
+}
+
+// FPS値に応じた背景色を決定する関数（視認性向上）
+function getFpsBackgroundColor(fpsValue) {
+    if (fpsValue >= 50) {
+        return "rgba(0, 100, 0, 0.3)"; // 薄い緑
+    } else if (fpsValue >= 30) {
+        return "rgba(100, 100, 0, 0.3)"; // 薄い黄色
+    } else if (fpsValue >= 20) {
+        return "rgba(100, 50, 0, 0.3)"; // 薄いオレンジ
+    } else {
+        return "rgba(100, 0, 0, 0.3)"; // 薄い赤
+    }
+}
+
+// パフォーマンス最適化: 高速当たり判定関数
+function fastCircleCollision(x1, y1, r1, x2, y2, r2) {
+    const dx = x1 - x2;
+    const dy = y1 - y2;
+    const radiusSum = r1 + r2;
+    
+    // 平方根を避けて距離の二乗で比較
+    return (dx * dx + dy * dy) <= (radiusSum * radiusSum);
+}
+
+function fastRectCollision(px, py, pr, rx, ry, rw, rh) {
+    // プレイヤーの円と矩形の当たり判定（高速版）
+    const closestX = Math.max(rx - rw/2, Math.min(px, rx + rw/2));
+    const closestY = Math.max(ry - rh/2, Math.min(py, ry + rh/2));
+    
+    const dx = px - closestX;
+    const dy = py - closestY;
+    
+    return (dx * dx + dy * dy) <= (pr * pr);
+}
+
 // 音声管理システムを初期化
 audioManager.init();
 
@@ -1419,6 +1484,8 @@ window.addEventListener("keydown", e => {
     if (e.ctrlKey && e.key === "9") {
         showFps = !showFps;
         console.log(`FPS表示: ${showFps ? 'ON' : 'OFF'}`);
+        console.log(`現在のFPS設定: showFps=${showFps}, fps=${fps}, averageFps=${averageFps}`);
+        saveFpsSettings();
     }
 });
 window.addEventListener("keyup", e => {
@@ -1561,6 +1628,11 @@ let fps = 0;
 let fpsFrameCount = 0;
 let lastTime = performance.now();
 let fpsUpdateInterval = 1000; // 1秒ごとにFPSを更新
+
+// パフォーマンス監視変数
+let averageFps = 60;
+let fpsHistory = [];
+let lastFpsTime = Date.now();
 
 // ユーザーIDの取得または生成
 function getOrCreateUserId() {
@@ -2268,6 +2340,9 @@ function startDeathAnimation() {
 
 
 function animate() {
+    // パフォーマンス監視を更新
+    updateFps();
+    
     // FPS計算
     const currentTime = performance.now();
     const deltaTime = currentTime - lastTime;
@@ -3246,17 +3321,39 @@ function animate() {
         drawPlayer();
     }
     
-    // FPS表示（デバッグ用）
+    // FPS表示（デバッグ用）- 詳細情報付き色分け版
     if (showFps) {
         ctx.save();
-        ctx.font = "16px monospace";
-        ctx.fillStyle = "#ff0000";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
-        ctx.textAlign = "left";
+        
+        // FPS値に応じた色を取得
+        const fpsColor = getFpsColor(fps);
+        const avgFpsColor = getFpsColor(averageFps);
+        const fpsBackgroundColor = getFpsBackgroundColor(Math.min(fps, averageFps));
+        
+        // 表示するテキスト
         const fpsText = `FPS: ${fps}`;
-        ctx.strokeText(fpsText, 10, 30);
-        ctx.fillText(fpsText, 10, 30);
+        
+        ctx.font = "14px monospace";
+        
+        // 各行のテキスト幅を計算
+        const texts = [fpsText];
+        const maxWidth = Math.max(...texts.map(text => ctx.measureText(text).width));
+        const lineHeight = 18;
+        const totalHeight = texts.length * lineHeight;
+        
+        // テキスト描画
+        ctx.textAlign = "left";
+        ctx.lineWidth = 1;
+        
+        let yPos = 22;
+        
+        // 現在FPS（色分け）
+        ctx.fillStyle = fpsColor;
+        ctx.strokeStyle = "#000000";
+        ctx.strokeText(fpsText, 10, yPos);
+        ctx.fillText(fpsText, 10, yPos);
+        yPos += lineHeight;
+
         ctx.restore();
     }
     

@@ -632,6 +632,11 @@ button,
   height: 26px;
 }
 
+/* お気に入りボタンがfavoritedクラスを持つ場合の追加スタイル */
+.buttonCopyIcon.favorited:hover {
+  background: rgba(255, 107, 0, 0.1);
+}
+
 /* ミニポップアップ */
 .mini-popup {
   position: absolute;
@@ -849,6 +854,11 @@ body.theme-dark .buttonCopyIcon:hover,
 body.theme-dark .hamburger-close-btn:hover {
   background: #22305c;
 }
+
+/* ダークテーマでのお気に入りボタンホバー */
+body.theme-dark .buttonCopyIcon.favorited:hover {
+  background: rgba(255, 215, 0, 0.2);
+}
 body.theme-dark .search-clear-btn svg,
 body.theme-dark .buttonCopyIcon svg,
 body.theme-dark .hamburger-close-btn svg {
@@ -1013,6 +1023,11 @@ body.theme-modern .buttonCopyIcon:hover,
 body.theme-modern .hamburger-close-btn:hover {
   background: #b2eaff;
 }
+
+/* モダンテーマでのお気に入りボタンホバー */
+body.theme-modern .buttonCopyIcon.favorited:hover {
+  background: rgba(0, 195, 255, 0.2);
+}
 body.theme-modern .name-suggestions {
   background: #e0faff;
   color: #156acc;
@@ -1115,5 +1130,324 @@ body.theme-dark .copy-popup {
 }
 body.theme-modern .copy-popup {
   background: #00c3ff;
+  color: #fff;
+}
+
+/* ===============================================
+   お気に入り機能のスタイル
+   =============================================== */
+
+/* カード上のお気に入りボタン */
+.favorite-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5; /* 詳細画面のz-indexより低く設定 */
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0; /* デフォルトは非表示 */
+}
+
+/* カードホバー時にお気に入りボタンを表示 */
+.card:hover .favorite-btn {
+  opacity: 1;
+}
+
+.favorite-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.favorite-btn.favorited {
+  background: rgba(255, 235, 200, 0.9);
+  opacity: 0;
+}
+
+.favorite-btn.favorited:hover {
+  background: rgba(255, 235, 200, 1);
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+/* お気に入りボタンのSVGスタイル */
+.favorite-btn svg {
+  display: block;
+}
+
+/* 詳細画面のお気に入りボタン */
+.detail-favorite-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.detail-favorite-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.detail-favorite-btn.favorited {
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  color: #333;
+}
+
+.detail-favorite-btn.favorited:hover {
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+/* 詳細画面のお気に入りSVGボタン */
+.detail-favorite-svg-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detail-favorite-svg-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 1);
+}
+
+.detail-favorite-svg-btn.favorited {
+  background: rgba(255, 235, 200, 0.9);
+  border-color: #ff6b00;
+}
+
+.detail-favorite-svg-btn.favorited:hover {
+  background: rgba(255, 235, 200, 1);
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+/* タイトル行のボタン配置 */
+.title-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* お気に入りのみ表示ボタンのアクティブ状態 */
+.favorite-filter-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.favorite-filter-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.favorite-filter-btn.active {
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  color: #333;
+}
+
+/* お気に入り数の強調 */
+#favoritesCount {
+  font-weight: bold;
+  color: #ff6b00;
+}
+
+/* ダークテーマでのお気に入りボタン */
+body.theme-dark .favorite-btn {
+  background: rgba(60, 60, 60, 0.9);
+}
+
+body.theme-dark .favorite-btn:hover {
+  background: rgba(80, 80, 80, 1);
+}
+
+body.theme-dark .favorite-btn.favorited {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+body.theme-dark .favorite-btn.favorited:hover {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+body.theme-dark .detail-favorite-svg-btn {
+  background: rgba(60, 60, 60, 0.9);
+  border-color: #555;
+}
+
+body.theme-dark .detail-favorite-svg-btn:hover {
+  background: rgba(80, 80, 80, 1);
+}
+
+body.theme-dark .detail-favorite-svg-btn.favorited {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+}
+
+/* モダンテーマでのお気に入りボタン */
+body.theme-modern .favorite-btn {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+body.theme-modern .favorite-btn.favorited {
+  background: rgba(0, 195, 255, 0.2);
+}
+
+body.theme-modern .favorite-btn.favorited:hover {
+  background: rgba(0, 195, 255, 0.3);
+}
+
+body.theme-modern .detail-favorite-btn {
+  background: linear-gradient(135deg, #00c3ff 0%, #0077ff 100%);
+}
+
+body.theme-modern .detail-favorite-btn.favorited {
+  background: linear-gradient(135deg, #00ff88 0%, #00c3ff 100%);
+  color: #fff;
+}
+
+body.theme-modern .detail-favorite-svg-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #00c3ff;
+}
+
+body.theme-modern .detail-favorite-svg-btn:hover {
+  background: rgba(240, 250, 255, 1);
+}
+
+body.theme-modern .detail-favorite-svg-btn.favorited {
+  background: rgba(224, 250, 255, 0.9);
+  border-color: #00c3ff;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .favorite-btn {
+    width: 28px;
+    height: 28px;
+    top: 6px;
+    right: 6px;
+  }
+  
+  .favorite-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .detail-favorite-btn {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .title-buttons {
+    gap: 2px;
+  }
+  
+  .buttonCopyIcon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .buttonCopyIcon svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ===============================================
+   キーボードショートカット説明
+   =============================================== */
+
+.keyboard-shortcuts-info {
+  margin-top: 40px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.keyboard-shortcuts-info summary {
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  user-select: none;
+}
+
+.keyboard-shortcuts-info summary:hover {
+  color: #333;
+}
+
+.shortcuts-list {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 13px;
+  color: #555;
+}
+
+.shortcuts-list kbd {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.shortcuts-detail {
+  grid-column: 1 / -1;
+  font-weight: bold;
+  margin-top: 8px;
+  color: #333;
+}
+
+/* ダークテーマ対応 */
+body.theme-dark .keyboard-shortcuts-info summary {
+  color: #bbb;
+}
+
+body.theme-dark .keyboard-shortcuts-info summary:hover {
+  color: #fff;
+}
+
+body.theme-dark .shortcuts-list {
+  color: #ccc;
+}
+
+body.theme-dark .shortcuts-list kbd {
+  background: #444;
+  border-color: #666;
+  color: #fff;
+}
+
+body.theme-dark .shortcuts-detail {
   color: #fff;
 }
