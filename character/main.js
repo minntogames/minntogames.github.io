@@ -7,8 +7,14 @@ let activeFilters = {
   group: [],
   world: [], // 追加
   favorites: [], // お気に入りフィルター追加
-  memo: [] // メモ済みフィルター追加
+  memo: [], // メモ済みフィルター追加
+  customTags: [] // カスタムタグフィルター追加
 };
+
+// カスタムタグ関連の変数
+let customTags = {}; // カスタムタグのデータ {tagId: {name, color, characterIds: []}}
+let characterTags = {}; // キャラクターIDとタグIDの関連付け {characterId: [tagId1, tagId2, ...]}
+let currentEditingCharacter = null; // タグ編集中のキャラクターID
 
 // 現在の表示言語 (ja: 日本語, en: 英語)
 let currentDisplayLanguage = 'ja'; 
@@ -69,7 +75,7 @@ let memoOnly = false;
 class CharacterDB {
   constructor() {
     this.dbName = 'CharacterDatabase';
-    this.dbVersion = 1;
+    this.dbVersion = 2; // カスタムタグ機能追加のためバージョンアップ
     this.db = null;
   }
 
@@ -116,6 +122,18 @@ class CharacterDB {
         if (!db.objectStoreNames.contains('stats')) {
           const statsStore = db.createObjectStore('stats', { keyPath: 'key' });
           statsStore.createIndex('key', 'key', { unique: true });
+        }
+        
+        // カスタムタグストア
+        if (!db.objectStoreNames.contains('customTags')) {
+          const customTagsStore = db.createObjectStore('customTags', { keyPath: 'tagId' });
+          customTagsStore.createIndex('tagId', 'tagId', { unique: true });
+        }
+        
+        // キャラクタータグ関連付けストア
+        if (!db.objectStoreNames.contains('characterTags')) {
+          const characterTagsStore = db.createObjectStore('characterTags', { keyPath: 'charId' });
+          characterTagsStore.createIndex('charId', 'charId', { unique: true });
         }
       };
     });
@@ -307,6 +325,8 @@ class CharacterDB {
       settings: [],
       favorites: [],
       stats: [],
+      customTags: [],
+      characterTags: [],
       exportDate: new Date().toISOString()
     };
 
@@ -342,7 +362,27 @@ class CharacterDB {
             
             statsRequest.onsuccess = () => {
               exportData.stats = statsRequest.result;
-              resolve(exportData);
+              
+              // カスタムタグをエクスポート
+              const customTagsTransaction = this.db.transaction(['customTags'], 'readonly');
+              const customTagsStore = customTagsTransaction.objectStore('customTags');
+              const customTagsRequest = customTagsStore.getAll();
+              
+              customTagsRequest.onsuccess = () => {
+                exportData.customTags = customTagsRequest.result;
+                
+                // キャラクタータグ関連付けをエクスポート
+                const characterTagsTransaction = this.db.transaction(['characterTags'], 'readonly');
+                const characterTagsStore = characterTagsTransaction.objectStore('characterTags');
+                const characterTagsRequest = characterTagsStore.getAll();
+                
+                characterTagsRequest.onsuccess = () => {
+                  exportData.characterTags = characterTagsRequest.result;
+                  resolve(exportData);
+                };
+                characterTagsRequest.onerror = () => reject(characterTagsRequest.error);
+              };
+              customTagsRequest.onerror = () => reject(customTagsRequest.error);
             };
             statsRequest.onerror = () => reject(statsRequest.error);
           };
@@ -358,7 +398,7 @@ class CharacterDB {
    * データをインポート
    */
   async importData(data) {
-    const transaction = this.db.transaction(['notes', 'settings', 'favorites', 'stats'], 'readwrite');
+    const transaction = this.db.transaction(['notes', 'settings', 'favorites', 'stats', 'customTags', 'characterTags'], 'readwrite');
     
     // メモをインポート
     if (data.notes) {
@@ -392,9 +432,177 @@ class CharacterDB {
       }
     }
     
+    // カスタムタグをインポート
+    if (data.customTags) {
+      const customTagsStore = transaction.objectStore('customTags');
+      for (const tag of data.customTags) {
+        await customTagsStore.put(tag);
+      }
+    }
+    
+    // キャラクタータグ関連付けをインポート
+    if (data.characterTags) {
+      const characterTagsStore = transaction.objectStore('characterTags');
+      for (const characterTag of data.characterTags) {
+        await characterTagsStore.put(characterTag);
+      }
+    }
+    
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  // ===== カスタムタグ関連メソッド =====
+
+  /**
+   * カスタムタグを保存
+   */
+  async saveCustomTag(tagId, tagData) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['customTags'], 'readwrite');
+      const store = transaction.objectStore('customTags');
+      
+      const tagRecord = {
+        tagId: tagId,
+        name: tagData.name,
+        color: tagData.color,
+        createdAt: tagData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const request = store.put(tagRecord);
+      
+      request.onsuccess = () => resolve(tagRecord);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * カスタムタグを取得
+   */
+  async getCustomTag(tagId) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['customTags'], 'readonly');
+      const store = transaction.objectStore('customTags');
+      const request = store.get(tagId);
+      
+      request.onsuccess = () => {
+        resolve(request.result || null);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * 全カスタムタグを取得
+   */
+  async getAllCustomTags() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['customTags'], 'readonly');
+      const store = transaction.objectStore('customTags');
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const tags = {};
+        request.result.forEach(tag => {
+          tags[tag.tagId] = {
+            name: tag.name,
+            color: tag.color,
+            createdAt: tag.createdAt,
+            updatedAt: tag.updatedAt
+          };
+        });
+        resolve(tags);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * カスタムタグを削除
+   */
+  async deleteCustomTag(tagId) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['customTags'], 'readwrite');
+      const store = transaction.objectStore('customTags');
+      const request = store.delete(tagId);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * キャラクターのタグを保存
+   */
+  async saveCharacterTags(charId, tagIds) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['characterTags'], 'readwrite');
+      const store = transaction.objectStore('characterTags');
+      
+      const record = {
+        charId: charId,
+        tagIds: tagIds,
+        updatedAt: new Date().toISOString()
+      };
+      
+      const request = store.put(record);
+      
+      request.onsuccess = () => resolve(record);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * キャラクターのタグを取得
+   */
+  async getCharacterTags(charId) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['characterTags'], 'readonly');
+      const store = transaction.objectStore('characterTags');
+      const request = store.get(charId);
+      
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.tagIds : []);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * 全キャラクターのタグ関連付けを取得
+   */
+  async getAllCharacterTags() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['characterTags'], 'readonly');
+      const store = transaction.objectStore('characterTags');
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const characterTags = {};
+        request.result.forEach(record => {
+          characterTags[record.charId] = record.tagIds;
+        });
+        resolve(characterTags);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * キャラクターからタグを削除
+   */
+  async removeCharacterTags(charId) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['characterTags'], 'readwrite');
+      const store = transaction.objectStore('characterTags');
+      const request = store.delete(charId);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 }
@@ -671,12 +879,17 @@ async function loadDataFromIndexedDB() {
     // メモデータをキャッシュに読み込み
     await loadAllMemosToCache();
     
+    // カスタムタグデータを読み込み
+    await loadCustomTagsFromIndexedDB();
+    
     console.log('IndexedDBからデータを読み込みました');
   } catch (error) {
     console.error('データ読み込みエラー:', error);
     // エラー時はlocalStorageから読み込み
     favorites = JSON.parse(localStorage.getItem('character-favorites') || '[]');
     userNotes = JSON.parse(localStorage.getItem('character-user-notes') || '{}');
+    customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
+    characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
   }
 }
 
@@ -1122,7 +1335,12 @@ function filterCharacters() {
           userNotes[c.id] && userNotes[c.id].trim() !== '' :
           // localStorageの場合
           userNotes[c.id] && userNotes[c.id].trim() !== '');
-      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch && favoritesMatch && memoMatch) {
+      
+      // カスタムタグフィルター
+      const customTagsMatch = activeFilters.customTags.length === 0 ||
+        (characterTags[c.id] && activeFilters.customTags.some(tagId => characterTags[c.id].includes(tagId)));
+      
+      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch && favoritesMatch && memoMatch && customTagsMatch) {
         filterMatch = true;
         break;
       }
@@ -1268,7 +1486,8 @@ function clearFilters() {
     group: [],
     world: [],
     favorites: [],
-    memo: []
+    memo: [],
+    customTags: []
   };
   
   // お気に入りフィルターもクリア
@@ -1281,6 +1500,14 @@ function clearFilters() {
   document.querySelectorAll('.filter-option').forEach(option => {
     option.classList.remove('selected');
   });
+  
+  // カスタムタグフィルターの折りたたみ状態もリセット
+  const customTagsContainer = document.getElementById('customTagsFilters');
+  const customTagsToggle = document.getElementById('customTagsToggle');
+  if (customTagsContainer && customTagsToggle) {
+    customTagsContainer.style.display = 'none';
+    customTagsToggle.textContent = '▼';
+  }
   
   filterCharacters();
   toggleFilterPopup();
@@ -1502,6 +1729,21 @@ function showCharacterDetails(charId, imgIndex = 0) {
           </p>
           <div id="noteDisplay" class="note-display"></div>
         </div>
+        <div class="character-tags">
+          <h4>カスタムタグ</h4>
+          <div id="characterTagsDisplay">
+            <!-- タグがここに表示されます -->
+          </div>
+          <div class="character-tag-manage">
+            <button onclick="showTagSelectionPopup(${charId})" class="add-tag-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              タグを追加
+            </button>
+          </div>
+        </div>
       </div>
     `;
     
@@ -1511,6 +1753,9 @@ function showCharacterDetails(charId, imgIndex = 0) {
     
     // メモ表示を更新
     updateNoteDisplay(charId);
+    
+    // カスタムタグ表示を更新
+    updateCharacterTagDisplay(charId);
     
     renderRelatedCharacters(character.group, character.id, false); // ←showAll=falseで初回5件
     renderRelationCharacters(character.id);
@@ -2382,3 +2627,637 @@ function initKeyboardShortcuts() {
 document.addEventListener('DOMContentLoaded', function() {
   initKeyboardShortcuts();
 });
+
+// ===============================================
+// カスタムタグ機能
+// ===============================================
+
+/**
+ * ハンバーガーメニューからカスタムタグ管理を表示
+ */
+function showCustomTagsFromMenu() {
+  // ハンバーガーメニューを閉じる
+  toggleHamburgerMenu();
+  
+  // 少し遅延してからカスタムタグ管理画面を表示
+  setTimeout(() => {
+    showCustomTagsPopup();
+  }, 300);
+}
+
+/**
+ * カスタムタグ一覧ポップアップを表示
+ */
+async function showCustomTagsPopup() {
+  try {
+    // カスタムタグをIndexedDBから読み込み
+    if (characterDB.db) {
+      customTags = await characterDB.getAllCustomTags();
+      characterTags = await characterDB.getAllCharacterTags();
+    } else {
+      // localStorage フォールバック
+      customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
+      characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
+    }
+    
+    // ポップアップを表示
+    document.getElementById('customTagsPopup').style.display = 'block';
+    
+    // タグ一覧を更新
+    renderCustomTagsList();
+    
+  } catch (error) {
+    console.error('カスタムタグ読み込みエラー:', error);
+    // エラー時はローカルストレージから読み込み
+    customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
+    characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
+    document.getElementById('customTagsPopup').style.display = 'block';
+    renderCustomTagsList();
+  }
+}
+
+/**
+ * カスタムタグ一覧ポップアップを閉じる
+ */
+function closeCustomTagsPopup() {
+  document.getElementById('customTagsPopup').style.display = 'none';
+  hideCreateTagForm();
+}
+
+/**
+ * カスタムタグ一覧を描画
+ */
+function renderCustomTagsList() {
+  const container = document.getElementById('customTagsList');
+  
+  if (Object.keys(customTags).length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">まだカスタムタグがありません。</p>';
+    return;
+  }
+  
+  container.innerHTML = '';
+  
+  Object.entries(customTags).forEach(([tagId, tagData]) => {
+    // このタグが使われているキャラクター数を計算
+    const usageCount = Object.values(characterTags).filter(tags => tags.includes(tagId)).length;
+    
+    const tagElement = document.createElement('div');
+    tagElement.className = 'custom-tag-item';
+    tagElement.innerHTML = `
+      <div class="tag-info">
+        <div class="tag-color-indicator" style="background-color: ${tagData.color}"></div>
+        <div class="tag-name">${escapeHtml(tagData.name)}</div>
+        <div class="tag-count">${usageCount}キャラ</div>
+      </div>
+      <div class="tag-actions">
+        <button class="tag-edit-btn" onclick="editCustomTag('${tagId}')">編集</button>
+        <button class="tag-delete-btn" onclick="deleteCustomTag('${tagId}')">削除</button>
+      </div>
+    `;
+    
+    container.appendChild(tagElement);
+  });
+}
+
+/**
+ * 新規タグ作成フォームを表示
+ */
+function showCreateTagForm() {
+  const form = document.getElementById('tagCreateForm');
+  form.style.display = 'block';
+  
+  // 入力フィールドをリセット
+  document.getElementById('newTagName').value = '';
+  document.getElementById('newTagColor').value = '#3b82f6';
+  
+  // 作成ボタンを「新規作成」状態にする
+  const saveBtn = form.querySelector('.tag-save-btn');
+  saveBtn.textContent = '保存';
+  saveBtn.onclick = createNewTag;
+  
+  // 名前入力フィールドにフォーカス
+  document.getElementById('newTagName').focus();
+}
+
+/**
+ * タグ作成フォームを隠す
+ */
+function hideCreateTagForm() {
+  document.getElementById('tagCreateForm').style.display = 'none';
+}
+
+/**
+ * 新しいカスタムタグを作成
+ */
+async function createNewTag() {
+  const nameInput = document.getElementById('newTagName');
+  const colorInput = document.getElementById('newTagColor');
+  
+  const name = nameInput.value.trim();
+  const color = colorInput.value;
+  
+  if (!name) {
+    alert('タグ名を入力してください。');
+    nameInput.focus();
+    return;
+  }
+  
+  // 重複チェック
+  const existingTag = Object.values(customTags).find(tag => tag.name === name);
+  if (existingTag) {
+    alert('同じ名前のタグが既に存在します。');
+    nameInput.focus();
+    return;
+  }
+  
+  try {
+    // 新しいタグIDを生成（現在のタイムスタンプ + ランダム）
+    const tagId = 'tag_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    const tagData = {
+      name: name,
+      color: color,
+      createdAt: new Date().toISOString()
+    };
+    
+    // IndexedDBに保存
+    if (characterDB.db) {
+      await characterDB.saveCustomTag(tagId, tagData);
+    } else {
+      // localStorage フォールバック
+      customTags[tagId] = tagData;
+      localStorage.setItem('custom-tags', JSON.stringify(customTags));
+    }
+    
+    // メモリ上のデータも更新
+    customTags[tagId] = tagData;
+    
+    // UI更新
+    hideCreateTagForm();
+    renderCustomTagsList();
+    
+    // フィルターオプションも更新（展開されている場合）
+    const customTagsContainer = document.getElementById('customTagsFilters');
+    if (customTagsContainer && customTagsContainer.style.display === 'block') {
+      updateCustomTagsFilterOptions();
+    }
+    
+    console.log('新しいカスタムタグを作成しました:', name);
+    
+  } catch (error) {
+    console.error('カスタムタグ作成エラー:', error);
+    alert('タグの作成に失敗しました。');
+  }
+}
+
+/**
+ * カスタムタグを編集
+ */
+function editCustomTag(tagId) {
+  const tagData = customTags[tagId];
+  if (!tagData) return;
+  
+  // フォームに現在の値をセット
+  document.getElementById('newTagName').value = tagData.name;
+  document.getElementById('newTagColor').value = tagData.color;
+  
+  // フォームを表示
+  const form = document.getElementById('tagCreateForm');
+  form.style.display = 'block';
+  
+  // 保存ボタンを「更新」状態にする
+  const saveBtn = form.querySelector('.tag-save-btn');
+  saveBtn.textContent = '更新';
+  saveBtn.onclick = () => updateCustomTag(tagId);
+  
+  // フィールドにフォーカス
+  document.getElementById('newTagName').focus();
+}
+
+/**
+ * カスタムタグを更新
+ */
+async function updateCustomTag(tagId) {
+  const nameInput = document.getElementById('newTagName');
+  const colorInput = document.getElementById('newTagColor');
+  
+  const name = nameInput.value.trim();
+  const color = colorInput.value;
+  
+  if (!name) {
+    alert('タグ名を入力してください。');
+    nameInput.focus();
+    return;
+  }
+  
+  // 重複チェック（自分以外の同名タグ）
+  const existingTag = Object.entries(customTags).find(([id, tag]) => 
+    id !== tagId && tag.name === name
+  );
+  if (existingTag) {
+    alert('同じ名前のタグが既に存在します。');
+    nameInput.focus();
+    return;
+  }
+  
+  try {
+    const tagData = {
+      ...customTags[tagId],
+      name: name,
+      color: color,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // IndexedDBに保存
+    if (characterDB.db) {
+      await characterDB.saveCustomTag(tagId, tagData);
+    } else {
+      // localStorage フォールバック
+      customTags[tagId] = tagData;
+      localStorage.setItem('custom-tags', JSON.stringify(customTags));
+    }
+    
+    // メモリ上のデータも更新
+    customTags[tagId] = tagData;
+    
+    // UI更新
+    hideCreateTagForm();
+    renderCustomTagsList();
+    
+    // フィルターオプションも更新（展開されている場合）
+    const customTagsContainer = document.getElementById('customTagsFilters');
+    if (customTagsContainer && customTagsContainer.style.display === 'block') {
+      updateCustomTagsFilterOptions();
+    }
+    
+    console.log('カスタムタグを更新しました:', name);
+    
+  } catch (error) {
+    console.error('カスタムタグ更新エラー:', error);
+    alert('タグの更新に失敗しました。');
+  }
+}
+
+/**
+ * カスタムタグを削除
+ */
+async function deleteCustomTag(tagId) {
+  const tagData = customTags[tagId];
+  if (!tagData) return;
+  
+  // 使用されているキャラクター数を確認
+  const usageCount = Object.values(characterTags).filter(tags => tags.includes(tagId)).length;
+  
+  const message = usageCount > 0 
+    ? `タグ「${tagData.name}」を削除しますか？\n${usageCount}人のキャラクターから削除されます。`
+    : `タグ「${tagData.name}」を削除しますか？`;
+  
+  if (!confirm(message)) {
+    return;
+  }
+  
+  try {
+    // IndexedDBから削除
+    if (characterDB.db) {
+      await characterDB.deleteCustomTag(tagId);
+    } else {
+      // localStorage フォールバック
+      delete customTags[tagId];
+      localStorage.setItem('custom-tags', JSON.stringify(customTags));
+    }
+    
+    // キャラクターからもタグを削除
+    Object.keys(characterTags).forEach(async (charId) => {
+      const tags = characterTags[charId];
+      const tagIndex = tags.indexOf(tagId);
+      if (tagIndex > -1) {
+        tags.splice(tagIndex, 1);
+        characterTags[charId] = tags;
+        
+        // IndexedDBに保存
+        if (characterDB.db) {
+          await characterDB.saveCharacterTags(parseInt(charId), tags);
+        } else {
+          localStorage.setItem('character-tags', JSON.stringify(characterTags));
+        }
+      }
+    });
+    
+    // メモリ上のデータも更新
+    delete customTags[tagId];
+    
+    // UI更新
+    renderCustomTagsList();
+    
+    // フィルターオプションも更新（展開されている場合）
+    const customTagsContainer = document.getElementById('customTagsFilters');
+    if (customTagsContainer && customTagsContainer.style.display === 'block') {
+      updateCustomTagsFilterOptions();
+    }
+    
+    console.log('カスタムタグを削除しました:', tagData.name);
+    
+  } catch (error) {
+    console.error('カスタムタグ削除エラー:', error);
+    alert('タグの削除に失敗しました。');
+  }
+}
+
+/**
+ * キャラクター詳細でタグ選択ポップアップを表示
+ */
+async function showTagSelectionPopup(charId) {
+  currentEditingCharacter = charId;
+  
+  try {
+    // カスタムタグをIndexedDBから読み込み（まだ読み込まれていない場合）
+    if (Object.keys(customTags).length === 0 && characterDB.db) {
+      customTags = await characterDB.getAllCustomTags();
+      characterTags = await characterDB.getAllCharacterTags();
+    }
+    
+    // ポップアップを表示
+    document.getElementById('tagSelectionPopup').style.display = 'block';
+    
+    // タグ選択リストを更新
+    renderTagSelectionList(charId);
+    
+  } catch (error) {
+    console.error('タグ選択ポップアップ表示エラー:', error);
+    document.getElementById('tagSelectionPopup').style.display = 'block';
+    renderTagSelectionList(charId);
+  }
+}
+
+/**
+ * タグ選択ポップアップを閉じる
+ */
+function closeTagSelectionPopup() {
+  document.getElementById('tagSelectionPopup').style.display = 'none';
+  currentEditingCharacter = null;
+}
+
+/**
+ * タグ選択リストを描画
+ */
+function renderTagSelectionList(charId) {
+  const container = document.getElementById('tagSelectionList');
+  
+  if (Object.keys(customTags).length === 0) {
+    container.innerHTML = `
+      <p style="text-align: center; color: #888; padding: 20px;">
+        カスタムタグがありません。<br>
+        <button onclick="closeTagSelectionPopup(); showCustomTagsFromMenu();" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          タグを作成する
+        </button>
+      </p>
+    `;
+    return;
+  }
+  
+  // 現在選択されているタグを取得
+  const selectedTags = characterTags[charId] || [];
+  
+  container.innerHTML = '';
+  
+  Object.entries(customTags).forEach(([tagId, tagData]) => {
+    const isSelected = selectedTags.includes(tagId);
+    
+    const tagElement = document.createElement('div');
+    tagElement.className = `tag-selection-item ${isSelected ? 'selected' : ''}`;
+    tagElement.onclick = () => toggleTagSelection(charId, tagId);
+    
+    tagElement.innerHTML = `
+      <div class="tag-color-indicator" style="background-color: ${tagData.color}"></div>
+      <div class="tag-name">${escapeHtml(tagData.name)}</div>
+      ${isSelected ? '<div style="margin-left: auto; color: #007bff;">✓</div>' : ''}
+    `;
+    
+    container.appendChild(tagElement);
+  });
+}
+
+/**
+ * タグ選択状態を切り替え
+ */
+async function toggleTagSelection(charId, tagId) {
+  if (!characterTags[charId]) {
+    characterTags[charId] = [];
+  }
+  
+  const tags = characterTags[charId];
+  const tagIndex = tags.indexOf(tagId);
+  
+  if (tagIndex > -1) {
+    // タグを削除
+    tags.splice(tagIndex, 1);
+  } else {
+    // タグを追加
+    tags.push(tagId);
+  }
+  
+  try {
+    // IndexedDBに保存
+    if (characterDB.db) {
+      await characterDB.saveCharacterTags(charId, tags);
+    } else {
+      // localStorage フォールバック
+      localStorage.setItem('character-tags', JSON.stringify(characterTags));
+    }
+    
+    // UI更新
+    renderTagSelectionList(charId);
+    updateCharacterTagDisplay(charId);
+    
+  } catch (error) {
+    console.error('タグ選択保存エラー:', error);
+    // エラー時は変更を元に戻す
+    if (tagIndex > -1) {
+      tags.push(tagId);
+    } else {
+      tags.splice(tags.length - 1, 1);
+    }
+  }
+}
+
+/**
+ * キャラクター詳細のタグ表示を更新
+ */
+function updateCharacterTagDisplay(charId) {
+  const characterTagsContainer = document.getElementById('characterTagsDisplay');
+  if (!characterTagsContainer) return;
+  
+  const tags = characterTags[charId] || [];
+  
+  if (tags.length === 0) {
+    characterTagsContainer.innerHTML = '<p style="color: #888; font-size: 14px;">タグが設定されていません</p>';
+    return;
+  }
+  
+  const tagElements = tags.map(tagId => {
+    const tagData = customTags[tagId];
+    if (!tagData) return '';
+    
+    return `
+      <div class="character-tag" style="background-color: ${tagData.color}">
+        ${escapeHtml(tagData.name)}
+        <button class="character-tag-remove" onclick="removeTagFromCharacter(${charId}, '${tagId}')" title="このタグを削除">
+          ×
+        </button>
+      </div>
+    `;
+  }).filter(Boolean).join('');
+  
+  characterTagsContainer.innerHTML = `
+    <div class="character-tags-list">
+      ${tagElements}
+    </div>
+  `;
+}
+
+/**
+ * キャラクターからタグを削除
+ */
+async function removeTagFromCharacter(charId, tagId) {
+  if (!characterTags[charId]) return;
+  
+  const tags = characterTags[charId];
+  const tagIndex = tags.indexOf(tagId);
+  
+  if (tagIndex > -1) {
+    tags.splice(tagIndex, 1);
+    
+    try {
+      // IndexedDBに保存
+      if (characterDB.db) {
+        await characterDB.saveCharacterTags(charId, tags);
+      } else {
+        // localStorage フォールバック
+        localStorage.setItem('character-tags', JSON.stringify(characterTags));
+      }
+      
+      // UI更新
+      updateCharacterTagDisplay(charId);
+      
+      // タグ選択ポップアップが開いている場合は更新
+      if (currentEditingCharacter === charId) {
+        renderTagSelectionList(charId);
+      }
+      
+    } catch (error) {
+      console.error('タグ削除エラー:', error);
+      // エラー時は変更を元に戻す
+      tags.splice(tagIndex, 0, tagId);
+    }
+  }
+}
+
+/**
+ * IndexedDBからカスタムタグデータを読み込み
+ */
+async function loadCustomTagsFromIndexedDB() {
+  try {
+    if (characterDB.db) {
+      customTags = await characterDB.getAllCustomTags();
+      characterTags = await characterDB.getAllCharacterTags();
+      console.log('カスタムタグデータをIndexedDBから読み込みました');
+    } else {
+      // フォールバック: localStorage
+      customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
+      characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
+      console.log('カスタムタグデータをlocalStorageから読み込みました');
+    }
+  } catch (error) {
+    console.error('カスタムタグ読み込みエラー:', error);
+    // エラー時はlocalStorageから読み込み
+    customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
+    characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
+  }
+}
+
+// ===============================================
+// カスタムタグフィルター機能
+// ===============================================
+
+/**
+ * カスタムタグフィルターの展開/折りたたみを切り替え
+ */
+function toggleCustomTagsFilter() {
+  const filtersContainer = document.getElementById('customTagsFilters');
+  const toggle = document.getElementById('customTagsToggle');
+  
+  if (filtersContainer.style.display === 'none') {
+    filtersContainer.style.display = '';  // CSSのデフォルト表示を使用
+    toggle.textContent = '▲';
+    
+    // フィルターオプションを更新
+    updateCustomTagsFilterOptions();
+  } else {
+    filtersContainer.style.display = 'none';
+    toggle.textContent = '▼';
+  }
+}
+
+/**
+ * カスタムタグフィルターオプションを更新
+ */
+function updateCustomTagsFilterOptions() {
+  const container = document.getElementById('customTagsFilters');
+  
+  if (Object.keys(customTags).length === 0) {
+    container.innerHTML = '<p style="color: #888; font-size: 12px; text-align: center; margin: 10px 0;">カスタムタグがありません</p>';
+    return;
+  }
+  
+  container.innerHTML = '';
+  
+  Object.entries(customTags).forEach(([tagId, tagData]) => {
+    // このタグが使われているキャラクター数を計算
+    const usageCount = Object.values(characterTags).filter(tags => tags.includes(tagId)).length;
+    
+    const filterOption = document.createElement('div');
+    filterOption.className = 'filter-option';
+    filterOption.onclick = () => toggleCustomTagFilter(tagId, filterOption);
+    
+    filterOption.innerHTML = `
+      <div class="tag-container">
+        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${tagData.color}; border: 1px solid #ccc;"></div>
+        <span>${escapeHtml(tagData.name)} (${usageCount})</span>
+      </div>
+    `;
+    
+    // 既に選択されている場合はスタイルを適用
+    if (activeFilters.customTags.includes(tagId)) {
+      filterOption.classList.add('selected');
+    }
+    
+    container.appendChild(filterOption);
+  });
+}
+
+/**
+ * カスタムタグの個別フィルターを切り替え
+ */
+function toggleCustomTagFilter(tagId, element) {
+  const index = activeFilters.customTags.indexOf(tagId);
+  
+  if (index === -1) {
+    // タグを追加
+    activeFilters.customTags.push(tagId);
+    element.classList.add('selected');
+  } else {
+    // タグを削除
+    activeFilters.customTags.splice(index, 1);
+    element.classList.remove('selected');
+  }
+}
+
+/**
+ * カスタムタグフィルターをクリア
+ */
+function clearCustomTagsFilter() {
+  activeFilters.customTags = [];
+  const container = document.getElementById('customTagsFilters');
+  const filterOptions = container.querySelectorAll('.filter-option');
+  filterOptions.forEach(option => option.classList.remove('selected'));
+}

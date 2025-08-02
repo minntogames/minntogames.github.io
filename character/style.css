@@ -384,12 +384,21 @@ button,
   gap: 8px;
 }
 
+/* カスタムタグフィルターコンテナ */
+#customTagsFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .filter-option {
+  display: flex; 
   background: #e0e0e0;
   padding: 5px 10px;
   border-radius: 15px;
   cursor: pointer;
   font-size: 14px;
+  display: inline-block;
 }
 
 .filter-option.selected {
@@ -1841,4 +1850,367 @@ body.theme-modern .btn-cancel:hover {
   .btn-cancel {
     width: 100%;
   }
+}
+
+/* ===== カスタムタグ機能のスタイル ===== */
+
+/* ハンバーガーメニュー内のカスタムタグボタン */
+.hamburger-tags-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: var(--text-color, #333);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.hamburger-tags-btn:hover {
+  background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+}
+
+/* カスタムタグポップアップ */
+#customTagsPopup .popup-content {
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* 新規タグ作成ボタン */
+.custom-tag-create {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tag-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tag-create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* タグ作成フォーム */
+.tag-create-form {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.tag-input-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tag-input-group input[type="text"] {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.tag-input-group input[type="color"] {
+  width: 40px;
+  height: 38px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tag-save-btn, .tag-cancel-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.tag-save-btn {
+  background: #28a745;
+  color: white;
+}
+
+.tag-save-btn:hover {
+  background: #218838;
+}
+
+.tag-cancel-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.tag-cancel-btn:hover {
+  background: #5a6268;
+}
+
+/* カスタムタグ一覧 */
+.custom-tags-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.custom-tag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
+}
+
+.custom-tag-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tag-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.tag-color-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #ddd;
+}
+
+.tag-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.tag-count {
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.tag-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tag-edit-btn, .tag-delete-btn {
+  padding: 6px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.tag-edit-btn {
+  background: #007bff;
+  color: white;
+}
+
+.tag-edit-btn:hover {
+  background: #0056b3;
+}
+
+.tag-delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.tag-delete-btn:hover {
+  background: #c82333;
+}
+
+/* タグ選択ポップアップ */
+.tag-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.tag-selection-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.tag-selection-item:hover {
+  background: #f8f9fa;
+  border-color: #007bff;
+}
+
+.tag-selection-item.selected {
+  background: #e3f2fd;
+  border-color: #007bff;
+}
+
+/* キャラクター詳細でのタグ表示 */
+.character-tags {
+  margin-top: 15px;
+}
+
+.character-tags h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: var(--text-color, #333);
+}
+
+.character-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.character-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: white;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.character-tag-remove {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.character-tag-remove:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* キャラクター詳細のタグ管理ボタン */
+.character-tag-manage {
+  margin-top: 10px;
+}
+
+.add-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-tag-btn:hover {
+  background: #0056b3;
+}
+
+/* テーマ対応 */
+:root[data-theme="dark"] .hamburger-tags-btn {
+  color: #e9ecef;
+}
+
+:root[data-theme="dark"] .hamburger-tags-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme="dark"] .custom-tag-item {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+:root[data-theme="dark"] .tag-selection-item {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #e9ecef;
+}
+
+:root[data-theme="dark"] .tag-selection-item:hover {
+  background: #4a5568;
+  border-color: #007bff;
+}
+
+:root[data-theme="neon"] .hamburger-tags-btn {
+  color: #00ff88;
+}
+
+:root[data-theme="neon"] .hamburger-tags-btn:hover {
+  background-color: rgba(0, 255, 136, 0.1);
+}
+
+:root[data-theme="neon"] .custom-tag-item {
+  background: #1a1a2e;
+  border-color: #00ff88;
+}
+
+:root[data-theme="neon"] .tag-selection-item {
+  background: #1a1a2e;
+  border-color: #00ff88;
+  color: #e9ecef;
+}
+
+:root[data-theme="neon"] .tag-selection-item:hover {
+  background: #16213e;
+  border-color: #00ff88;
+}
+
+.filter-option span {
+  vertical-align: middle;
+}
+
+.tag-container {
+  margin: 0;
+  padding: 0;
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
 }

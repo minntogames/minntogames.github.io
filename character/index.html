@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
   <meta charset="UTF-8" />
   <title>キャラ図鑑</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +25,7 @@
       <!-- ▼テーマ切替ボタン（3テーマ対応） -->
       <button onclick="toggleTheme()" class="hamburger-theme-btn" id="themeToggleBtn">テーマ切替 (現在: ライト)</button>
       <!-- ▼データ管理ボタン -->
-      <button onclick="showDataManagerFromMenu()" class="hamburger-data-btn" id="dataManagerBtn" title="データのエクスポート・インポート">
+      <button onclick="showDataManagerFromMenu()" class="hamburger-lang-btn" id="dataManagerBtn" title="データのエクスポート・インポート">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           <polyline points="14,2 14,8 20,8"/>
@@ -36,7 +35,14 @@
         </svg>
         データ管理
       </button>
-      <!-- 必要なら他のメニュー項目をここに追加 -->
+      <button onclick="showCustomTagsFromMenu()" class="hamburger-lang-btn" id="customTagsBtn" title="カスタムタグ管理">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 7L9 19l-5.5-5.5 1.414-1.414L9 16.172 19.586 5.586z"/>
+          <path d="M12 2L8 6v6l4 4 6-6V4z"/>
+          <circle cx="15.5" cy="6.5" r="1.5"/>
+        </svg>
+        カスタムタグ
+      </button>
     </div>
   </div>
 
@@ -100,6 +106,17 @@
         <div id="groupFilters" class="filter-options"></div>
       </div>
 
+      
+      <!-- ▼追加：カスタムタグフィルター -->
+      <div class="filter-section">
+        <h4 onclick="toggleCustomTagsFilter()" style="cursor: pointer; user-select: none; position: relative;">
+          カスタムタグ
+          <span id="customTagsToggle" style="position: absolute; right: 0; font-size: 14px;">▼</span>
+        </h4>
+        <div id="customTagsFilters" class="filter-options" style="display: none;"></div>
+      </div>
+      <!-- ▲追加ここまで -->
+
       <!-- ▼追加：お気に入りフィルター -->
       <div class="filter-section">
         <h4>その他</h4>
@@ -130,6 +147,51 @@
       <h3>関連キャラクター</h3>
       <div id="relatedCharacters" class="card-container">
         <!-- 関連キャラクターのカードがここに表示されます -->
+      </div>
+    </div>
+  </div>
+
+  <!-- カスタムタグ管理ポップアップ -->
+  <div id="customTagsPopup" class="popup" style="display: none;">
+    <div class="popup-content">
+      <span class="close" onclick="closeCustomTagsPopup()">&times;</span>
+      <h3>カスタムタグ管理</h3>
+      
+      <!-- 新規タグ作成ボタン -->
+      <div class="custom-tag-create">
+        <button onclick="showCreateTagForm()" class="tag-create-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          新規タグ作成
+        </button>
+      </div>
+
+      <!-- タグ作成フォーム（初期状態では非表示） -->
+      <div id="tagCreateForm" class="tag-create-form" style="display: none;">
+        <div class="tag-input-group">
+          <input type="text" id="newTagName" placeholder="タグ名を入力" maxlength="20">
+          <input type="color" id="newTagColor" value="#3b82f6" title="タグの色を選択">
+          <button onclick="createNewTag()" class="tag-save-btn">保存</button>
+          <button onclick="hideCreateTagForm()" class="tag-cancel-btn">キャンセル</button>
+        </div>
+      </div>
+
+      <!-- タグ一覧 -->
+      <div id="customTagsList" class="custom-tags-list">
+        <!-- カスタムタグがここに表示されます -->
+      </div>
+    </div>
+  </div>
+
+  <!-- タグ選択ポップアップ（キャラ詳細で使用） -->
+  <div id="tagSelectionPopup" class="popup" style="display: none;">
+    <div class="popup-content">
+      <span class="close" onclick="closeTagSelectionPopup()">&times;</span>
+      <h3>タグを選択</h3>
+      <div id="tagSelectionList" class="tag-selection-list">
+        <!-- 選択可能なタグがここに表示されます -->
       </div>
     </div>
   </div>
