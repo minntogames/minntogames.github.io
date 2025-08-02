@@ -6,7 +6,8 @@ let activeFilters = {
   attribute: [],
   group: [],
   world: [], // 追加
-  favorites: [] // お気に入りフィルター追加
+  favorites: [], // お気に入りフィルター追加
+  memo: [] // メモ済みフィルター追加
 };
 
 // 現在の表示言語 (ja: 日本語, en: 英語)
@@ -44,7 +45,8 @@ const labels = {
     'year': { 'ja': '年', 'en': '' }, // 日付の単位は日本語と英語で異なるため、空文字列で対応
     'month': { 'ja': '月', 'en': '' },
     'day': { 'ja': '日', 'en': '' },
-    'age': { 'ja': '歳', 'en': 'Age' } // 追加
+    'age': { 'ja': '歳', 'en': 'Age' }, // 追加
+    'memo': { 'ja': 'メモ', 'en': 'Memo' }
 };
 
 // cha.json を読み込み、キャラクターデータと設定を初期化
@@ -53,9 +55,680 @@ let relationGroups = []; // relationデータ保持用
 // お気に入り機能
 let favorites = JSON.parse(localStorage.getItem('character-favorites') || '[]');
 
+// ユーザーメモ機能（IndexedDBに移行予定）
+let userNotes = JSON.parse(localStorage.getItem('character-user-notes') || '{}');
+
+// フィルター状態管理
+let favoritesOnly = false;
+let memoOnly = false;
+
+// ===============================================
+// IndexedDB管理クラス
+// ===============================================
+
+class CharacterDB {
+  constructor() {
+    this.dbName = 'CharacterDatabase';
+    this.dbVersion = 1;
+    this.db = null;
+  }
+
+  /**
+   * データベースを初期化
+   */
+  async init() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, this.dbVersion);
+      
+      request.onerror = () => {
+        console.error('IndexedDB初期化エラー:', request.error);
+        reject(request.error);
+      };
+      
+      request.onsuccess = (event) => {
+        this.db = event.target.result;
+        console.log('IndexedDB初期化完了');
+        resolve(this.db);
+      };
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        
+        // メモストア
+        if (!db.objectStoreNames.contains('notes')) {
+          const notesStore = db.createObjectStore('notes', { keyPath: 'charId' });
+          notesStore.createIndex('charId', 'charId', { unique: true });
+        }
+        
+        // 設定ストア
+        if (!db.objectStoreNames.contains('settings')) {
+          const settingsStore = db.createObjectStore('settings', { keyPath: 'key' });
+          settingsStore.createIndex('key', 'key', { unique: true });
+        }
+        
+        // お気に入りストア
+        if (!db.objectStoreNames.contains('favorites')) {
+          const favoritesStore = db.createObjectStore('favorites', { keyPath: 'charId' });
+          favoritesStore.createIndex('charId', 'charId', { unique: true });
+        }
+        
+        // ユーザー統計ストア
+        if (!db.objectStoreNames.contains('stats')) {
+          const statsStore = db.createObjectStore('stats', { keyPath: 'key' });
+          statsStore.createIndex('key', 'key', { unique: true });
+        }
+      };
+    });
+  }
+
+  /**
+   * メモを保存
+   */
+  async saveNote(charId, content) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['notes'], 'readwrite');
+      const store = transaction.objectStore('notes');
+      
+      const noteData = {
+        charId: charId,
+        content: content.trim(),
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+      
+      const request = store.put(noteData);
+      
+      request.onsuccess = () => resolve(noteData);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * メモを取得
+   */
+  async getNote(charId) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['notes'], 'readonly');
+      const store = transaction.objectStore('notes');
+      const request = store.get(charId);
+      
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.content : '');
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * メモを削除
+   */
+  async deleteNote(charId) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['notes'], 'readwrite');
+      const store = transaction.objectStore('notes');
+      const request = store.delete(charId);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * 設定を保存
+   */
+  async saveSetting(key, value) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['settings'], 'readwrite');
+      const store = transaction.objectStore('settings');
+      
+      const settingData = {
+        key: key,
+        value: value,
+        updatedAt: new Date().toISOString()
+      };
+      
+      const request = store.put(settingData);
+      
+      request.onsuccess = () => resolve(settingData);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * 設定を取得
+   */
+  async getSetting(key, defaultValue = null) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['settings'], 'readonly');
+      const store = transaction.objectStore('settings');
+      const request = store.get(key);
+      
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.value : defaultValue);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * お気に入りを同期（配列形式をIndexedDBに変換）
+   */
+  async syncFavorites(favoriteIds) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const transaction = this.db.transaction(['favorites'], 'readwrite');
+        const store = transaction.objectStore('favorites');
+        
+        // 既存のお気に入りをクリア
+        await store.clear();
+        
+        // 新しいお気に入りを追加
+        for (const charId of favoriteIds) {
+          await store.put({
+            charId: charId,
+            addedAt: new Date().toISOString()
+          });
+        }
+        
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * お気に入りを取得
+   */
+  async getFavorites() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['favorites'], 'readonly');
+      const store = transaction.objectStore('favorites');
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const results = request.result;
+        const favoriteIds = results.map(item => item.charId);
+        resolve(favoriteIds);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * 統計データを保存
+   */
+  async saveStat(key, value) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['stats'], 'readwrite');
+      const store = transaction.objectStore('stats');
+      
+      const statData = {
+        key: key,
+        value: value,
+        updatedAt: new Date().toISOString()
+      };
+      
+      const request = store.put(statData);
+      
+      request.onsuccess = () => resolve(statData);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * 統計データを取得
+   */
+  async getStat(key, defaultValue = 0) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['stats'], 'readonly');
+      const store = transaction.objectStore('stats');
+      const request = store.get(key);
+      
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.value : defaultValue);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * データベースからデータをエクスポート
+   */
+  async exportData() {
+    const exportData = {
+      fileFormat: 'BMCD',
+      version: '1.0',
+      description: 'Bookmark & Memo Character Data',
+      notes: [],
+      settings: [],
+      favorites: [],
+      stats: [],
+      exportDate: new Date().toISOString()
+    };
+
+    // メモをエクスポート
+    const notesTransaction = this.db.transaction(['notes'], 'readonly');
+    const notesStore = notesTransaction.objectStore('notes');
+    const notesRequest = notesStore.getAll();
+    
+    return new Promise((resolve, reject) => {
+      notesRequest.onsuccess = () => {
+        exportData.notes = notesRequest.result;
+        
+        // 設定をエクスポート
+        const settingsTransaction = this.db.transaction(['settings'], 'readonly');
+        const settingsStore = settingsTransaction.objectStore('settings');
+        const settingsRequest = settingsStore.getAll();
+        
+        settingsRequest.onsuccess = () => {
+          exportData.settings = settingsRequest.result;
+          
+          // お気に入りをエクスポート
+          const favoritesTransaction = this.db.transaction(['favorites'], 'readonly');
+          const favoritesStore = favoritesTransaction.objectStore('favorites');
+          const favoritesRequest = favoritesStore.getAll();
+          
+          favoritesRequest.onsuccess = () => {
+            exportData.favorites = favoritesRequest.result;
+            
+            // 統計をエクスポート
+            const statsTransaction = this.db.transaction(['stats'], 'readonly');
+            const statsStore = statsTransaction.objectStore('stats');
+            const statsRequest = statsStore.getAll();
+            
+            statsRequest.onsuccess = () => {
+              exportData.stats = statsRequest.result;
+              resolve(exportData);
+            };
+            statsRequest.onerror = () => reject(statsRequest.error);
+          };
+          favoritesRequest.onerror = () => reject(favoritesRequest.error);
+        };
+        settingsRequest.onerror = () => reject(settingsRequest.error);
+      };
+      notesRequest.onerror = () => reject(notesRequest.error);
+    });
+  }
+
+  /**
+   * データをインポート
+   */
+  async importData(data) {
+    const transaction = this.db.transaction(['notes', 'settings', 'favorites', 'stats'], 'readwrite');
+    
+    // メモをインポート
+    if (data.notes) {
+      const notesStore = transaction.objectStore('notes');
+      for (const note of data.notes) {
+        await notesStore.put(note);
+      }
+    }
+    
+    // 設定をインポート
+    if (data.settings) {
+      const settingsStore = transaction.objectStore('settings');
+      for (const setting of data.settings) {
+        await settingsStore.put(setting);
+      }
+    }
+    
+    // お気に入りをインポート
+    if (data.favorites) {
+      const favoritesStore = transaction.objectStore('favorites');
+      for (const favorite of data.favorites) {
+        await favoritesStore.put(favorite);
+      }
+    }
+    
+    // 統計をインポート
+    if (data.stats) {
+      const statsStore = transaction.objectStore('stats');
+      for (const stat of data.stats) {
+        await statsStore.put(stat);
+      }
+    }
+    
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+}
+
+// IndexedDBインスタンス
+const characterDB = new CharacterDB();
+
+// ===============================================
+// データ管理機能
+// ===============================================
+
+/**
+ * データをエクスポートする
+ */
+async function exportAllData() {
+  try {
+    if (!characterDB.db) {
+      throw new Error('IndexedDBが初期化されていません');
+    }
+    
+    const data = await characterDB.exportData();
+    const dataStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `character-data-${new Date().toISOString().split('T')[0]}.bmcd`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('BMCDデータエクスポート完了');
+  } catch (error) {
+    console.error('データエクスポートエラー:', error);
+    alert('データのエクスポートに失敗しました。');
+  }
+}
+
+/**
+ * データをインポートする
+ * @param {File} file - インポートするBMCDファイル
+ */
+async function importAllData(file) {
+  try {
+    if (!characterDB.db) {
+      throw new Error('IndexedDBが初期化されていません');
+    }
+    
+    // ファイル拡張子の検証
+    if (!file.name.toLowerCase().endsWith('.bmcd')) {
+      throw new Error('BMCDファイル(.bmcd)を選択してください');
+    }
+    
+    const text = await file.text();
+    const data = JSON.parse(text);
+    
+    // BMCDファイル形式の検証
+    if (!data.exportDate) {
+      throw new Error('無効なBMCDデータファイルです');
+    }
+    
+    // オプション: BMCDフォーマットの追加検証
+    if (data.fileFormat && data.fileFormat !== 'BMCD') {
+      console.warn('ファイル形式が異なりますが、インポートを続行します:', data.fileFormat);
+    }
+    
+    await characterDB.importData(data);
+    
+    // データを再読み込み
+    await loadDataFromIndexedDB();
+    
+    // UIを更新
+    filterCharacters();
+    updateFavoriteUI();
+    
+    // メモ数も更新
+    updateMemoCount();
+    
+    // 詳細表示中の場合、メモ表示も更新
+    const detailModal = document.getElementById('characterModal');
+    if (detailModal && detailModal.style.display !== 'none') {
+      const charId = parseInt(detailModal.dataset.charId);
+      if (charId) {
+        await updateNoteDisplay(charId);
+      }
+    }
+    
+    console.log('データインポート完了');
+    alert('BMCDデータのインポートが完了しました。');
+  } catch (error) {
+    console.error('データインポートエラー:', error);
+    if (error.message.includes('BMCDファイル')) {
+      alert(error.message);
+    } else if (error.message.includes('JSON')) {
+      alert('BMCDファイルの形式が正しくありません。正しいBMCDファイルを選択してください。');
+    } else {
+      alert('データのインポートに失敗しました。正しいBMCDファイルか確認してください。');
+    }
+  }
+}
+
+/**
+ * ハンバーガーメニューからデータ管理画面を表示
+ */
+function showDataManagerFromMenu() {
+  // ハンバーガーメニューを閉じる
+  toggleHamburgerMenu();
+  
+  // 少し遅延してからデータ管理画面を表示
+  setTimeout(() => {
+    showDataManager();
+  }, 300);
+}
+
+/**
+ * データ管理用の簡易UI（開発・テスト用）
+ */
+function showDataManager() {
+  const existingManager = document.getElementById('dataManager');
+  if (existingManager) {
+    existingManager.remove();
+    return;
+  }
+  
+  const manager = document.createElement('div');
+  manager.id = 'dataManager';
+  manager.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 10000;
+    min-width: 280px;
+    max-width: 400px;
+  `;
+  
+  manager.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+      <h4 style="margin: 0; color: #333; font-size: 1.2em;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10,9 9,9 8,9"/>
+        </svg>
+        データ管理
+      </h4>
+      <button onclick="showDataManager()" style="background: none; border: none; font-size: 24px; color: #999; cursor: pointer; padding: 0; line-height: 1;" title="閉じる">&times;</button>
+    </div>
+    <div style="margin-bottom: 12px;">
+      <button onclick="exportAllData()" class="data-manager-btn export-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-bottom: 8px; padding: 12px; background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.18s;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7,10 12,15 17,10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        エクスポート
+      </button>
+    </div>
+    <div style="margin-bottom: 15px;">
+      <input type="file" id="importFile" accept=".bmcd" style="display: none;" onchange="handleImportFile(this)">
+      <button onclick="document.getElementById('importFile').click()" class="data-manager-btn import-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: linear-gradient(135deg, #28a745, #1e7e34); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.18s;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17,8 12,3 7,8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        インポート
+      </button>
+    </div>
+    <p style="font-size: 12px; color: #666; margin: 0; text-align: center; line-height: 1.4;">
+      お気に入り、メモ、設定データを<br>BMCD形式(.bmcd)でバックアップ・復元
+    </p>
+  `;
+  
+  document.body.appendChild(manager);
+}
+
+/**
+ * インポートファイル選択の処理
+ * @param {HTMLInputElement} input - ファイル入力要素
+ */
+function handleImportFile(input) {
+  const file = input.files[0];
+  if (file) {
+    importAllData(file);
+  }
+  input.value = ''; // ファイル選択をリセット
+}
+
+// ===============================================
+// アプリケーション初期化
+// ===============================================
+
+/**
+ * アプリケーション初期化
+ */
+async function initializeApp() {
+  try {
+    // IndexedDBを初期化
+    await characterDB.init();
+    
+    // localStorageからIndexedDBにデータを移行
+    await migrateFromLocalStorage();
+    
+    // データを読み込み
+    await loadDataFromIndexedDB();
+    
+    console.log('アプリケーション初期化完了');
+  } catch (error) {
+    console.error('アプリケーション初期化エラー:', error);
+    // IndexedDBが使用できない場合はlocalStorageを使用
+    console.log('localStorageモードで動作します');
+  }
+}
+
+/**
+ * localStorageからIndexedDBにデータを移行
+ */
+async function migrateFromLocalStorage() {
+  try {
+    // お気に入りデータの移行
+    const storedFavorites = localStorage.getItem('character-favorites');
+    if (storedFavorites) {
+      const favoriteIds = JSON.parse(storedFavorites);
+      await characterDB.syncFavorites(favoriteIds);
+      console.log('お気に入りデータを移行しました');
+    }
+    
+    // メモデータの移行
+    const storedNotes = localStorage.getItem('character-user-notes');
+    if (storedNotes) {
+      const notesData = JSON.parse(storedNotes);
+      for (const [charId, content] of Object.entries(notesData)) {
+        if (content.trim()) {
+          await characterDB.saveNote(charId, content);
+        }
+      }
+      console.log('メモデータを移行しました');
+    }
+    
+    // 設定データの移行（今後の拡張用）
+    const themeSettings = localStorage.getItem('character-theme-settings');
+    if (themeSettings) {
+      await characterDB.saveSetting('theme', JSON.parse(themeSettings));
+    }
+    
+    // 移行完了後、localStorageのデータを削除（オプション）
+    // localStorage.removeItem('character-favorites');
+    // localStorage.removeItem('character-user-notes');
+    // localStorage.removeItem('character-theme-settings');
+    
+  } catch (error) {
+    console.error('データ移行エラー:', error);
+  }
+}
+
+/**
+ * IndexedDBからデータを読み込み
+ */
+async function loadDataFromIndexedDB() {
+  try {
+    // お気に入りを読み込み
+    favorites = await characterDB.getFavorites();
+    
+    // メモデータをキャッシュに読み込み
+    await loadAllMemosToCache();
+    
+    console.log('IndexedDBからデータを読み込みました');
+  } catch (error) {
+    console.error('データ読み込みエラー:', error);
+    // エラー時はlocalStorageから読み込み
+    favorites = JSON.parse(localStorage.getItem('character-favorites') || '[]');
+    userNotes = JSON.parse(localStorage.getItem('character-user-notes') || '{}');
+  }
+}
+
+/**
+ * IndexedDBからすべてのメモをキャッシュに読み込み
+ */
+async function loadAllMemosToCache() {
+  try {
+    if (!characterDB.db) {
+      return;
+    }
+    
+    const transaction = characterDB.db.transaction(['notes'], 'readonly');
+    const store = transaction.objectStore('notes');
+    const request = store.getAll();
+    
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const results = request.result;
+        userNotes = {}; // キャッシュをクリア
+        
+        results.forEach(noteData => {
+          if (noteData.content && noteData.content.trim()) {
+            userNotes[noteData.charId] = noteData.content;
+          }
+        });
+        
+        console.log(`${results.length}件のメモをキャッシュに読み込みました`);
+        resolve();
+      };
+      
+      request.onerror = () => {
+        console.error('メモ読み込みエラー:', request.error);
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    console.error('メモキャッシュ読み込みエラー:', error);
+    // エラー時はlocalStorageから読み込み
+    try {
+      userNotes = JSON.parse(localStorage.getItem('character-user-notes') || '{}');
+      console.log('localStorageからメモデータを読み込みました');
+    } catch (localError) {
+      console.error('localStorage読み込みエラー:', localError);
+      userNotes = {};
+    }
+  }
+}
+
 fetch('cha.json')
   .then(res => res.json())
-  .then(data => {
+  .then(async (data) => {
     characters = data.slice(1); // 設定は先頭にある
     settings = data[0].settings;
     // relationデータも保持
@@ -67,11 +740,17 @@ fetch('cha.json')
     // フィルターオプションを設定
     setupFilterOptions();
     
+    // IndexedDBを初期化
+    await initializeApp();
+    
     // 初期表示
     filterCharacters();
 
     // お気に入り数を初期化
     updateFavoriteUI();
+    
+    // メモ数を初期化
+    updateMemoCount();
 
     // 言語切り替えボタンのテキストを初期設定
     document.getElementById('langToggleBtn').textContent = currentDisplayLanguage === 'ja' ? '言語切替 (現在: 日本語)' : '言語 Toggle (Current: English)';
@@ -241,10 +920,14 @@ function showMiniPopup(cardEl, char) {
   let displayName = currentDisplayLanguage === 'en' && nameEn ? nameEn : name;
   let worldLabel = currentDisplayLanguage === 'en' ? 'Worldline' : '世界線';
 
+  // 基本情報を先に表示
   popup.innerHTML =
     worldBar +
     `<div style="font-weight:bold;font-size:1.13em;margin-bottom:2px;">${displayName}</div>` +
     `<div style="color:#008080;font-size:0.98em;">${worldLabel}${char.world || 'N/A'}</div>`;
+
+  // メモを非同期で取得・表示
+  loadMemoForPopup(popup, char.id);
 
   // カードの親（.card-container）に追加
   cardEl.parentNode.appendChild(popup);
@@ -279,6 +962,66 @@ function showMiniPopup(cardEl, char) {
   }, 10);
 
   currentMiniPopup = popup;
+}
+
+/**
+ * ミニポップアップ用にメモを非同期で読み込み
+ * @param {HTMLElement} popup - ポップアップ要素
+ * @param {number} charId - キャラクターID
+ */
+async function loadMemoForPopup(popup, charId) {
+  try {
+    let memo = '';
+    if (characterDB.db) {
+      memo = await characterDB.getNote(charId);
+      // キャッシュも更新
+      if (memo) {
+        userNotes[charId] = memo;
+      } else {
+        delete userNotes[charId];
+      }
+    } else {
+      memo = userNotes[charId] || '';
+    }
+    
+    if (memo) {
+      // メモが長い場合は省略表示
+      const shortMemo = memo.length > 50 ? memo.substring(0, 47) + '...' : memo;
+      const memoHtml = `<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.1);font-size:0.85em;color:#555;">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#666;">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            <path d="M15 5l4 4"/>
+          </svg>
+          <span style="font-weight:500;color:#666;">メモ</span>
+        </div>
+        <div style="line-height:1.3;overflow:hidden;">${shortMemo}</div>
+      </div>`;
+      
+      // ポップアップが存在し、まだ表示中の場合のみ追加
+      if (popup && popup.parentNode) {
+        popup.innerHTML += memoHtml;
+      }
+    }
+  } catch (error) {
+    console.error('ミニポップアップメモ取得エラー:', error);
+    // エラー時はキャッシュから取得を試行
+    const memo = userNotes[charId] || '';
+    if (memo && popup && popup.parentNode) {
+      const shortMemo = memo.length > 50 ? memo.substring(0, 47) + '...' : memo;
+      const memoHtml = `<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.1);font-size:0.85em;color:#555;">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#666;">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            <path d="M15 5l4 4"/>
+          </svg>
+          <span style="font-weight:500;color:#666;">メモ</span>
+        </div>
+        <div style="line-height:1.3;overflow:hidden;">${shortMemo}</div>
+      </div>`;
+      popup.innerHTML += memoHtml;
+    }
+  }
 }
 
 /**
@@ -373,7 +1116,13 @@ function filterCharacters() {
         activeFilters.world.includes(String(c.world));
       const favoritesMatch = activeFilters.favorites.length === 0 ||
         favorites.includes(c.id);
-      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch && favoritesMatch) {
+      const memoMatch = activeFilters.memo.length === 0 ||
+        (characterDB.db ? 
+          // IndexedDBの場合はキャッシュをチェック（非同期取得は重いため）
+          userNotes[c.id] && userNotes[c.id].trim() !== '' :
+          // localStorageの場合
+          userNotes[c.id] && userNotes[c.id].trim() !== '');
+      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch && favoritesMatch && memoMatch) {
         filterMatch = true;
         break;
       }
@@ -470,6 +1219,17 @@ function toggleFilterOption(type, value, element) {
     return;
   }
   
+  // メモ済みフィルターの特別処理
+  if (type === 'memo') {
+    const index = activeFilters.memo.indexOf('memo');
+    if (index === -1) {
+      activeFilters.memo.push('memo');
+    } else {
+      activeFilters.memo.splice(index, 1);
+    }
+    return;
+  }
+  
   // フィルターの表示値(日本語)を正規の英語名に変換してactiveFiltersに格納
   const canonicalValue = type === 'world' ? value : (languageMaps[type][value.toLowerCase()] || value.toLowerCase());
   const index = activeFilters[type].indexOf(canonicalValue);
@@ -507,11 +1267,15 @@ function clearFilters() {
     attribute: [],
     group: [],
     world: [],
-    favorites: []
+    favorites: [],
+    memo: []
   };
   
   // お気に入りフィルターもクリア
   favoritesOnly = false;
+  
+  // メモ済みフィルターもクリア
+  memoOnly = false;
   
   // 選択状態をクリア
   document.querySelectorAll('.filter-option').forEach(option => {
@@ -726,12 +1490,28 @@ function showCharacterDetails(charId, imgIndex = 0) {
         <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
         <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('group')}:</strong> ${character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
+        <div class="memo-section">
+          <p>
+            <strong>${getTranslatedLabel('memo')}:</strong>
+            <button onclick="showNoteEditor(${charId})" class="memo-edit-btn" title="メモを編集">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+          </p>
+          <div id="noteDisplay" class="note-display"></div>
+        </div>
       </div>
     `;
     
     // データセット属性を設定
     detailsContainer.dataset.charId = charId;
     detailsContainer.dataset.imgIndex = imgIndex;
+    
+    // メモ表示を更新
+    updateNoteDisplay(charId);
+    
     renderRelatedCharacters(character.group, character.id, false); // ←showAll=falseで初回5件
     renderRelationCharacters(character.id);
     detailsPopup.style.display = 'block';
@@ -1143,14 +1923,28 @@ window.onCardLeave = function() {
  * お気に入りの状態を切り替える
  * @param {number} charId - キャラクターID
  */
-function toggleFavorite(charId) {
+async function toggleFavorite(charId) {
   const index = favorites.indexOf(charId);
   if (index === -1) {
     favorites.push(charId);
   } else {
     favorites.splice(index, 1);
   }
-  localStorage.setItem('character-favorites', JSON.stringify(favorites));
+  
+  try {
+    // IndexedDBに保存
+    if (characterDB.db) {
+      await characterDB.syncFavorites(favorites);
+    } else {
+      // フォールバック: localStorage
+      localStorage.setItem('character-favorites', JSON.stringify(favorites));
+    }
+  } catch (error) {
+    console.error('お気に入り保存エラー:', error);
+    // エラー時はlocalStorageにフォールバック
+    localStorage.setItem('character-favorites', JSON.stringify(favorites));
+  }
+  
   updateFavoriteUI(charId);
   
   // もしお気に入りのみ表示中なら再フィルタリング
@@ -1217,6 +2011,23 @@ function updateFavoriteUI(charId = null) {
   if (favCount) {
     favCount.textContent = favorites.length;
   }
+  
+  // メモ済み数を更新
+  updateMemoCount();
+}
+
+/**
+ * メモ済み数を更新
+ */
+function updateMemoCount() {
+  const memoCount = document.getElementById('memoCount');
+  if (memoCount) {
+    // メモがあるキャラクター数をカウント
+    const memoCharacterCount = Object.keys(userNotes).filter(charId => 
+      userNotes[charId] && userNotes[charId].trim() !== ''
+    ).length;
+    memoCount.textContent = memoCharacterCount;
+  }
 }
 
 /**
@@ -1259,6 +2070,204 @@ function showRandomCharacter() {
   showCharacterDetails(randomChar.id);
   document.getElementById('detailsPopup').style.display = 'block';
   updateHamburgerMenuVisibility();
+}
+
+// ===============================================
+// メモ機能
+// ===============================================
+
+/**
+ * ユーザーメモを保存する
+ * @param {number} charId - キャラクターID
+ * @param {string} note - メモ内容
+ */
+async function saveUserNote(charId, note) {
+  // HTMLタグやスクリプトをエスケープ
+  const sanitizedNote = escapeHtml(note.trim());
+  
+  try {
+    if (characterDB.db) {
+      // IndexedDBに保存
+      if (sanitizedNote) {
+        await characterDB.saveNote(charId, sanitizedNote);
+        userNotes[charId] = sanitizedNote; // キャッシュも更新
+      } else {
+        await characterDB.deleteNote(charId);
+        delete userNotes[charId]; // キャッシュからも削除
+      }
+    } else {
+      // フォールバック: localStorage
+      if (sanitizedNote) {
+        userNotes[charId] = sanitizedNote;
+      } else {
+        delete userNotes[charId];
+      }
+      localStorage.setItem('character-user-notes', JSON.stringify(userNotes));
+    }
+  } catch (error) {
+    console.error('メモ保存エラー:', error);
+    // エラー時はlocalStorageにフォールバック
+    if (sanitizedNote) {
+      userNotes[charId] = sanitizedNote;
+    } else {
+      delete userNotes[charId];
+    }
+    localStorage.setItem('character-user-notes', JSON.stringify(userNotes));
+  }
+  
+  // メモ数を更新
+  updateMemoCount();
+}
+
+/**
+ * HTMLエスケープ関数
+ * @param {string} text - エスケープするテキスト
+ * @returns {string} エスケープされたテキスト
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * メモ編集モーダルを表示する
+ * @param {number} charId - キャラクターID
+ */
+async function showNoteEditor(charId) {
+  let currentNote = '';
+  
+  try {
+    if (characterDB.db) {
+      currentNote = await characterDB.getNote(charId);
+    } else {
+      currentNote = userNotes[charId] || '';
+    }
+  } catch (error) {
+    console.error('メモ取得エラー:', error);
+    currentNote = userNotes[charId] || '';
+  }
+  
+  const char = characters.find(c => c.id === charId);
+  const charName = char ? (currentDisplayLanguage === 'en' && char.nameEn ? char.nameEn[0] : char.name[0]) : '';
+  
+  // 既存のモーダルを削除
+  const existingModal = document.getElementById('noteEditorModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  // モーダル作成
+  const modal = document.createElement('div');
+  modal.id = 'noteEditorModal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content note-editor-modal">
+      <div class="modal-header">
+        <h3>${charName} のメモ</h3>
+        <button class="modal-close" onclick="closeNoteEditor()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="noteTextarea" placeholder="メモを入力してください...">${unescapeHtml(currentNote)}</textarea>
+      </div>
+      <div class="modal-footer">
+        <button onclick="saveNote(${charId})" class="btn-save">保存</button>
+        <button onclick="closeNoteEditor()" class="btn-cancel">キャンセル</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  document.getElementById('noteTextarea').focus();
+}
+
+/**
+ * HTMLアンエスケープ関数
+ * @param {string} html - アンエスケープするHTML
+ * @returns {string} アンエスケープされたテキスト
+ */
+function unescapeHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+/**
+ * メモを保存してモーダルを閉じる
+ * @param {number} charId - キャラクターID
+ */
+async function saveNote(charId) {
+  const textarea = document.getElementById('noteTextarea');
+  const note = textarea.value;
+  
+  try {
+    await saveUserNote(charId, note);
+    await updateNoteDisplay(charId);
+    closeNoteEditor();
+  } catch (error) {
+    console.error('メモ保存処理エラー:', error);
+    // エラーが発生してもモーダルは閉じる
+    closeNoteEditor();
+  }
+}
+
+/**
+ * メモエディターモーダルを閉じる
+ */
+function closeNoteEditor() {
+  const modal = document.getElementById('noteEditorModal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+/**
+ * キャラクター詳細のメモ表示を更新する
+ * @param {number} charId - キャラクターID
+ */
+async function updateNoteDisplay(charId) {
+  const noteDisplay = document.getElementById('noteDisplay');
+  
+  try {
+    let note = '';
+    
+    if (characterDB.db) {
+      // IndexedDBから取得
+      note = await characterDB.getNote(charId);
+      // キャッシュも更新
+      if (note) {
+        userNotes[charId] = note;
+      } else {
+        delete userNotes[charId];
+      }
+    } else {
+      // フォールバック: キャッシュから取得
+      note = userNotes[charId] || '';
+    }
+    
+    if (noteDisplay) {
+      if (note) {
+        noteDisplay.innerHTML = note;
+        noteDisplay.style.display = 'block';
+      } else {
+        noteDisplay.innerHTML = '<em style="color: #999;">メモがありません</em>';
+        noteDisplay.style.display = 'block';
+      }
+    }
+  } catch (error) {
+    console.error('メモ表示エラー:', error);
+    // エラー時はキャッシュから表示
+    const note = userNotes[charId] || '';
+    if (noteDisplay) {
+      if (note) {
+        noteDisplay.innerHTML = note;
+        noteDisplay.style.display = 'block';
+      } else {
+        noteDisplay.innerHTML = '<em style="color: #999;">メモがありません</em>';
+        noteDisplay.style.display = 'block';
+      }
+    }
+  }
 }
 
 // ===============================================
@@ -1350,6 +2359,19 @@ function initKeyboardShortcuts() {
         }
         return;
       }
+      
+      // M でメモ編集
+      if (e.key === 'm' || e.key === 'M') {
+        showNoteEditor(currentCharId);
+        return;
+      }
+    }
+    
+    // データ管理用ショートカット（Ctrl+Shift+D）
+    if (e.ctrlKey && e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+      e.preventDefault();
+      showDataManager();
+      return;
     }
   });
 }

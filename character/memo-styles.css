@@ -1,0 +1,347 @@
+/* ===============================================
+   メモ機能のスタイル
+   =============================================== */
+
+/* メモセクション */
+.memo-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.memo-section p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* メモ編集ボタン */
+.memo-edit-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.memo-edit-btn:hover {
+  background: #e0f7fa;
+}
+
+.memo-edit-btn svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+/* メモ表示エリア */
+.note-display {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 40px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.note-display:empty::before {
+  content: "メモがありません";
+  color: #999;
+  font-style: italic;
+}
+
+/* モーダルオーバーレイ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* メモエディターモーダル */
+.note-editor-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.modal-close:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.modal-body {
+  padding: 20px 24px;
+  flex: 1;
+}
+
+.modal-body textarea {
+  width: 100%;
+  height: 200px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal-body textarea:focus {
+  border-color: #4a88a2;
+  box-shadow: 0 0 0 3px rgba(74, 136, 162, 0.1);
+}
+
+.modal-body textarea::placeholder {
+  color: #999;
+}
+
+.modal-footer {
+  padding: 16px 24px 20px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  border-top: 1px solid #eee;
+}
+
+.btn-save,
+.btn-cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-save {
+  background: #4a88a2;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #3a7088;
+  transform: translateY(-1px);
+}
+
+.btn-cancel {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.btn-cancel:hover {
+  background: #e0e0e0;
+  color: #444;
+}
+
+/* ダークテーマでのメモ機能 */
+body.theme-dark .memo-section {
+  border-top-color: #444;
+}
+
+body.theme-dark .memo-edit-btn:hover {
+  background: #22305c;
+}
+
+body.theme-dark .note-display {
+  background: #22305c;
+  border-color: #444;
+  color: #e9eaf6;
+}
+
+body.theme-dark .note-editor-modal {
+  background: #1a2540;
+  color: #e9eaf6;
+}
+
+body.theme-dark .modal-header {
+  border-bottom-color: #444;
+}
+
+body.theme-dark .modal-header h3 {
+  color: #e9eaf6;
+}
+
+body.theme-dark .modal-close {
+  color: #bbb;
+}
+
+body.theme-dark .modal-close:hover {
+  background: #22305c;
+  color: #e9eaf6;
+}
+
+body.theme-dark .modal-body textarea {
+  background: #22305c;
+  border-color: #444;
+  color: #e9eaf6;
+}
+
+body.theme-dark .modal-body textarea:focus {
+  border-color: #3a86ff;
+  box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.1);
+}
+
+body.theme-dark .modal-body textarea::placeholder {
+  color: #bbb;
+}
+
+body.theme-dark .modal-footer {
+  border-top-color: #444;
+}
+
+body.theme-dark .btn-save {
+  background: #3a86ff;
+}
+
+body.theme-dark .btn-save:hover {
+  background: #2970cc;
+}
+
+body.theme-dark .btn-cancel {
+  background: #22305c;
+  color: #e9eaf6;
+}
+
+body.theme-dark .btn-cancel:hover {
+  background: #14213d;
+}
+
+/* モダンテーマでのメモ機能 */
+body.theme-modern .memo-section {
+  border-top-color: #b2eaff;
+}
+
+body.theme-modern .memo-edit-btn:hover {
+  background: #b2eaff;
+}
+
+body.theme-modern .note-display {
+  background: #e0faff;
+  border-color: #b2eaff;
+  color: #156acc;
+}
+
+body.theme-modern .note-editor-modal {
+  background: rgba(255, 255, 255, 0.98);
+  color: #156acc;
+}
+
+body.theme-modern .modal-header {
+  border-bottom-color: #b2eaff;
+}
+
+body.theme-modern .modal-header h3 {
+  color: #156acc;
+}
+
+body.theme-modern .modal-body textarea {
+  background: #e0faff;
+  border-color: #b2eaff;
+  color: #156acc;
+}
+
+body.theme-modern .modal-body textarea:focus {
+  border-color: #00c3ff;
+  box-shadow: 0 0 0 3px rgba(0, 195, 255, 0.1);
+}
+
+body.theme-modern .modal-footer {
+  border-top-color: #b2eaff;
+}
+
+body.theme-modern .btn-save {
+  background: #00c3ff;
+}
+
+body.theme-modern .btn-save:hover {
+  background: #0090cc;
+}
+
+body.theme-modern .btn-cancel {
+  background: #b2eaff;
+  color: #156acc;
+}
+
+body.theme-modern .btn-cancel:hover {
+  background: #90d5ff;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .note-editor-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .modal-body textarea {
+    height: 150px;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+  }
+  
+  .btn-save,
+  .btn-cancel {
+    width: 100%;
+  }
+}

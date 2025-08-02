@@ -25,6 +25,17 @@
       <button onclick="toggleLanguage()" class="hamburger-lang-btn" id="langToggleBtn">言語切替 (現在: 日本語)</button>
       <!-- ▼テーマ切替ボタン（3テーマ対応） -->
       <button onclick="toggleTheme()" class="hamburger-theme-btn" id="themeToggleBtn">テーマ切替 (現在: ライト)</button>
+      <!-- ▼データ管理ボタン -->
+      <button onclick="showDataManagerFromMenu()" class="hamburger-data-btn" id="dataManagerBtn" title="データのエクスポート・インポート">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10,9 9,9 8,9"/>
+        </svg>
+        データ管理
+      </button>
       <!-- 必要なら他のメニュー項目をここに追加 -->
     </div>
   </div>
@@ -91,10 +102,13 @@
 
       <!-- ▼追加：お気に入りフィルター -->
       <div class="filter-section">
-        <h4>お気に入り</h4>
+        <h4>その他</h4>
         <div class="filter-options">
           <div id="favoritesOnlyBtn" onclick="toggleFilterOption('favorites', 'favorites', this)" class="filter-option">
             お気に入り (<span id="favoritesCount">0</span>)
+          </div>
+          <div id="memoOnlyBtn" onclick="toggleFilterOption('memo', 'memo', this)" class="filter-option">
+            メモ済み (<span id="memoCount">0</span>)
           </div>
         </div>
       </div>
@@ -102,7 +116,6 @@
       
       <button onclick="applyFilters()" class="buttonRound">適用</button>
       <button onclick="clearFilters()" class="buttonRound">クリア</button>
-      
     </div>
   </div>
 
@@ -139,9 +152,11 @@
         <div><kbd>L</kbd> 言語切り替え</div>
         <div><kbd>T</kbd> テーマ切り替え</div>
         <div><kbd>Esc</kbd> ポップアップを閉じる</div>
+        <div><kbd>Ctrl+Shift+D</kbd> データ管理</div>
         <div class="shortcuts-detail">詳細画面で：</div>
         <div><kbd>H</kbd> 前のキャラクター</div>
         <div><kbd>J</kbd> 次のキャラクター</div>
+        <div><kbd>M</kbd> メモ編集</div>
       </div>
     </details>
   </div>
