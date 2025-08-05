@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "キャラエディター起動",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/character/py/cha_json_editor.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}

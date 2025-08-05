@@ -2,55 +2,218 @@
     {
         "settings": {
             "race": {
-                "en": ["Stickman", "Half-Human", "Human", "Beastman", "Demon", "God", "Subhuman", "Devil", "Fairy", "Angel", "Star-Human", "Ogre","Other"],
-                "ja": ["棒人間", "半人間", "人間", "獣人", "魔人", "魔神", "亜人", "悪魔", "妖精", "天使", "星人", "鬼","その他"]
+                "en": [
+                    "Stickman",
+                    "Half-Human",
+                    "Human",
+                    "Beastman",
+                    "Demon",
+                    "God",
+                    "Subhuman",
+                    "Devil",
+                    "Fairy",
+                    "Angel",
+                    "Star-Human",
+                    "Ogre",
+                    "Other"
+                ],
+                "ja": [
+                    "棒人間",
+                    "半人間",
+                    "人間",
+                    "獣人",
+                    "魔人",
+                    "魔神",
+                    "亜人",
+                    "悪魔",
+                    "妖精",
+                    "天使",
+                    "星人",
+                    "鬼",
+                    "その他"
+                ]
             },
             "fightingStyle": {
-                "en": ["None", "Sword", "Spear", "Axe", "Bow", "Gun", "Magic", "Martial Arts", "Hammer", "drill", "claw", "Katana", "Fist", "Scythe","Other"],
-                "ja": ["なし", "剣", "槍", "斧", "弓", "銃", "魔法", "格闘技", "ハンマー", "ドリル", "爪", "刀", "拳", "鎌","その他"]
+                "en": [
+                    "None",
+                    "Sword",
+                    "Spear",
+                    "Axe",
+                    "Bow",
+                    "Gun",
+                    "Magic",
+                    "Martial Arts",
+                    "Hammer",
+                    "drill",
+                    "claw",
+                    "Katana",
+                    "Fist",
+                    "Scythe",
+                    "Other"
+                ],
+                "ja": [
+                    "なし",
+                    "剣",
+                    "槍",
+                    "斧",
+                    "弓",
+                    "銃",
+                    "魔法",
+                    "格闘技",
+                    "ハンマー",
+                    "ドリル",
+                    "爪",
+                    "刀",
+                    "拳",
+                    "鎌",
+                    "その他"
+                ]
             },
             "attribute": {
-                "en": ["Fire", "Water", "Earth", "Wind", "Light", 
-                       "Darkness", "Holy", "Poison", "Electricity", "Ice", 
-                       "Psychic", "None", "Spirarl"],
-                "ja": ["火属性", "水属性", "土属性", "風属性", "光属性", 
-                       "闇属性", "聖属性", "毒属性", "電気属性", "氷属性", 
-                       "サイコ属性", "無属性", "螺旋属性"]
+                "en": [
+                    "Fire",
+                    "Water",
+                    "Earth",
+                    "Wind",
+                    "Light",
+                    "Darkness",
+                    "Holy",
+                    "Poison",
+                    "Electricity",
+                    "Ice",
+                    "Psychic",
+                    "None",
+                    "Spirarl"
+                ],
+                "ja": [
+                    "火属性",
+                    "水属性",
+                    "土属性",
+                    "風属性",
+                    "光属性",
+                    "闇属性",
+                    "聖属性",
+                    "毒属性",
+                    "電気属性",
+                    "氷属性",
+                    "サイコ属性",
+                    "無属性",
+                    "螺旋属性"
+                ]
             },
             "group": {
-                "en": ["Last Line", "Galactic Company", "Main Group", "Space Pirates", "space police","Subspace", 
-                    "Otherworld", "Underworld", "B.comsHACKER's", "Nibiru", "Stock 'Black'", "Other"],
-                "ja": ["ラストライン", "ギャラクティックカンパニー", "メイン組", "宇宙海賊組", "宇宙警察", "亜空間組", 
-                    "異世界組", "冥界組", "B.comsHACKER's", "ニビル", "株式「黒」", "その他"]
+                "en": [
+                    "Last Line",
+                    "Galactic Company",
+                    "Main Group",
+                    "Space Pirates",
+                    "space police",
+                    "Subspace",
+                    "Otherworld",
+                    "Underworld",
+                    "B.comsHACKER's",
+                    "Nibiru",
+                    "Stock 'Black'",
+                    "Other"
+                ],
+                "ja": [
+                    "ラストライン",
+                    "ギャラクティックカンパニー",
+                    "メイン組",
+                    "宇宙海賊組",
+                    "宇宙警察",
+                    "亜空間組",
+                    "異世界組",
+                    "冥界組",
+                    "B.comsHACKER's",
+                    "ニビル",
+                    "株式「黒」",
+                    "その他"
+                ]
             },
             "calendar": {
-                "en": ["Jagua Calendar", "Star Calendar", "Space Calendar"],
-                "ja": ["ジャグア暦", "星暦", "宇宙暦"]
+                "en": [
+                    "Jagua Calendar",
+                    "Star Calendar",
+                    "Space Calendar"
+                ],
+                "ja": [
+                    "ジャグア暦",
+                    "星暦",
+                    "宇宙暦"
+                ]
             }
         },
         "relation": [
-            [2, 13, 32, 33, 34, 35, 36],
-            [19, 20],
-            [16, 17, 18],
-            [7, 40],
-            [41, 42],
-            [45, 46, 47, 48],
-            [49, 50]
+            [
+                2,
+                13,
+                32,
+                33,
+                34,
+                35,
+                36
+            ],
+            [
+                19,
+                20
+            ],
+            [
+                16,
+                17,
+                18
+            ],
+            [
+                7,
+                40
+            ],
+            [
+                41,
+                42
+            ],
+            [
+                45,
+                46,
+                47,
+                48
+            ],
+            [
+                49,
+                50
+            ]
         ]
     },
     {
         "id": 1,
-        "name": ["Xドクター", "W.D.ドクター"],
-        "name_en": ["X Doctor", "W.D.Doctor"],
+        "name": [
+            "Xドクター",
+            "W.D.ドクター"
+        ],
+        "name_en": [
+            "X Doctor",
+            "W.D.Doctor"
+        ],
         "name_Kana": "くろすどくたー",
         "description": [
-            "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている。",
-            "自身の悪が抑えきれず悪が放出されてしまった姿。彼が言っていることは理解不能(言語的に)で近くにあるものを破壊し尽くす。体のどこからでも鎖が出てくる。"
+            "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている",
+            "自身の悪が抑えきれず悪が放出されてしまった姿。彼が言っていることは理解不能(言語的に)で近くにあるものを破壊し尽くす。体のどこからでも鎖が出てくる。出てくる鎖に上限はないらしい。"
         ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": [["Sword", "Magic"], ["Magic"]],
-        "attribute": [["Electricity"], ["Darkness"]],
+        "race": [
+            "棒人間",
+            "棒人間"
+        ],
+        "fightingStyle": [
+            [
+                "Sword",
+                "Magic"
+            ],
+            "Magic"
+        ],
+        "attribute": [
+            "Electricity",
+            "Darkness"
+        ],
         "height": 190,
         "age": "不明",
         "birthday": {
@@ -59,52 +222,121 @@
             "day": 9
         },
         "personality": "意地悪",
-        "group": ["Main Group"],
-        "img": ["1-0.webp", "1-1.webp"],
-        "imgsize": "300%",
-        "imgThumbsize": ["150%", "200%"],
-        "imageZoomPosition": "-190px -150px",
-        "imageThumbPosition": ["0px 0px", "0px 0px"],
-        "imgsize_mobile": "300%",
-        "imageZoomPosition_mobile": "-120px -100px"
+        "group": "Main Group",
+        "img": [
+            "1-0.webp",
+            "1-1.webp"
+        ],
+        "imgsize": [
+            "3",
+            ""
+        ],
+        "imgThumbsize": [
+            "150%",
+            "200%"
+        ],
+        "imageZoomPosition": [
+            "-",
+            ""
+        ],
+        "imageThumbPosition": [
+            "0px 0px",
+            "0px 0px"
+        ],
+        "imgsize_mobile": [
+            "3",
+            ""
+        ],
+        "imageZoomPosition_mobile": [
+            "-",
+            ""
+        ]
     },
     {
         "id": 2,
-        "name": ["黒田適当","黒田適当(暴)"],
-        "name_en": "Kuroda Tekitou",
+        "name": [
+            "黒田適当",
+            "黒田適当(暴)"
+        ],
+        "name_en": [
+            "Kuroda Tekitou",
+            ""
+        ],
         "name_Kana": "くろだてきとう",
-        "description": ["黒田家の長男。盲目の武闘家で気で空間を認識している。ドクターとは友達でよく振り回されている。",
-                        "闇に呑まれ暴走してしまった状態。自我はほぼない。"],
+        "description": [
+            "黒田家の長男。盲目の武闘家で気で空間を認識している。ドクターとは友達でよく振り回されている。",
+            "闇に呑まれ暴走してしまった状態。自我はほぼない"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": [["Martial Arts"],["Martial Arts","Magic"]],
-        "attribute": [["None"],["Darkness"]],
+        "race": [
+            "棒人間",
+            ""
+        ],
+        "fightingStyle": [
+            "Martial Arts",
+            [
+                "Martial Arts",
+                "Magic"
+            ]
+        ],
+        "attribute": [
+            "None",
+            "Darkness"
+        ],
         "height": 210,
-        "age": 25,
+        "age": "25",
         "birthday": {
             "year": "-1 13600",
             "month": 5,
             "day": 20
         },
         "personality": "慎重に行動するタイプ",
-        "group": ["Main Group"],
-        "img": ["2-0.webp", "2-1.webp"],
-        "imgsize": "140%",
-        "imageZoomPosition": "-40px -80px",
-        "imgsize_mobile": "150%",
-        "imageZoomPosition_mobile": "-35px -65px"
+        "group": "Main Group",
+        "img": [
+            "2-0.webp",
+            "2-1.webp"
+        ],
+        "imgsize": [
+            "140%",
+            ""
+        ],
+        "imageZoomPosition": [
+            "-40px -80px",
+            ""
+        ],
+        "imgsize_mobile": [
+            "150%",
+            ""
+        ],
+        "imageZoomPosition_mobile": [
+            "-35px -65px",
+            ""
+        ]
     },
     {
         "id": 3,
-        "name": ["無敵勇者棒人間","MYB・ゴールデン"],
-        "name_en": "Invincible Hero Stickman",
+        "name": [
+            "無敵勇者棒人間",
+            "MYB・ゴールデン"
+        ],
+        "name_en": [
+            "Invincible Hero Stickman"
+        ],
         "name_Kana": "むてきゆうしゃぼうにんげん",
-        "description": ["元初代主人公だがドクターにとられた。だが主人公補正がかかっており相当の字実力もある。最近大学を何浪したが卒業した。",
-                        "天の力が共鳴しその力が発現した姿、通常の倍のスピード、パワーを誇る"],
+        "description": [
+            "元初代主人公だがドクターにとられた。だが主人公補正がかかっており相当の字実力もある。最近大学を何浪したが卒業した",
+            "天の力が共鳴しその力が発現した姿、通常の倍のスピード、パワーを誇る"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Sword"],
-        "attribute": ["Holy"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Sword"
+        ],
+        "attribute": [
+            "Holy"
+        ],
         "height": 177,
         "birthday": {
             "year": "-1 13598",
@@ -112,12 +344,24 @@
             "day": 3
         },
         "personality": "楽観的",
-        "group": ["Main Group"],
-        "img": ["3-0.webp", "3-1.webp"],
-        "imgsize": "250%",
-        "imageZoomPosition": "-150px -110px",
-        "imgsize_mobile": "320%",
-        "imageZoomPosition_mobile": "-140px -100px"
+        "group": "Main Group",
+        "img": [
+            "3-0.webp",
+            "3-1.webp"
+        ],
+        "imgsize": [
+            "250%"
+        ],
+        "imageZoomPosition": [
+            "-150px -110px"
+        ],
+        "imgsize_mobile": [
+            "320%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-140px -100px"
+        ],
+        "age": ""
     },
     {
         "id": 4,
@@ -126,9 +370,15 @@
         "name_Kana": "かったー",
         "description": "五賢者の一人で風魔法の使い手。風魔力をチャクラムのようにして戦う。普段は大学で魔法関連の教授をしている。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Magic"],
-        "attribute": ["Wind"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Magic"
+        ],
+        "attribute": [
+            "Wind"
+        ],
         "height": 192,
         "birthday": {
             "year": "-1 12329",
@@ -136,7 +386,9 @@
             "day": 1
         },
         "personality": "なんか",
-        "group": ["Main Group"],
+        "group": [
+            "Main Group"
+        ],
         "img": "4.webp",
         "imgsize": "170%",
         "imageZoomPosition": "-60px -0px",
@@ -150,9 +402,15 @@
         "name_Kana": "からーて",
         "description": "空手を極め究極の空手道を身に着けた空手家。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Martial Arts"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Martial Arts"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 185,
         "birthday": {
             "year": "-1 13589",
@@ -160,7 +418,9 @@
             "day": 5
         },
         "personality": "自信家",
-        "group": ["Main Group"],
+        "group": [
+            "Main Group"
+        ],
         "img": "5.webp",
         "imgsize": "150%",
         "imageZoomPosition": "-60px -20px",
@@ -174,9 +434,15 @@
         "name_Kana": "こっく",
         "description": "常に両手に包丁を持ち徘徊している不審者。こう見えて３つ星レストランのチーフをしていて食にはつよいこだわりを持っている。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 171,
         "birthday": {
             "year": "-1 13590",
@@ -184,7 +450,9 @@
             "day": 23
         },
         "personality": "サイコパスもどき",
-        "group": ["Main Group"],
+        "group": [
+            "Main Group"
+        ],
         "img": "6.webp",
         "imgsize": "130%",
         "imageZoomPosition": "-50px -100px",
@@ -198,9 +466,16 @@
         "name_Kana": "がんますたーはんまーますたー",
         "description": "銃器とハンマー系統を使いこなす棒人間。よくハンマーを持っているのでパワーがある。<br>あと前にドクターのところから時間停止できるウォッチをパクっている。昔はドクターと敵対していたがなんか気づいたら味方ポジにいた。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Gun", "Hammer"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Gun",
+            "Hammer"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 171,
         "birthday": {
             "year": "-1 13597",
@@ -208,7 +483,9 @@
             "day": 2
         },
         "personality": "努力家",
-        "group": ["Main Group"],
+        "group": [
+            "Main Group"
+        ],
         "img": "7.webp",
         "imgsize": "230%",
         "imageZoomPosition": "-130px -140px",
@@ -222,9 +499,15 @@
         "name_Kana": "ぱんちまん",
         "description": "パンチが得意な棒人間。ガンマスター・ハンマーマスターとは仲がいい。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Fist"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Fist"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 170,
         "birthday": {
             "year": "-1 13597",
@@ -232,7 +515,9 @@
             "day": 1
         },
         "personality": "なんか",
-        "group": ["Main Group"],
+        "group": [
+            "Main Group"
+        ],
         "img": "8.webp",
         "imgsize": "170%",
         "imageZoomPosition": "-60px -10px",
@@ -246,9 +531,15 @@
         "name_Kana": "すろう",
         "description": "時間を遅くする特殊能力を持つ棒人間。前に怪盗ジャックドールに変装して遊んでたらドクター一行にシバかれてスピーダーにも説教を食らった。もう変装なんてしない。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 179,
         "birthday": {
             "year": "-1 13595",
@@ -256,7 +547,9 @@
             "day": 1
         },
         "personality": "なんか",
-        "group": ["Main Group"],
+        "group": [
+            "Main Group"
+        ],
         "img": "9.webp",
         "imgsize": "180%",
         "imageZoomPosition": "-80px -50px",
@@ -265,14 +558,26 @@
     },
     {
         "id": 10,
-        "name": "スピーダー",
-        "name_en": "Speeder",
+        "name": [
+            "スピーダー"
+        ],
+        "name_en": [
+            "Speeder"
+        ],
         "name_Kana": "すぴーだー",
-        "description": "自身とその周りを加速する特殊能力がある棒人間",
+        "description": [
+            "自身とその周りを加速する特殊能力がある棒人間"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 185,
         "birthday": {
             "year": "-1 13599",
@@ -280,12 +585,23 @@
             "day": 1
         },
         "personality": "なんか",
-        "group": ["Main Group"],
-        "img": "10.webp",
-        "imgsize": "300%",
-        "imageZoomPosition": "-190px -70px",
-        "imgsize_mobile": "320%",
-        "imageZoomPosition_mobile": "-130px -40px"
+        "group": "Main Group",
+        "img": [
+            "10.webp"
+        ],
+        "imgsize": [
+            "300%"
+        ],
+        "imageZoomPosition": [
+            "-190px -70px"
+        ],
+        "imgsize_mobile": [
+            "320%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-130px -40px"
+        ],
+        "age": ""
     },
     {
         "id": 11,
@@ -294,9 +610,15 @@
         "name_Kana": "ぼうんず",
         "description": "骨の棒人間。重力を操る特殊能力を持つ。頭が取れやすい。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": [""],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            ""
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 161,
         "birthday": {
             "year": "-1 13462",
@@ -304,7 +626,9 @@
             "day": 7
         },
         "personality": "おちゃらけた",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "11.webp",
         "imgsize": "180%",
         "imageZoomPosition": "-90px -30px",
@@ -318,9 +642,15 @@
         "name_Kana": "からくりしんた",
         "description": "機械好きな棒人間。よく機械を開発をしている。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 170,
         "birthday": {
             "year": "-1 13600",
@@ -328,7 +658,9 @@
             "day": 7
         },
         "personality": "熱心",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "12.webp",
         "imgsize": "250%",
         "imageZoomPosition": "-130px -160px",
@@ -342,9 +674,15 @@
         "name_Kana": "くろだたぐろ",
         "description": "黒田適当の息子。帽子についている突起物は引き抜くと剣になる。使える。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Sword"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Sword"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 175,
         "birthday": {
             "year": "-1 13613",
@@ -352,7 +690,9 @@
             "day": 5
         },
         "personality": "楽観的",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "13.webp",
         "imgsize": "180%",
         "imageZoomPosition": "-80px -70px",
@@ -366,9 +706,17 @@
         "name_Kana": "きんぐ",
         "description": "基本的には国民を見守っているがいざとなったときは国民を守るために出向くとても民想いな棒人間の王様。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Spear", "Magic"],
-        "attribute": ["Fire", "Light"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Spear",
+            "Magic"
+        ],
+        "attribute": [
+            "Fire",
+            "Light"
+        ],
         "height": 220,
         "birthday": {
             "year": "-1 13570",
@@ -376,7 +724,9 @@
             "day": 2
         },
         "personality": "正義心",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "14.webp",
         "imgsize": "250%",
         "imageZoomPosition": "-140px -40px",
@@ -390,9 +740,15 @@
         "name_Kana": "かみさま",
         "description": "棒人間の神様。なんかたまにちょっかいをかけてくる。暇なのだろうか",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Other"],
-        "attribute": ["Holy"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Other"
+        ],
+        "attribute": [
+            "Holy"
+        ],
         "height": "ビッグ",
         "birthday": {
             "year": "-2 1年",
@@ -400,7 +756,9 @@
             "day": 28
         },
         "personality": "楽観的",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "15.webp",
         "imgsize": "250%",
         "imageZoomPosition": "-140px -130px",
@@ -414,9 +772,15 @@
         "name_Kana": "すたっふ",
         "description": "スタッフ。翻訳の資料などを担当していてスタッフ無しでは私たちの言葉は読めないだろう",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 169,
         "birthday": {
             "year": "-1 13619",
@@ -424,7 +788,9 @@
             "day": 14
         },
         "personality": "真面目",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "16.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -140px",
@@ -438,9 +804,15 @@
         "name_Kana": "なれーたー",
         "description": "ナレーター。リアルタイムで翻訳してくれる超万能棒人間。この人がいなかったら棒人間何言ってるかわからないからね",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 170,
         "birthday": {
             "year": "-1 13617",
@@ -448,7 +820,9 @@
             "day": 23
         },
         "personality": "フレンドリー",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "17.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -140px",
@@ -457,14 +831,26 @@
     },
     {
         "id": 18,
-        "name": "カメラマン",
-        "name_en": "Cameraman",
+        "name": [
+            "カメラマン"
+        ],
+        "name_en": [
+            "Cameraman"
+        ],
         "name_Kana": "かめらまん",
-        "description": "カメラマン。リアルタイムで状況を配信していてカメラマンなしでは何が起こってるか見ることはできないだろう。",
+        "description": [
+            "カメラマン。リアルタイムで状況を配信していてカメラマンなしでは何が起こってるか見ることはできないだろう。"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 163,
         "birthday": {
             "year": "-1 13622",
@@ -472,12 +858,23 @@
             "day": 5
         },
         "personality": "",
-        "group": ["メイン組"],
-        "img": "18.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -140px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "メイン組",
+        "img": [
+            "18.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -140px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 19,
@@ -486,9 +883,15 @@
         "name_Kana": "びーぜろいちこむず",
         "description": "B.comsHACKER'sのリーダー。この世界を支配しようとたくらんでいる。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Other"],
-        "attribute": ["Electricity"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Other"
+        ],
+        "attribute": [
+            "Electricity"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -496,7 +899,9 @@
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
+        "group": [
+            "B.comsHACKER's"
+        ],
         "img": "19.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -140px",
@@ -510,9 +915,15 @@
         "name_Kana": "びーいちろくこむず",
         "description": "B.01.comsの兄。ブラコンで弟の計画に加担している。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Other"],
-        "attribute": ["Electricity"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Other"
+        ],
+        "attribute": [
+            "Electricity"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -520,7 +931,9 @@
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
+        "group": [
+            "B.comsHACKER's"
+        ],
         "img": "20.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -140px",
@@ -534,9 +947,16 @@
         "name_Kana": "びーよんまるよんこむず",
         "description": "B.comsHACKER'sののメンバー。ダークヒーローをやっている。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Magic","Martial Arts"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Magic",
+            "Martial Arts"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -544,7 +964,9 @@
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
+        "group": [
+            "B.comsHACKER's"
+        ],
         "img": "21.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -558,9 +980,15 @@
         "name_Kana": "びーだぶりゅーこむず",
         "description": "B.comsHACKER'sのメンバーで手足がドリルになっている。ドリルの着脱はできる。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["drill"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "drill"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -568,7 +996,9 @@
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
+        "group": [
+            "B.comsHACKER's"
+        ],
         "img": "22.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -577,75 +1007,145 @@
     },
     {
         "id": 23,
-        "name": "B.303.coms",
-        "name_en": "B.303.coms",
+        "name": [
+            "B.303.coms"
+        ],
+        "name_en": [
+            "B.303.coms"
+        ],
         "name_Kana": "びーさんまるさんこむず",
-        "description": "B.comsHACKER'sのメンバー。ドラキュラの能力を持っている。",
+        "description": [
+            "B.comsHACKER'sのメンバー。ドラキュラの能力を持っている。"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Magic"],
-        "attribute": ["Darkness"],
-        "height": null,
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Magic"
+        ],
+        "attribute": [
+            "Darkness"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
-        "img": "23.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "B.comsHACKER's",
+        "img": [
+            "23.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 24,
-        "name": "B.666.coms",
-        "name_en": "B.666.coms",
+        "name": [
+            "B.666.coms"
+        ],
+        "name_en": [
+            "B.666.coms"
+        ],
         "name_Kana": "びーろくこむず",
-        "description": "B.comsHACKER'sのメンバー。四肢が機械になっており鋭い爪が付いている。",
+        "description": [
+            "B.comsHACKER'sのメンバー。四肢が機械になっており鋭い爪が付いている。"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["claw"],
-        "attribute": ["None"],
-        "height": null,
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "claw"
+        ],
+        "attribute": [
+            "None"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
-        "img": "24.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "B.comsHACKER's",
+        "img": [
+            "24.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 25,
-        "name": "ガッツァ",
-        "name_en": "Gatza",
+        "name": [
+            "ガッツァ"
+        ],
+        "name_en": [
+            "Gatza"
+        ],
         "name_Kana": "がっつぁ",
-        "description": "背中から獣の手が生えている棒人間。獣の手は自在に動かせる。<br>そして見たものに変身することができる。(能力は変わらない)",
+        "description": [
+            "背中から獣の手が生えている棒人間。獣の手は自在に動かせる。<br>そして見たものに変身することができる。(能力は変わらない)"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["claw","Other"],
-        "attribute": ["Psychic"],
-        "height": null,
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "claw",
+            "Other"
+        ],
+        "attribute": [
+            "Psychic"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "",
-        "group": ["Other"],
-        "img": "25.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Other",
+        "img": [
+            "25.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 26,
@@ -654,9 +1154,15 @@
         "name_Kana": "おおおのさん",
         "description": "斧が大好きです。大斧さんでぅ、",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Axe"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Axe"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -664,7 +1170,9 @@
             "day": null
         },
         "personality": "",
-        "group": ["Other"],
+        "group": [
+            "Other"
+        ],
         "img": "26.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -678,9 +1186,16 @@
         "name_Kana": "びーよんこむず",
         "description": "B.comsHACKER'sのメンバー。手に付いているエネルギー砲で戦う。もう片方の手は義腕。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Gun", "Magic"],
-        "attribute": ["Electricity"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Gun",
+            "Magic"
+        ],
+        "attribute": [
+            "Electricity"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -688,7 +1203,9 @@
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
+        "group": [
+            "B.comsHACKER's"
+        ],
         "img": "27.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -697,38 +1214,74 @@
     },
     {
         "id": 28,
-        "name": "B.NNN.coms",
-        "name_en": "B.NNN.coms",
+        "name": [
+            "B.NNN.coms"
+        ],
+        "name_en": [
+            "B.NNN.coms"
+        ],
         "name_Kana": "びーえぬこむず",
-        "description": "B.comsHACKER'sのメンバー。剣にまとった炎で敵を焼尽くす。",
+        "description": [
+            "B.comsHACKER'sのメンバー。剣にまとった炎で敵を焼尽くす。"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Sword"],
-        "attribute": ["Fire"],
-        "height": null,
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Sword"
+        ],
+        "attribute": [
+            "Fire"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "",
-        "group": ["B.comsHACKER's"],
-        "img": "28.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "B.comsHACKER's",
+        "img": [
+            "28.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 29,
-        "name": "デビラ・ゲロス",
-        "name_en": "Debira Geros",
+        "name": [
+            "デビラ・ゲロス"
+        ],
+        "name_en": [
+            "Debira Geros"
+        ],
         "name_Kana": "でびらげろす",
-        "description": "冥界の大扉の門番。侵入者を撃退する。",
+        "description": [
+            "冥界の大扉の門番。侵入者を撃退する。"
+        ],
         "world": "1",
-        "race": ["棒人間", "悪魔"],
-        "fightingStyle": ["Spear"],
-        "attribute": ["Darkness"],
+        "race": [
+            "棒人間",
+            "悪魔"
+        ],
+        "fightingStyle": [
+            "Spear"
+        ],
+        "attribute": [
+            "Darkness"
+        ],
         "height": 225,
         "birthday": {
             "year": "不明",
@@ -736,12 +1289,23 @@
             "day": null
         },
         "personality": "正義感がある",
-        "group": ["Underworld"],
-        "img": "29.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Underworld",
+        "img": [
+            "29.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 30,
@@ -750,9 +1314,16 @@
         "name_Kana": "はんどううろす",
         "description": "冥界の大扉の門番。侵入者は通さない。<br>冥界の強者の5本指に入るくらいの実力者だが力を隠している。",
         "world": "1",
-        "race": ["棒人間", "悪魔"],
-        "fightingStyle": ["Other"],
-        "attribute": ["Darkness"],
+        "race": [
+            "棒人間",
+            "悪魔"
+        ],
+        "fightingStyle": [
+            "Other"
+        ],
+        "attribute": [
+            "Darkness"
+        ],
         "height": 230,
         "birthday": {
             "year": "不明",
@@ -760,7 +1331,9 @@
             "day": null
         },
         "personality": "怠惰",
-        "group": ["Underworld"],
+        "group": [
+            "Underworld"
+        ],
         "img": "30.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -769,51 +1342,97 @@
     },
     {
         "id": 31,
-        "name": "白田三津琉技",
-        "name_en": "Sirata no Mitsurugi",
+        "name": [
+            "白田三津琉技"
+        ],
+        "name_en": [
+            "Sirata no Mitsurugi"
+        ],
         "name_Kana": "しらたみつるぎ",
-        "description": "東の大地の侍。刀を主に使う。",
+        "description": [
+            "東の大地の侍。刀を主に使う。"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Katana"],
-        "attribute": ["None"],
-        "height": null,
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Katana"
+        ],
+        "attribute": [
+            "None"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": 7,
             "day": 19
         },
         "personality": "仁義",
-        "group": ["Other"],
-        "img": "31.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Other",
+        "img": [
+            "31.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 32,
-        "name": "黒田まつる",
-        "name_en": "Kuroda Matsuru",
+        "name": [
+            "黒田まつる"
+        ],
+        "name_en": [
+            "Kuroda Matsuru"
+        ],
         "name_Kana": "くろだまつる",
-        "description": "黒田家の次男。よく目が回っている。四男が病院行った方が良いと言われて行こうか検討している",
+        "description": [
+            "黒田家の次男。よく目が回っている。四男が病院行った方が良いと言われて行こうか検討している"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
-        "height": null,
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": 9,
             "day": 9
         },
         "personality": "おとなしい",
-        "group": ["その他"],
-        "img": "32.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "その他",
+        "img": [
+            "32.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 33,
@@ -822,9 +1441,15 @@
         "name_Kana": "くろだまもる",
         "description": "黒田家の三男。活発すぎていつもどこか怪我をしている。そのためいつも四男が手当てをしている。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -832,7 +1457,9 @@
             "day": 10
         },
         "personality": "活発で元気",
-        "group": ["その他"],
+        "group": [
+            "その他"
+        ],
         "img": "33.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -300px",
@@ -846,9 +1473,15 @@
         "name_Kana": "くろだはくし",
         "description": "黒田家の四男。料理が得意で好きな料理は麻婆茄子。上の兄たちが心配。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -856,7 +1489,9 @@
             "day": 11
         },
         "personality": "普通",
-        "group": ["Other"],
+        "group": [
+            "Other"
+        ],
         "img": "34.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -90px",
@@ -870,9 +1505,15 @@
         "name_Kana": "くろだいつえ",
         "description": "黒田家の母。四男を産んでからちょっと...あれになった。現在天から見守っている。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -880,7 +1521,9 @@
             "day": 3
         },
         "personality": "家族思い",
-        "group": ["Other"],
+        "group": [
+            "Other"
+        ],
         "img": "35.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -894,9 +1537,15 @@
         "name_Kana": "くろだてつ",
         "description": "黒田家の大黒柱。昔、戦争に参加していて顔にかなりの重症を負ったが奇跡的な回復力で生きた。",
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Other"],
-        "attribute": ["None"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Other"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -904,7 +1553,9 @@
             "day": 3
         },
         "personality": "頑固おやじ(ほんとは親バカ)",
-        "group": ["Other"],
+        "group": [
+            "Other"
+        ],
         "img": "36.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -918,9 +1569,15 @@
         "name_Kana": "めるか",
         "description": "とある実験所から逃げてきた実験体。複数の変身形態を持っている。",
         "world": "1",
-        "race": ["その他"],
-        "fightingStyle": ["Other"],
-        "attribute": ["None"],
+        "race": [
+            "その他"
+        ],
+        "fightingStyle": [
+            "Other"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": 40,
         "birthday": {
             "year": "",
@@ -928,7 +1585,9 @@
             "day": null
         },
         "personality": "いたずら屋",
-        "group": ["その他"],
+        "group": [
+            "その他"
+        ],
         "img": "37.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -450px",
@@ -942,9 +1601,15 @@
         "name_Kana": "あんどろいどたくみ",
         "description": "フレンドリーな匠。昔メイン組と行動していたがある事件に巻き込まれ体の一部を損失、その後サイボーグ化したがあの事件以来外に出るのが怖くて出られない。",
         "world": "1",
-        "race": ["Other"],
-        "fightingStyle": ["Other"],
-        "attribute": ["Fire"],
+        "race": [
+            "Other"
+        ],
+        "fightingStyle": [
+            "Other"
+        ],
+        "attribute": [
+            "Fire"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -952,7 +1617,9 @@
             "day": null
         },
         "personality": "フレンドリー",
-        "group": ["メイン組"],
+        "group": [
+            "メイン組"
+        ],
         "img": "38.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -961,171 +1628,335 @@
     },
     {
         "id": 39,
-        "name": "ドクタースノー",
-        "name_en": "Doctor Snow",
+        "name": [
+            "ドクタースノー"
+        ],
+        "name_en": [
+            "Doctor Snow"
+        ],
         "name_Kana": "どくたーすのー",
-        "description": "雪国の警備員。脱走した囚人を見つけてはシバき倒して刑務所へ送り返している。",
+        "description": [
+            "雪国の警備員。脱走した囚人を見つけてはシバき倒して刑務所へ送り返している。"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Sword"],
-        "attribute": ["Ice"],
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Sword"
+        ],
+        "attribute": [
+            "Ice"
+        ],
         "height": 181,
         "birthday": {
-            "year": "",
+            "year": null,
             "month": 10,
             "day": 11
         },
         "personality": "ワル",
-        "group": ["その他"],
-        "img": "39.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -100px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -50px"
+        "group": "その他",
+        "img": [
+            "39.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -100px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -50px"
+        ],
+        "age": ""
     },
     {
         "id": 40,
-        "name": "ガンマスター",
-        "name_en": "Gunmaster",
+        "name": [
+            "ガンマスター"
+        ],
+        "name_en": [
+            "Gunmaster"
+        ],
         "name_Kana": "がんますたー",
-        "description": "ガンマスター・ハンマーマスターの兄。銃の扱いに関しては弟よりもはるかに長けていたが、不慮の事故で天国で見守っている。",
+        "description": [
+            "ガンマスター・ハンマーマスターの兄。銃の扱いに関しては弟よりもはるかに長けていたが、不慮の事故で天国で見守っている。"
+        ],
         "world": "1",
-        "race": ["棒人間"],
-        "fightingStyle": ["Gun"],
-        "attribute": ["無属性"],
-        "height": null,
+        "race": [
+            "棒人間"
+        ],
+        "fightingStyle": [
+            "Gun"
+        ],
+        "attribute": [
+            "無属性"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "強気",
-        "group": ["その他"],
-        "img": "40.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "その他",
+        "img": [
+            "40.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 41,
-        "name": "ミノル",
-        "name_en": "Minoru",
+        "name": [
+            "ミノル"
+        ],
+        "name_en": [
+            "Minoru"
+        ],
         "name_Kana": "みのる",
-        "description": "星人。ちょっと抜けてるところがある。",
+        "description": [
+            "星人。ちょっと抜けてるところがある。"
+        ],
         "world": "1",
-        "race": ["星人"],
-        "fightingStyle": ["Sword"],
-        "attribute": ["None"],
-        "height": null,
+        "race": [
+            "星人"
+        ],
+        "fightingStyle": [
+            "Sword"
+        ],
+        "attribute": [
+            "None"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "天然",
-        "group": ["Other"],
-        "img": "41.webp",
-        "imgsize": "390%",
-        "imageZoomPosition": "-280px -220px",
-        "imgsize_mobile": "350%",
-        "imageZoomPosition_mobile": "-150px -120px"
+        "group": "Other",
+        "img": [
+            "41.webp"
+        ],
+        "imgsize": [
+            "390%"
+        ],
+        "imageZoomPosition": [
+            "-280px -220px"
+        ],
+        "imgsize_mobile": [
+            "350%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-150px -120px"
+        ],
+        "age": ""
     },
     {
         "id": 42,
-        "name": "ハンテン",
-        "name_en": "Hanten",
+        "name": [
+            "ハンテン"
+        ],
+        "name_en": [
+            "Hanten"
+        ],
         "name_Kana": "はんてん",
-        "description": "ミノルとは双子。気に入らないものは容赦なく切り刻む。",
+        "description": [
+            "ミノルとは双子。気に入らないものは容赦なく切り刻む。"
+        ],
         "world": "1",
-        "race": ["星人"],
-        "fightingStyle": ["Sword"],
-        "attribute": ["Fire"],
-        "height": null,
+        "race": [
+            "星人"
+        ],
+        "fightingStyle": [
+            "Sword"
+        ],
+        "attribute": [
+            "Fire"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "怒りっぽい",
-        "group": ["space police"],
-        "img": "42.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "space police",
+        "img": [
+            "42.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 43,
-        "name": "マスターC.K.",
-        "name_en": "Master C.K.",
+        "name": [
+            "マスターC.K."
+        ],
+        "name_en": [
+            "Master C.K."
+        ],
         "name_Kana": "ますたーしーけー",
-        "description": "バーでを経営している星人ミノルとは交際関係にある。ハンテンはそれを認めておらず前切りかかろうとしたのをミノルに止められた",
+        "description": [
+            "バーでを経営している星人ミノルとは交際関係にある。ハンテンはそれを認めておらず前切りかかろうとしたのをミノルに止められた"
+        ],
         "world": "1",
-        "race": ["星人"],
-        "fightingStyle": ["Gun"],
-        "attribute": ["None"],
-        "height": null,
+        "race": [
+            "星人"
+        ],
+        "fightingStyle": [
+            "Gun"
+        ],
+        "attribute": [
+            "None"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "クール",
-        "group": ["Other"],
-        "img": "43.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Other",
+        "img": [
+            "43.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 44,
-        "name": "ゲンム",
-        "name_en": "Genmu",
+        "name": [
+            "ゲンム"
+        ],
+        "name_en": [
+            "Genmu"
+        ],
         "name_Kana": "げんむ",
-        "description": "宇宙警察の長官。いつもハンテンが制服をボロボロにして返ってくるので困っている。",
+        "description": [
+            "宇宙警察の長官。いつもハンテンが制服をボロボロにして返ってくるので困っている。"
+        ],
         "world": "1",
-        "race": ["星人"],
-        "fightingStyle": ["Sword"],
-        "attribute": ["Light"],
-        "height": null,
+        "race": [
+            "星人"
+        ],
+        "fightingStyle": [
+            "Sword"
+        ],
+        "attribute": [
+            "Light"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "温厚",
-        "group": ["space police"],
-        "img": "44.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "space police",
+        "img": [
+            "44.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 45,
-        "name": "パール・シルベール",
-        "name_en": "Pearl Silbert",
+        "name": [
+            "パール・シルベール"
+        ],
+        "name_en": [
+            "Pearl Silbert"
+        ],
         "name_Kana": "ぱーるしるべーる",
-        "description": "パール家の父、エフェルトに契約憑依し鎌となっている。",
+        "description": [
+            "パール家の父、エフェルトに契約憑依し鎌となっている。"
+        ],
         "world": "1",
-        "race": ["鬼", "天使"],
-        "fightingStyle": ["claw"],
-        "attribute": ["Darkness", "Holy", "Fire"],
-        "height": null,
+        "race": [
+            "鬼",
+            "天使"
+        ],
+        "fightingStyle": [
+            "claw"
+        ],
+        "attribute": [
+            "Darkness",
+            "Holy",
+            "Fire"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "おやばか",
-        "group": ["Nibiru"],
-        "img": "45.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Nibiru",
+        "img": [
+            "45.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 46,
@@ -1134,9 +1965,17 @@
         "name_Kana": "ぱーるえふぇると",
         "description": "パール家の長女でニビルの統括。住みやすい星を見つけては侵略している。",
         "world": "1",
-        "race": ["人間", "鬼"],
-        "fightingStyle": ["Scythe"],
-        "attribute": ["Fire", "Darkness"],
+        "race": [
+            "人間",
+            "鬼"
+        ],
+        "fightingStyle": [
+            "Scythe"
+        ],
+        "attribute": [
+            "Fire",
+            "Darkness"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -1144,7 +1983,9 @@
             "day": null
         },
         "personality": "やさしい",
-        "group": ["Nibiru"],
+        "group": [
+            "Nibiru"
+        ],
         "img": "46.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -1153,52 +1994,100 @@
     },
     {
         "id": 47,
-        "name": "パール・ヌオルト・パーツ",
-        "name_en": "Pearl Nuort Parts",
+        "name": [
+            "パール・ヌオルト・パーツ"
+        ],
+        "name_en": [
+            "Pearl Nuort Parts"
+        ],
         "name_Kana": "ぱーるぬおるとぱーつ",
-        "description": "パール家の長男(パールの弟)。基本的に裏方で姉を見守っている",
+        "description": [
+            "パール家の長男(パールの弟)。基本的に裏方で姉を見守っている"
+        ],
         "world": "1",
-        "race": ["人間", "鬼"],
-        "fightingStyle": ["Magic", "Fist"],
-        "attribute": ["Darkness"],
-        "height": null,
+        "race": [
+            "人間",
+            "鬼"
+        ],
+        "fightingStyle": [
+            "Magic",
+            "Fist"
+        ],
+        "attribute": [
+            "Darkness"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "怠惰",
-        "group": ["Nibiru"],
-        "img": "47.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Nibiru",
+        "img": [
+            "47.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
     },
     {
         "id": 48,
-        "name": "パール・ルシフィナ",
-        "name_en": "Pearl Lucifina",
+        "name": [
+            "パール・ルシフィナ"
+        ],
+        "name_en": [
+            "Pearl Lucifina"
+        ],
         "name_Kana": "ぱーるるしふぃな",
-        "description": "パール家のの母。パーツに憑依して。ネックレスになっている。魔力を与えている。",
+        "description": [
+            "パール家のの母。パーツに憑依して。ネックレスになっている。魔力を与えている。"
+        ],
         "world": "1",
-        "race": ["妖精", "天使"],
-        "fightingStyle": ["Magic"],
-        "attribute": ["Holy"],
-        "height": null,
+        "race": [
+            "妖精",
+            "天使"
+        ],
+        "fightingStyle": [
+            "Magic"
+        ],
+        "attribute": [
+            "Holy"
+        ],
+        "height": "None",
         "age": "永遠の20代",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "やさしい",
-        "group": ["Nibiru"],
-        "img": "48.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Nibiru",
+        "img": [
+            "48.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ]
     },
     {
         "id": 49,
@@ -1207,9 +2096,15 @@
         "name_Kana": "あおきりゅうじ",
         "description": "青木家の長男。ニートしてる。",
         "world": "1",
-        "race": ["人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
+        "race": [
+            "人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
         "height": null,
         "birthday": {
             "year": "",
@@ -1217,7 +2112,9 @@
             "day": null
         },
         "personality": "根暗",
-        "group": ["Other"],
+        "group": [
+            "Other"
+        ],
         "img": "49.webp",
         "imgsize": "290%",
         "imageZoomPosition": "-180px -160px",
@@ -1226,26 +2123,246 @@
     },
     {
         "id": 50,
-        "name": "青木ちさ",
-        "name_en": "Aoki tisa",
+        "name": [
+            "青木ちさ"
+        ],
+        "name_en": [
+            "Aoki tisa"
+        ],
         "name_Kana": "あおきちさ",
-        "description": "青木流時の妹。最近兄の根暗オーラが侵食してきてニートになりそうで困っている。",
+        "description": [
+            "青木流時の妹。最近兄の根暗オーラが侵食してきてニートになりそうで困っているらしい。"
+        ],
         "world": "1",
-        "race": ["人間"],
-        "fightingStyle": ["None"],
-        "attribute": ["None"],
-        "height": null,
+        "race": [
+            "人間"
+        ],
+        "fightingStyle": [
+            "None"
+        ],
+        "attribute": [
+            "None"
+        ],
+        "height": "None",
         "birthday": {
-            "year": "",
+            "year": null,
             "month": null,
             "day": null
         },
         "personality": "陽気",
-        "group": ["Other"],
-        "img": "50.webp",
-        "imgsize": "290%",
-        "imageZoomPosition": "-180px -160px",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "group": "Other",
+        "img": [
+            "50.webp"
+        ],
+        "imgsize": [
+            "290%"
+        ],
+        "imageZoomPosition": [
+            "-180px -160px"
+        ],
+        "imgsize_mobile": [
+            "250%"
+        ],
+        "imageZoomPosition_mobile": [
+            "-90px -80px"
+        ],
+        "age": ""
+    },
+    {
+        "id": 51,
+        "name": [
+            "シークレットマスター"
+        ],
+        "name_en": [
+            "secretmaster"
+        ],
+        "name_Kana": "しーくれっとますたー",
+        "description": [
+            "シークレットなマスターで素顔は誰にもわからない。何もかもがシークレットな男。"
+        ],
+        "world": "1",
+        "race": [
+            "その他"
+        ],
+        "fightingStyle": [
+            "剣"
+        ],
+        "attribute": [
+            "無属性"
+        ],
+        "height": "",
+        "age": "",
+        "birthday": {
+            "year": null,
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": "メイン組",
+        "img": [
+            "51.webp"
+        ],
+        "imgsize": [
+            ""
+        ],
+        "imageZoomPosition": [
+            ""
+        ],
+        "imgsize_mobile": [
+            ""
+        ],
+        "imageZoomPosition_mobile": [
+            ""
+        ]
+    },
+    {
+        "id": 52,
+        "name": [
+            "バグ"
+        ],
+        "name_en": [
+            "bug"
+        ],
+        "name_Kana": "ばぐ",
+        "description": [
+            "この世界のバグ。世界によって見た目を変えるがここでは棒人間に近しい見た目になっている。世の物を狂わせ均衡を崩す。"
+        ],
+        "world": "1",
+        "race": [
+            [
+                "棒人間",
+                "亜人"
+            ]
+        ],
+        "fightingStyle": [
+            "その他"
+        ],
+        "attribute": [
+            [
+                "闇属性",
+                "サイコ属性"
+            ]
+        ],
+        "height": "",
+        "age": "",
+        "birthday": {
+            "year": null,
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": "その他",
+        "img": [
+            "52.webp"
+        ],
+        "imgsize": [
+            ""
+        ],
+        "imageZoomPosition": [
+            ""
+        ],
+        "imgsize_mobile": [
+            ""
+        ],
+        "imageZoomPosition_mobile": [
+            ""
+        ]
+    },
+    {
+        "id": 53,
+        "name": [
+            "士田"
+        ],
+        "name_en": [
+            "shida"
+        ],
+        "name_Kana": "しだ",
+        "description": [
+            "この世を放浪する旅人突然と表れて忽然と消える謎の深い人物。"
+        ],
+        "world": "1",
+        "race": [
+            "人間"
+        ],
+        "fightingStyle": [
+            "なし"
+        ],
+        "attribute": [
+            "無属性"
+        ],
+        "height": "",
+        "age": "",
+        "birthday": {
+            "year": null,
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": "その他",
+        "img": [
+            "53.webp"
+        ],
+        "imgsize": [
+            ""
+        ],
+        "imageZoomPosition": [
+            ""
+        ],
+        "imgsize_mobile": [
+            ""
+        ],
+        "imageZoomPosition_mobile": [
+            ""
+        ]
+    },
+    {
+        "id": 54,
+        "name": [
+            "Doctor"
+        ],
+        "name_en": [
+            "Doctor"
+        ],
+        "name_Kana": "どくたー",
+        "description": [
+            "Xドクターと酷似している見た目をしている人物。<br>言い伝えによると昔この世を治めた人物だったらしいが新たな統治者によりその座から引きずり落されたらしい。<br>その後彼はギャラクティックカンパニーへと就職し現在は経理として仕事をしている。<br>「X」は元々はDoctorの物だったが統治の座から下されてしまった時ドクターへ「X」を託した。"
+        ],
+        "world": "1",
+        "race": [
+            ""
+        ],
+        "fightingStyle": [
+            [
+                "拳",
+                "魔法"
+            ]
+        ],
+        "attribute": [
+            "闇属性"
+        ],
+        "height": "",
+        "age": "",
+        "birthday": {
+            "year": null,
+            "month": null,
+            "day": null
+        },
+        "personality": "",
+        "group": "ギャラクティックカンパニー",
+        "img": [
+            "54.webp"
+        ],
+        "imgsize": [
+            ""
+        ],
+        "imageZoomPosition": [
+            ""
+        ],
+        "imgsize_mobile": [
+            ""
+        ],
+        "imageZoomPosition_mobile": [
+            ""
+        ]
     }
 ]

@@ -59,10 +59,10 @@ const labels = {
 let relationGroups = []; // relationデータ保持用
 
 // お気に入り機能
-let favorites = JSON.parse(localStorage.getItem('character-favorites') || '[]');
+let favorites = [];
 
-// ユーザーメモ機能（IndexedDBに移行予定）
-let userNotes = JSON.parse(localStorage.getItem('character-user-notes') || '{}');
+// ユーザーメモ機能
+let userNotes = {};
 
 // フィルター状態管理
 let favoritesOnly = false;
@@ -813,58 +813,14 @@ async function initializeApp() {
     // IndexedDBを初期化
     await characterDB.init();
     
-    // localStorageからIndexedDBにデータを移行
-    await migrateFromLocalStorage();
-    
     // データを読み込み
     await loadDataFromIndexedDB();
     
     console.log('アプリケーション初期化完了');
   } catch (error) {
     console.error('アプリケーション初期化エラー:', error);
-    // IndexedDBが使用できない場合はlocalStorageを使用
-    console.log('localStorageモードで動作します');
-  }
-}
-
-/**
- * localStorageからIndexedDBにデータを移行
- */
-async function migrateFromLocalStorage() {
-  try {
-    // お気に入りデータの移行
-    const storedFavorites = localStorage.getItem('character-favorites');
-    if (storedFavorites) {
-      const favoriteIds = JSON.parse(storedFavorites);
-      await characterDB.syncFavorites(favoriteIds);
-      console.log('お気に入りデータを移行しました');
-    }
-    
-    // メモデータの移行
-    const storedNotes = localStorage.getItem('character-user-notes');
-    if (storedNotes) {
-      const notesData = JSON.parse(storedNotes);
-      for (const [charId, content] of Object.entries(notesData)) {
-        if (content.trim()) {
-          await characterDB.saveNote(charId, content);
-        }
-      }
-      console.log('メモデータを移行しました');
-    }
-    
-    // 設定データの移行（今後の拡張用）
-    const themeSettings = localStorage.getItem('character-theme-settings');
-    if (themeSettings) {
-      await characterDB.saveSetting('theme', JSON.parse(themeSettings));
-    }
-    
-    // 移行完了後、localStorageのデータを削除（オプション）
-    // localStorage.removeItem('character-favorites');
-    // localStorage.removeItem('character-user-notes');
-    // localStorage.removeItem('character-theme-settings');
-    
-  } catch (error) {
-    console.error('データ移行エラー:', error);
+    // IndexedDBが使用できない場合でも継続
+    console.log('IndexedDBなしモードで動作します');
   }
 }
 
@@ -885,11 +841,11 @@ async function loadDataFromIndexedDB() {
     console.log('IndexedDBからデータを読み込みました');
   } catch (error) {
     console.error('データ読み込みエラー:', error);
-    // エラー時はlocalStorageから読み込み
-    favorites = JSON.parse(localStorage.getItem('character-favorites') || '[]');
-    userNotes = JSON.parse(localStorage.getItem('character-user-notes') || '{}');
-    customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
-    characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
+    // エラーが発生した場合はデフォルト値で初期化
+    favorites = [];
+    userNotes = {};
+    customTags = {};
+    characterTags = {};
   }
 }
 
@@ -928,14 +884,8 @@ async function loadAllMemosToCache() {
     });
   } catch (error) {
     console.error('メモキャッシュ読み込みエラー:', error);
-    // エラー時はlocalStorageから読み込み
-    try {
-      userNotes = JSON.parse(localStorage.getItem('character-user-notes') || '{}');
-      console.log('localStorageからメモデータを読み込みました');
-    } catch (localError) {
-      console.error('localStorage読み込みエラー:', localError);
-      userNotes = {};
-    }
+    // エラー時はデフォルト値で初期化
+    userNotes = {};
   }
 }
 
@@ -1183,8 +1133,10 @@ function showMiniPopup(cardEl, char) {
  * @param {number} charId - キャラクターID
  */
 async function loadMemoForPopup(popup, charId) {
+  const shortMemo = (i) => i.length > 50 ? i.substring(0, 47) + '...' : i;
   try {
     let memo = '';
+    
     if (characterDB.db) {
       memo = await characterDB.getNote(charId);
       // キャッシュも更新
@@ -1198,42 +1150,22 @@ async function loadMemoForPopup(popup, charId) {
     }
     
     if (memo) {
-      // メモが長い場合は省略表示
-      const shortMemo = memo.length > 50 ? memo.substring(0, 47) + '...' : memo;
-      const memoHtml = `<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.1);font-size:0.85em;color:#555;">
-        <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#666;">
-            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-            <path d="M15 5l4 4"/>
-          </svg>
-          <span style="font-weight:500;color:#666;">メモ</span>
-        </div>
-        <div style="line-height:1.3;overflow:hidden;">${shortMemo}</div>
-      </div>`;
-      
-      // ポップアップが存在し、まだ表示中の場合のみ追加
+      let shorted = shortMemo(memo);
       if (popup && popup.parentNode) {
-        popup.innerHTML += memoHtml;
+        popup.innerHTML += `<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.1);font-size:0.85em;color:#555;">
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#666;">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+              <path d="M15 5l4 4"/>
+            </svg>
+            <span style="font-weight:500;color:#666;">メモ</span>
+          </div>
+          <div style="line-height:1.3;overflow:hidden;">${shorted}</div>
+        </div>`;
       }
     }
   } catch (error) {
     console.error('ミニポップアップメモ取得エラー:', error);
-    // エラー時はキャッシュから取得を試行
-    const memo = userNotes[charId] || '';
-    if (memo && popup && popup.parentNode) {
-      const shortMemo = memo.length > 50 ? memo.substring(0, 47) + '...' : memo;
-      const memoHtml = `<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.1);font-size:0.85em;color:#555;">
-        <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#666;">
-            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-            <path d="M15 5l4 4"/>
-          </svg>
-          <span style="font-weight:500;color:#666;">メモ</span>
-        </div>
-        <div style="line-height:1.3;overflow:hidden;">${shortMemo}</div>
-      </div>`;
-      popup.innerHTML += memoHtml;
-    }
   }
 }
 
@@ -1330,11 +1262,8 @@ function filterCharacters() {
       const favoritesMatch = activeFilters.favorites.length === 0 ||
         favorites.includes(c.id);
       const memoMatch = activeFilters.memo.length === 0 ||
-        (characterDB.db ? 
-          // IndexedDBの場合はキャッシュをチェック（非同期取得は重いため）
-          userNotes[c.id] && userNotes[c.id].trim() !== '' :
-          // localStorageの場合
-          userNotes[c.id] && userNotes[c.id].trim() !== '');
+        // メモフィルター（IndexedDBのキャッシュからチェック）
+        userNotes[c.id] && userNotes[c.id].trim() !== '';
       
       // カスタムタグフィルター
       const customTagsMatch = activeFilters.customTags.length === 0 ||
@@ -2178,16 +2107,9 @@ async function toggleFavorite(charId) {
   
   try {
     // IndexedDBに保存
-    if (characterDB.db) {
-      await characterDB.syncFavorites(favorites);
-    } else {
-      // フォールバック: localStorage
-      localStorage.setItem('character-favorites', JSON.stringify(favorites));
-    }
+    await characterDB.syncFavorites(favorites);
   } catch (error) {
     console.error('お気に入り保存エラー:', error);
-    // エラー時はlocalStorageにフォールバック
-    localStorage.setItem('character-favorites', JSON.stringify(favorites));
   }
   
   updateFavoriteUI(charId);
@@ -2331,33 +2253,22 @@ async function saveUserNote(charId, note) {
   const sanitizedNote = escapeHtml(note.trim());
   
   try {
-    if (characterDB.db) {
-      // IndexedDBに保存
-      if (sanitizedNote) {
-        await characterDB.saveNote(charId, sanitizedNote);
-        userNotes[charId] = sanitizedNote; // キャッシュも更新
-      } else {
-        await characterDB.deleteNote(charId);
-        delete userNotes[charId]; // キャッシュからも削除
-      }
+    // IndexedDBに保存
+    if (sanitizedNote) {
+      await characterDB.saveNote(charId, sanitizedNote);
+      userNotes[charId] = sanitizedNote; // キャッシュも更新
     } else {
-      // フォールバック: localStorage
-      if (sanitizedNote) {
-        userNotes[charId] = sanitizedNote;
-      } else {
-        delete userNotes[charId];
-      }
-      localStorage.setItem('character-user-notes', JSON.stringify(userNotes));
+      await characterDB.deleteNote(charId);
+      delete userNotes[charId]; // キャッシュからも削除
     }
   } catch (error) {
     console.error('メモ保存エラー:', error);
-    // エラー時はlocalStorageにフォールバック
+    // エラー時もキャッシュだけは更新しておく
     if (sanitizedNote) {
       userNotes[charId] = sanitizedNote;
     } else {
       delete userNotes[charId];
     }
-    localStorage.setItem('character-user-notes', JSON.stringify(userNotes));
   }
   
   // メモ数を更新
@@ -2651,14 +2562,8 @@ function showCustomTagsFromMenu() {
 async function showCustomTagsPopup() {
   try {
     // カスタムタグをIndexedDBから読み込み
-    if (characterDB.db) {
-      customTags = await characterDB.getAllCustomTags();
-      characterTags = await characterDB.getAllCharacterTags();
-    } else {
-      // localStorage フォールバック
-      customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
-      characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
-    }
+    customTags = await characterDB.getAllCustomTags();
+    characterTags = await characterDB.getAllCharacterTags();
     
     // ポップアップを表示
     document.getElementById('customTagsPopup').style.display = 'block';
@@ -2668,9 +2573,9 @@ async function showCustomTagsPopup() {
     
   } catch (error) {
     console.error('カスタムタグ読み込みエラー:', error);
-    // エラー時はローカルストレージから読み込み
-    customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
-    characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
+    // エラー時はデフォルト値で初期化
+    customTags = {};
+    characterTags = {};
     document.getElementById('customTagsPopup').style.display = 'block';
     renderCustomTagsList();
   }
@@ -2781,13 +2686,7 @@ async function createNewTag() {
     };
     
     // IndexedDBに保存
-    if (characterDB.db) {
-      await characterDB.saveCustomTag(tagId, tagData);
-    } else {
-      // localStorage フォールバック
-      customTags[tagId] = tagData;
-      localStorage.setItem('custom-tags', JSON.stringify(customTags));
-    }
+    await characterDB.saveCustomTag(tagId, tagData);
     
     // メモリ上のデータも更新
     customTags[tagId] = tagData;
@@ -2869,13 +2768,7 @@ async function updateCustomTag(tagId) {
     };
     
     // IndexedDBに保存
-    if (characterDB.db) {
-      await characterDB.saveCustomTag(tagId, tagData);
-    } else {
-      // localStorage フォールバック
-      customTags[tagId] = tagData;
-      localStorage.setItem('custom-tags', JSON.stringify(customTags));
-    }
+    await characterDB.saveCustomTag(tagId, tagData);
     
     // メモリ上のデータも更新
     customTags[tagId] = tagData;
@@ -2918,13 +2811,7 @@ async function deleteCustomTag(tagId) {
   
   try {
     // IndexedDBから削除
-    if (characterDB.db) {
-      await characterDB.deleteCustomTag(tagId);
-    } else {
-      // localStorage フォールバック
-      delete customTags[tagId];
-      localStorage.setItem('custom-tags', JSON.stringify(customTags));
-    }
+    await characterDB.deleteCustomTag(tagId);
     
     // キャラクターからもタグを削除
     Object.keys(characterTags).forEach(async (charId) => {
@@ -2935,11 +2822,7 @@ async function deleteCustomTag(tagId) {
         characterTags[charId] = tags;
         
         // IndexedDBに保存
-        if (characterDB.db) {
-          await characterDB.saveCharacterTags(parseInt(charId), tags);
-        } else {
-          localStorage.setItem('character-tags', JSON.stringify(characterTags));
-        }
+        await characterDB.saveCharacterTags(parseInt(charId), tags);
       }
     });
     
@@ -3058,12 +2941,7 @@ async function toggleTagSelection(charId, tagId) {
   
   try {
     // IndexedDBに保存
-    if (characterDB.db) {
-      await characterDB.saveCharacterTags(charId, tags);
-    } else {
-      // localStorage フォールバック
-      localStorage.setItem('character-tags', JSON.stringify(characterTags));
-    }
+    await characterDB.saveCharacterTags(charId, tags);
     
     // UI更新
     renderTagSelectionList(charId);
@@ -3129,12 +3007,7 @@ async function removeTagFromCharacter(charId, tagId) {
     
     try {
       // IndexedDBに保存
-      if (characterDB.db) {
-        await characterDB.saveCharacterTags(charId, tags);
-      } else {
-        // localStorage フォールバック
-        localStorage.setItem('character-tags', JSON.stringify(characterTags));
-      }
+      await characterDB.saveCharacterTags(charId, tags);
       
       // UI更新
       updateCharacterTagDisplay(charId);
@@ -3157,21 +3030,14 @@ async function removeTagFromCharacter(charId, tagId) {
  */
 async function loadCustomTagsFromIndexedDB() {
   try {
-    if (characterDB.db) {
-      customTags = await characterDB.getAllCustomTags();
-      characterTags = await characterDB.getAllCharacterTags();
-      console.log('カスタムタグデータをIndexedDBから読み込みました');
-    } else {
-      // フォールバック: localStorage
-      customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
-      characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
-      console.log('カスタムタグデータをlocalStorageから読み込みました');
-    }
+    customTags = await characterDB.getAllCustomTags();
+    characterTags = await characterDB.getAllCharacterTags();
+    console.log('カスタムタグデータをIndexedDBから読み込みました');
   } catch (error) {
     console.error('カスタムタグ読み込みエラー:', error);
-    // エラー時はlocalStorageから読み込み
-    customTags = JSON.parse(localStorage.getItem('custom-tags') || '{}');
-    characterTags = JSON.parse(localStorage.getItem('character-tags') || '{}');
+    // エラー時はデフォルト値で初期化
+    customTags = {};
+    characterTags = {};
   }
 }
 
