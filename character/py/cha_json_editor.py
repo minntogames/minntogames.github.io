@@ -61,7 +61,7 @@ class ChaEditor(tk.Tk):
         self._update_edit_indicator()
 
     def _update_buffer_from_fields(self, char_idx, style_idx):
-        """現在のフィールド内容を編集バッファに反映"""
+        """現在のフィールド内容を編集バッファに反映（条件式準拠）"""
         char = self._get_buffer(char_idx)
         
         for key, entry in self.fields.items():
@@ -70,54 +70,75 @@ class ChaEditor(tk.Tk):
             else:
                 text = entry.get()
             
-            if key in self.style_array_fields:
-                val = [x.strip() for x in text.split('\n') if x.strip()]
-                arr = char.get(key, [])
-                
-                # arrが文字列の場合は配列に変換
-                if isinstance(arr, str):
-                    arr = [arr] if arr else ['']
-                elif not isinstance(arr, list):
-                    arr = ['']
-                
-                if arr and isinstance(arr[0], list):
-                    while len(arr) <= style_idx:
-                        arr.append([])
-                    arr[style_idx] = val if len(val) > 1 else (val[0] if val else '')
-                    char[key] = arr
+            # 条件式に基づくフィールド処理
+            if key in self.never_array_fields:
+                # 未配列フィールド：常に単一値
+                if key == 'id':
+                    try:
+                        char[key] = int(text) if text else 0
+                    except:
+                        char[key] = 0
+                elif key == 'height':
+                    try:
+                        char[key] = int(text) if text else None
+                    except:
+                        char[key] = None
                 else:
-                    if style_idx == 0:
-                        if len(arr) > 1:
-                            # arrがリストであることを確認してから代入
-                            if isinstance(arr, list):
-                                arr[0] = val if len(val) > 1 else (val[0] if val else '')
-                                char[key] = arr
-                            else:
-                                char[key] = [val if len(val) > 1 else (val[0] if val else '')]
-                        else:
-                            char[key] = [val if len(val) > 1 else (val[0] if val else '')]
+                    char[key] = text
+                    
+            elif key in self.style_array_fields:
+                # スタイル配列対応フィールド
+                val = [x.strip() for x in text.split('\n') if x.strip()]
+                current_value = char.get(key, '')
+                
+                if key in self.nested_array_fields:
+                    # 配列内配列フィールド（race, fightingStyle, attribute）
+                    if not isinstance(current_value, list):
+                        current_value = [[current_value]] if current_value else [['']]
+                    
+                    # 必要な要素数まで拡張
+                    while len(current_value) <= style_idx:
+                        current_value.append([''])
+                    
+                    # 値の設定
+                    if len(val) > 1:
+                        current_value[style_idx] = val
                     else:
-                        new_arr = []
-                        for i in range(style_idx+1):
-                            if isinstance(arr, list) and i < len(arr):
-                                new_arr.append(arr[i])
-                            else:
-                                new_arr.append('')
-                        new_arr[style_idx] = val if len(val) > 1 else (val[0] if val else '')
-                        char[key] = new_arr
+                        current_value[style_idx] = val if val else ['']
+                        
+                    char[key] = current_value
+                else:
+                    # その他のスタイル配列対応フィールド
+                    if not isinstance(current_value, list):
+                        current_value = [current_value] if current_value else ['']
+                    
+                    # 必要な要素数まで拡張
+                    while len(current_value) <= style_idx:
+                        current_value.append('')
+                    
+                    # 値の設定
+                    if len(val) > 1:
+                        current_value[style_idx] = val
+                    else:
+                        current_value[style_idx] = val[0] if val else ''
+                        
+                    char[key] = current_value
+                    
+            elif key in self.array_fields:
+                # 常に配列のフィールド（group等）
+                val = [x.strip() for x in text.split('\n') if x.strip()]
+                char[key] = val if val else ['']
+                
             elif key in self.multi_line_fields:
+                # 複数行フィールド
                 val = [x.strip() for x in text.split('\n') if x.strip()]
                 char[key] = val if len(val) > 1 else (val[0] if val else '')
-            elif key == 'id' or key == 'height':
-                try:
-                    val = int(text)
-                except Exception:
-                    val = text
-                char[key] = val
+                
             else:
+                # その他のフィールド
                 char[key] = text
         
-        # birthdayフィールドの処理
+        # birthdayフィールドの処理（条件式準拠）
         b = {}
         for part in ['year', 'month', 'day']:
             v = self.birthday_fields[part].get().strip()
@@ -125,9 +146,17 @@ class ChaEditor(tk.Tk):
                 b[part] = None
             else:
                 try:
-                    b[part] = int(v)
+                    if part == 'year':
+                        # yearは文字列型
+                        b[part] = v
+                    else:
+                        # month, dayは数値型
+                        b[part] = int(v)
                 except Exception:
-                    b[part] = v
+                    if part == 'year':
+                        b[part] = v
+                    else:
+                        b[part] = None
         char['birthday'] = b
         
         # 編集バッファを更新
@@ -410,9 +439,14 @@ $Shortcut.Save()
         self.tk_img = None  # 画像参照保持用
 
         self.fields = {}
-        self.labels = ['id', 'name', 'name_en', 'name_Kana', 'description', 'world', 'race', 'fightingStyle', 'attribute', 'height', 'age', 'personality', 'group', 'img', 'imgsize', 'imageZoomPosition', 'imgsize_mobile', 'imageZoomPosition_mobile']
-        self.style_array_fields = ['name', 'name_en', 'description', 'race', 'fightingStyle', 'attribute', 'img', 'imgsize', 'imageZoomPosition', 'imgsize_mobile', 'imageZoomPosition_mobile']
-        self.multi_line_fields = ['description', 'fightingStyle', 'attribute', 'race', 'group']
+        self.labels = ['id', 'name', 'name_en', 'name_Kana', 'description', 'world', 'race', 'fightingStyle', 'attribute', 'height', 'age', 'personality', 'group', 'img', 'imgsize', 'imgThumbsize', 'imageZoomPosition', 'imageThumbPosition', 'imgsize_mobile', 'imageZoomPosition_mobile']
+        
+        # 条件式に基づくフィールド分類
+        self.never_array_fields = ['id', 'name_Kana', 'world', 'height', 'age', 'personality', 'imgsize', 'imageZoomPosition', 'imgsize_mobile', 'imageZoomPosition_mobile']  # 未配列
+        self.style_array_fields = ['name', 'name_en', 'description', 'race', 'fightingStyle', 'attribute', 'img', 'imgThumbsize', 'imageThumbPosition']  # 複数スタイル対応
+        self.array_fields = ['race', 'fightingStyle', 'attribute', 'group', 'img', 'imgThumbsize', 'imageThumbPosition']  # 常に配列
+        self.nested_array_fields = ['race', 'fightingStyle', 'attribute']  # 配列内配列
+        self.multi_line_fields = ['description', 'fightingStyle', 'attribute', 'race', 'group', 'imgThumbsize', 'imageThumbPosition']
         # settingsから選択肢取得
         self.choices = {}
         try:
@@ -509,6 +543,9 @@ $Shortcut.Save()
         
         # すべての編集バッファを実際のデータに反映
         self._save_all_buffers()
+        
+        # 条件式に基づくデータ正規化
+        self._normalize_characters_data()
         
         # dataの更新
         self.data[1:] = self.characters
@@ -628,68 +665,81 @@ $Shortcut.Save()
         self.selected_index = idx
         char_idx, style_idx = self.listbox_items[idx]
         
-        # 編集バッファからデータを取得（なければ元データをコピー）
+        # 編集バッファからデータを取得
         char = self._get_buffer(char_idx)
         
-        # スタイルごとに分岐
+        # 条件式に基づくフィールド表示
         for key, entry in self.fields.items():
             val = char.get(key, '')
-            if key in self.style_array_fields:
-                # 多次元配列対応
-                v = ''
-                if isinstance(val, list):
-                    # [[...], [...]] or [...] or ''
-                    if val and len(val) > 0 and isinstance(val[0], list):
-                        if style_idx is not None and style_idx < len(val):
-                            v = val[style_idx]
-                        else:
-                            v = ''
-                    else:
-                        v = val[style_idx] if style_idx is not None and style_idx < len(val) else ''
-                elif isinstance(val, str):
-                    # 文字列の場合は最初のスタイルのみ表示
-                    v = val if style_idx == 0 else ''
-                else:
-                    v = val if style_idx == 0 else ''
+            
+            if key in self.never_array_fields:
+                # 未配列フィールド：常に単一値表示
+                display_val = str(val) if val is not None else ''
                 
-                if isinstance(entry, tk.Text):
-                    entry.delete('1.0', tk.END)
-                    if isinstance(v, list):
-                        entry.insert('1.0', '\n'.join(str(x) for x in v))
+            elif key in self.style_array_fields:
+                # スタイル配列対応フィールド
+                display_val = ''
+                
+                if key in self.nested_array_fields:
+                    # 配列内配列フィールド（race, fightingStyle, attribute）
+                    if isinstance(val, list):
+                        if style_idx is not None and style_idx < len(val):
+                            style_data = val[style_idx]
+                            if isinstance(style_data, list):
+                                display_val = '\n'.join(str(x) for x in style_data if x)
+                            else:
+                                display_val = str(style_data) if style_data else ''
+                        else:
+                            display_val = ''
                     else:
-                        entry.insert('1.0', str(v))
+                        # 文字列の場合、最初のスタイルのみ表示
+                        display_val = str(val) if style_idx == 0 and val else ''
                 else:
-                    entry.delete(0, tk.END)
-                    entry.insert(0, str(v))
-            elif key in self.multi_line_fields and isinstance(entry, tk.Text):
+                    # その他のスタイル配列対応フィールド
+                    if isinstance(val, list):
+                        if style_idx is not None and style_idx < len(val):
+                            style_data = val[style_idx]
+                            if isinstance(style_data, list):
+                                display_val = '\n'.join(str(x) for x in style_data if x)
+                            else:
+                                display_val = str(style_data) if style_data else ''
+                        else:
+                            display_val = ''
+                    else:
+                        # 文字列の場合、最初のスタイルのみ表示
+                        display_val = str(val) if style_idx == 0 and val else ''
+                        
+            elif key in self.array_fields:
+                # 常に配列のフィールド
                 if isinstance(val, list):
-                    entry.delete('1.0', tk.END)
-                    entry.insert('1.0', '\n'.join(str(x) for x in val))
+                    display_val = '\n'.join(str(x) for x in val if x)
                 else:
-                    entry.delete('1.0', tk.END)
-                    entry.insert('1.0', str(val))
+                    display_val = str(val) if val else ''
+                    
             else:
-                if isinstance(entry, tk.Text):
-                    entry.delete('1.0', tk.END)
-                    entry.insert('1.0', str(val))
-                else:
-                    entry.delete(0, tk.END)
-                    entry.insert(0, str(val))
-        # birthday object対応
+                # その他のフィールド
+                display_val = str(val) if val is not None else ''
+            
+            # 表示
+            if isinstance(entry, tk.Text):
+                entry.delete('1.0', tk.END)
+                entry.insert('1.0', display_val)
+            else:
+                entry.delete(0, tk.END)
+                entry.insert(0, display_val)
+                
+        # birthday object対応（条件式準拠）
         b = char.get('birthday', {})
         if isinstance(b, dict):
             for part in ['year', 'month', 'day']:
-                v = b.get(part, '')
+                v = b.get(part, None)
                 self.birthday_fields[part].delete(0, tk.END)
-                self.birthday_fields[part].insert(0, str(v) if v is not None else '')
-        elif isinstance(b, str):
-            self.birthday_fields['year'].delete(0, tk.END)
-            self.birthday_fields['year'].insert(0, b)
-            self.birthday_fields['month'].delete(0, tk.END)
-            self.birthday_fields['day'].delete(0, tk.END)
+                if v is not None:
+                    self.birthday_fields[part].insert(0, str(v))
         else:
             for part in ['year', 'month', 'day']:
                 self.birthday_fields[part].delete(0, tk.END)
+                
         self.selected_char_idx = char_idx
         self.selected_style_idx = style_idx
 
@@ -766,38 +816,45 @@ $Shortcut.Save()
 
     def add_character(self):
         new_id = self._get_next_id()
+        # 条件式に基づく新規キャラクター作成
         new_char = {
-            'id': new_id,
-            'name': ['新規キャラ'],
-            'name_en': [''],
-            'name_Kana': '',
-            'description': [''],
-            'world': '',
-            'race': [''],
-            'fightingStyle': [''],
-            'attribute': [''],
-            'height': '',
-            'age': '',
-            'birthday': {'year': '', 'month': '', 'day': ''},
-            'personality': '',
-            'group': '',
-            'img': [f'{new_id}.webp'],  # IDに基づいた初期画像ファイル名
-            'imgsize': [''],
-            'imageZoomPosition': [''],
-            'imgsize_mobile': [''],
-            'imageZoomPosition_mobile': ['']
+            'id': new_id,                                    # number型(未配列)
+            'name': '新規キャラ',                           # string型(複数は配列)
+            'name_en': '',                                   # string型(複数は配列)
+            'name_Kana': '',                                 # string型(未配列)
+            'description': '',                               # string型(複数は配列)
+            'world': '',                                     # string型(未配列)
+            'race': [''],                                    # 配列(string型)(複数は配列内配列)
+            'fightingStyle': [''],                           # 配列(string型)(複数は配列内配列)
+            'attribute': [''],                               # 配列(string型)(複数は配列内配列)
+            'height': None,                                  # number型(未配列)
+            'age': '',                                       # string型(未配列)
+            'birthday': {                                    # オブジェクト
+                'year': None,                                # string型(未配列)
+                'month': None,                               # number型(未配列)
+                'day': None                                  # number型(未配列)
+            },
+            'personality': '',                               # string型(未配列)
+            'group': [''],                                   # 配列(string型)(未配列)
+            'img': [f'{new_id}.webp'],                      # 配列(string型)(複数は配列)
+            'imgsize': '',                                   # string型(未配列)
+            'imgThumbsize': [''],                           # 配列(string型)(複数は配列)
+            'imageZoomPosition': '',                         # string型(未配列)
+            'imageThumbPosition': [''],                     # 配列(string型)(複数は配列)
+            'imgsize_mobile': '',                           # string型(未配列)
+            'imageZoomPosition_mobile': ''                  # string型(未配列)
         }
         new_char_idx = len(self.characters)
         self.characters.append(new_char)
         self.data[1:] = self.characters
-        self.build_listbox_items(preserve_selection=False)  # 新規作成時は選択状態をクリア
+        self.build_listbox_items(preserve_selection=False)
         
         # 新しく作成されたキャラクターを選択
         for i, (char_idx, style_idx) in enumerate(self.listbox_items):
             if char_idx == new_char_idx and style_idx == 0:
                 self.listbox.selection_clear(0, tk.END)
                 self.listbox.selection_set(i)
-                self.listbox.see(i)  # スクロール位置も調整
+                self.listbox.see(i)
                 self.selected_index = i
                 self.listbox.event_generate('<<ListboxSelect>>')
                 break
@@ -854,25 +911,40 @@ $Shortcut.Save()
         idx = sel[0]
         char_idx, style_idx = self.listbox_items[idx]
         char = self.characters[char_idx]
-        # name, name_en, description, race, fightingStyle, attribute, img など配列に追加
+        
+        # 条件式に基づくスタイル追加
         for key in self.style_array_fields:
-            arr = char.get(key, [])
-            # 多次元配列化
-            if arr and isinstance(arr[0], list):
-                arr.insert(style_idx+1 if style_idx is not None else len(arr), [''])
-            else:
-                # 1次元→2次元
-                arr2 = []
-                if isinstance(arr, list) and arr:
-                    for v in arr:
-                        arr2.append([v] if not isinstance(v, list) else v)
+            current_value = char.get(key, '')
+            
+            if key in self.nested_array_fields:
+                # 配列内配列フィールド（race, fightingStyle, attribute）
+                if isinstance(current_value, list):
+                    if len(current_value) > 0 and isinstance(current_value[0], list):
+                        # 既に配列内配列の場合
+                        current_value.insert(style_idx+1 if style_idx is not None else len(current_value), [''])
+                    else:
+                        # 1次元配列の場合は2次元配列に変換
+                        arr2 = []
+                        for v in current_value:
+                            arr2.append([v] if v else [''])
+                        arr2.insert(style_idx+1 if style_idx is not None else len(arr2), [''])
+                        char[key] = arr2
                 else:
-                    arr2 = [['']]
-                arr2.insert(style_idx+1 if style_idx is not None else len(arr2), [''])
-                arr = arr2
-            char[key] = arr
+                    # 文字列の場合は配列内配列に変換
+                    if current_value:
+                        char[key] = [[current_value], ['']]
+                    else:
+                        char[key] = [[''], ['']]
+            else:
+                # その他のスタイル配列対応フィールド
+                if isinstance(current_value, list):
+                    current_value.insert(style_idx+1 if style_idx is not None else len(current_value), '')
+                else:
+                    # 文字列の場合は配列に変換
+                    char[key] = [current_value, '']
+                    
         self.data[1:] = self.characters
-        self.build_listbox_items(preserve_selection=False)  # 新規スタイル追加時は選択状態をクリア
+        self.build_listbox_items(preserve_selection=False)
         
         # 新スタイルを選択
         target_style_idx = style_idx + 1 if style_idx is not None else 1
@@ -880,7 +952,7 @@ $Shortcut.Save()
             if cidx == char_idx and sidx == target_style_idx:
                 self.listbox.selection_clear(0, tk.END)
                 self.listbox.selection_set(i)
-                self.listbox.see(i)  # スクロール位置も調整
+                self.listbox.see(i)
                 self.selected_index = i
                 self.listbox.event_generate('<<ListboxSelect>>')
                 break
@@ -918,6 +990,75 @@ $Shortcut.Save()
                     break
             
             self.save_changes()
+
+    def _normalize_characters_data(self):
+        """条件式に基づくキャラクターデータの正規化"""
+        for char in self.characters:
+            # 未配列フィールドの正規化（常に文字列または単一値）
+            for field in self.never_array_fields:
+                if field in char:
+                    value = char[field]
+                    if isinstance(value, list):
+                        if len(value) == 1:
+                            char[field] = value[0]
+                        elif len(value) == 0:
+                            if field == 'height':
+                                char[field] = None
+                            else:
+                                char[field] = ''
+            
+            # スタイル配列対応フィールドの正規化
+            for field in self.style_array_fields:
+                if field in char:
+                    value = char[field]
+                    
+                    if field in self.nested_array_fields:
+                        # 配列内配列フィールドの正規化
+                        if isinstance(value, list):
+                            if len(value) == 1:
+                                inner_array = value[0]
+                                if isinstance(inner_array, list):
+                                    if len(inner_array) == 1:
+                                        # [[value]] -> value
+                                        char[field] = inner_array[0] if inner_array[0] else ''
+                                    elif len(inner_array) == 0:
+                                        # [[]] -> ''
+                                        char[field] = ''
+                                else:
+                                    # [value] -> value
+                                    char[field] = inner_array if inner_array else ''
+                            elif len(value) == 0:
+                                char[field] = ''
+                    else:
+                        # その他のスタイル配列対応フィールドの正規化
+                        if isinstance(value, list):
+                            if len(value) == 1:
+                                char[field] = value[0] if value[0] else ''
+                            elif len(value) == 0:
+                                char[field] = ''
+            
+            # 配列フィールドの正規化
+            for field in self.array_fields:
+                if field in char:
+                    value = char[field]
+                    if isinstance(value, list):
+                        if len(value) == 0 or (len(value) == 1 and value[0] == ''):
+                            char[field] = ['']
+                    elif not value:
+                        char[field] = ['']
+            
+            # 数値フィールドの正規化
+            if 'height' in char:
+                if char['height'] == '' or char['height'] == 0:
+                    char['height'] = None
+            
+            # birthday フィールドの正規化
+            if 'birthday' in char and isinstance(char['birthday'], dict):
+                birthday = char['birthday']
+                for part in ['year', 'month', 'day']:
+                    if part in birthday:
+                        if birthday[part] == '' or birthday[part] == 0:
+                            birthday[part] = None
 
 
 if __name__ == '__main__':
