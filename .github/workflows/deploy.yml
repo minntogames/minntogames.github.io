@@ -1,0 +1,23 @@
+name: Deploy to Coreserver
+
+on:
+  push:
+    branches:
+      - main  # デプロイするブランチ名（例: main または master）
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Upload to Coreserver via SFTP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USER }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          source: "."
+          target: ${{ secrets.SFTP_TARGET_DIR }}
+          strip_components: 1
