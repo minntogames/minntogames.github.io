@@ -2,6 +2,5 @@
 deny from all
 </Files>
 Options -Indexes
-ErrorDocument 404 /404.html
-DirectoryIndex https://minntogames.github.io/index.html       
+ErrorDocument 404 /404.html   
 order deny,allow
