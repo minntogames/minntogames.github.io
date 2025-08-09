@@ -1,6 +1,7 @@
 <?php
-// URLパラメータからIDを取得
+// URLパラメータからIDとimgインデックスを取得
 $characterId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+$imgIndex = isset($_GET['img']) ? (int)$_GET['img'] : 0;
 $characterData = null;
 $ogTitle = 'キャラ図鑑';
 $ogDescription = 'キャラクター図鑑です';
@@ -24,27 +25,31 @@ if ($characterId) {
     
     // キャラクターデータが見つかった場合、メタタグ用のデータを設定
     if ($characterData) {
-        $characterName = is_array($characterData['name']) ? $characterData['name'][0] : $characterData['name'];
+        // 名前の処理（imgIndexに対応）
+        $nameArray = is_array($characterData['name']) ? $characterData['name'] : [$characterData['name']];
+        $characterName = isset($nameArray[$imgIndex]) ? $nameArray[$imgIndex] : $nameArray[0];
         $ogTitle = htmlspecialchars($characterName) . ' - キャラ図鑑';
         
+        // 説明の処理（imgIndexに対応）
         $description = '';
         if (isset($characterData['description'])) {
-            if (is_array($characterData['description'])) {
-                $description = strip_tags($characterData['description'][0]);
-            } else {
-                $description = strip_tags($characterData['description']);
-            }
-            // 長すぎる場合は切り詰める
-            if (strlen($description) > 160) {
-                $description = mb_substr($description, 0, 157) . '...';
+            $descArray = is_array($characterData['description']) ? $characterData['description'] : [$characterData['description']];
+            $targetDesc = isset($descArray[$imgIndex]) ? $descArray[$imgIndex] : $descArray[0];
+            if ($targetDesc) {
+                $description = strip_tags($targetDesc);
+                // 長すぎる場合は切り詰める
+                if (strlen($description) > 160) {
+                    $description = mb_substr($description, 0, 157) . '...';
+                }
             }
         }
         $ogDescription = htmlspecialchars($description ? $description : $characterName . 'のキャラクター情報');
         
-        // 画像URLの設定
+        // 画像URLの設定（imgIndexに対応）
         if (isset($characterData['img']) && !empty($characterData['img'])) {
-            $imageName = is_array($characterData['img']) ? $characterData['img'][0] : $characterData['img'];
-            $ogImage = 'https://minntogames.github.io/character/img/' . htmlspecialchars($imageName);
+            $imageArray = is_array($characterData['img']) ? $characterData['img'] : [$characterData['img']];
+            $targetImage = isset($imageArray[$imgIndex]) ? $imageArray[$imgIndex] : $imageArray[0];
+            $ogImage = 'https://minntogames.github.io/character/img/' . htmlspecialchars($targetImage);
         }
     }
 }
@@ -301,6 +306,7 @@ if ($characterId) {
   <script>
     // 初期表示時に指定されたキャラクターを表示
     window.initialCharacterId = <?php echo json_encode($characterId); ?>;
+    window.initialImgIndex = <?php echo json_encode($imgIndex); ?>;
   </script>
   <?php endif; ?>
 

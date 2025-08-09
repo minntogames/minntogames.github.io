@@ -923,16 +923,14 @@ fetch('cha.json')
     const id = params.get('id');
     const img = params.get('img');
     
-    // PHP側で指定されたキャラクターIDとimgIndexもチェック
+    // PHP側で指定されたキャラクターIDもチェック
     const initialCharacterId = window.initialCharacterId;
-    const initialImgIndex = window.initialImgIndex || 0;
     
     // URLパラメータまたはPHP側のIDが指定されている場合
     const targetId = id && !isNaN(Number(id)) ? Number(id) : initialCharacterId;
-    const targetImgIndex = img && !isNaN(Number(img)) ? Number(img) : initialImgIndex;
     
     if (targetId) {
-      showCharacterDetails(targetId, targetImgIndex);
+      showCharacterDetails(targetId, img && !isNaN(Number(img)) ? Number(img) : 0);
       document.getElementById('detailsPopup').style.display = 'block';
       updateHamburgerMenuVisibility();
     }

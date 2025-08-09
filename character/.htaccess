@@ -4,6 +4,13 @@ RewriteEngine On
 # index.html → index.php へのリダイレクト
 RewriteRule ^index\.html$ index.php [R=301,L]
 
+# 数値のみのパス（例: character/2）をid パラメータとして処理
+RewriteRule ^([0-9]+)/?$ index.php?id=$1 [QSA,L]
+
+# ルートディレクトリへの "?id=X" 形式のリクエストをindex.phpに渡す
+RewriteCond %{QUERY_STRING} ^id=([0-9]+)(&.*)?$
+RewriteRule ^$ index.php [QSA,L]
+
 # パラメータ付きのリクエストをindex.phpに渡す
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
