@@ -922,8 +922,15 @@ fetch('cha.json')
     const params = new URLSearchParams(location.search);
     const id = params.get('id');
     const img = params.get('img');
-    if (id && !isNaN(Number(id))) {
-      showCharacterDetails(Number(id), img && !isNaN(Number(img)) ? Number(img) : 0);
+    
+    // PHP側で指定されたキャラクターIDもチェック
+    const initialCharacterId = window.initialCharacterId;
+    
+    // URLパラメータまたはPHP側のIDが指定されている場合
+    const targetId = id && !isNaN(Number(id)) ? Number(id) : initialCharacterId;
+    
+    if (targetId) {
+      showCharacterDetails(targetId, img && !isNaN(Number(img)) ? Number(img) : 0);
       document.getElementById('detailsPopup').style.display = 'block';
       updateHamburgerMenuVisibility();
     }
@@ -1450,23 +1457,50 @@ function clearFilters() {
  * @returns {string} 変換された用語
  */
 function getDisplayTerm(type, termInCharacterData, targetLanguage) {
-  const lowerCaseTermInCharacterData = termInCharacterData.toLowerCase();
+  // 配列の場合は最初の要素を取得（二重配列にも対応）
+  let actualTerm = termInCharacterData;
+  if (Array.isArray(termInCharacterData)) {
+    // [["属性"]] または ["属性"] の場合
+    if (termInCharacterData.length > 0) {
+      actualTerm = Array.isArray(termInCharacterData[0]) ? termInCharacterData[0][0] : termInCharacterData[0];
+    } else {
+      return ''; // 空配列の場合
+    }
+  }
+  
+  // 文字列でない場合は文字列に変換
+  if (typeof actualTerm !== 'string') {
+    actualTerm = String(actualTerm || '');
+  }
+  
+  const lowerCaseTermInCharacterData = actualTerm.toLowerCase();
 
   // 1. キャラクターデータ内の用語を正規の英語（小文字）に変換
   let canonicalEnTerm = languageMaps[type][lowerCaseTermInCharacterData];
 
-  // マッピングが見つからない場合、その用語自体が正規の英語であると仮定
+  // マッピングが見つからない場合、日本語から英語への逆引きを試行
+  if (!canonicalEnTerm && displayLanguageMaps[type] && displayLanguageMaps[type].enToJa) {
+    // 日本語から英語への逆引き
+    for (const [enTerm, jaTerm] of Object.entries(displayLanguageMaps[type].enToJa)) {
+      if (jaTerm.toLowerCase() === lowerCaseTermInCharacterData) {
+        canonicalEnTerm = enTerm;
+        break;
+      }
+    }
+  }
+
+  // それでも見つからない場合、その用語自体が正規の英語であると仮定
   if (!canonicalEnTerm) {
-    return termInCharacterData; // 変換せずにそのまま返す
+    return actualTerm; // 変換せずにそのまま返す
   }
 
   // 2. 正規の英語用語をターゲット言語の表示名に変換
   if (targetLanguage === 'ja') {
-    return displayLanguageMaps[type].enToJa[canonicalEnTerm] || termInCharacterData;
+    return displayLanguageMaps[type].enToJa[canonicalEnTerm] || actualTerm;
   } else if (targetLanguage === 'en') {
-    return displayLanguageMaps[type].enToEn[canonicalEnTerm] || termInCharacterData;
+    return displayLanguageMaps[type].enToEn[canonicalEnTerm] || actualTerm;
   }
-  return termInCharacterData; // Fallback
+  return actualTerm; // Fallback
 }
 
 /**

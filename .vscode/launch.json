@@ -8,5 +8,15 @@
             "program": "${workspaceFolder}/character/py/cha_json_editor.py",
             "console": "integratedTerminal"
         }
-    ]
+    ],
+    "a": {
+    "name": "Coreserver",
+    "host": "v2011.coreserver.jp",
+    "protocol": "sftp",
+    "port": 22,
+    "username": "minntelia",
+    "password": "sGxJJiomTAc7",
+    "remotePath": "/home/minntelia/domains/youtube.minntelia.com/public_html/",
+    "uploadOnSave": true
+}
 }
