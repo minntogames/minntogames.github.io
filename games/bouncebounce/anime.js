@@ -839,7 +839,7 @@ const ACHIEVEMENTS = {
     golden_cat: {
         id: 'golden_cat',
         name: 'ネコをあがめよ',
-        description: 'normal-goldenを引く',
+        description: 'シロ(ゴールデン)を引く',
         icon: '👑',
         rarity: 'GOLD',
         condition: (stats, data) => data.goldenCatCount >= 1
