@@ -1,0 +1,206 @@
+{
+  "tiles": {
+    "0": {
+      "name": "テストチップ",
+      "walkable": true,
+      "layer": "ground"
+    },
+    "1": {
+      "name": "草地面",
+      "walkable": true,
+      "layer": "ground"
+    },
+    "2": {
+      "name": "草壁",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "3": {
+      "name": "水",
+      "walkable": false,
+      "layer": "ground"
+    },    
+    "4": {
+      "name": "階段",
+      "walkable": true,
+      "layer": "ground"
+    },
+    "5": {
+      "name": "闇",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "6": {
+      "name": "石地面",
+      "walkable": true,
+      "layer": "ground"
+    },
+    "7": {
+      "name": "石壁",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "8": {
+      "name": "石地面左端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "9": {
+      "name": "石地面端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "a": {
+      "name": "石地面右端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "b": {
+      "name": "石壁左端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "c": {
+      "name": "石壁右端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "10": {
+      "name": "草地面左端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "11": {
+      "name": "草地面右端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "12": {
+      "name": "土壁",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "14": {
+      "name": "石階段",
+      "walkable": true,
+      "layer": "ground"
+    },
+    "20": {
+      "name": "土壁左端",
+      "walkable": false,
+      "layer": "ground"
+    },
+    "21": {
+      "name": "土壁右端",
+      "walkable": false,
+      "layer": "ground"
+    }
+  },
+  "decorations": {
+    "0": {
+      "name": "草",
+      "layer": "decoration"
+    },
+    "1": {
+      "name": "木上",
+      "layer": "foreground"
+    },
+    "2": {
+      "name": "木下",
+      "layer": "decoration",
+      "walkable": false
+    },
+    "3": {
+      "name": "岩",
+      "layer": "decoration",
+      "walkable": false
+    },
+    "4": {
+        "name": "看板",
+        "layer": "decoration",
+        "walkable": false
+    },
+    "5": {
+      "name": "土壁下左端",
+      "walkable": false,
+      "layer": "decoration"
+    },
+    "6": {
+      "name": "土壁下右端",
+      "walkable": false,
+      "layer": "decoration"
+    },
+    "7": {
+      "name": "滝",
+      "walkable": false,
+      "layer": "decoration"
+    },
+    "8": {
+      "name": "入口",
+      "walkable": false,
+      "layer": "decoration"
+    },
+    "10": {
+      "name": "花",
+      "walkable": true,
+      "layer": "decoration"
+    },
+    "11": {
+      "name": "とげ岩上",
+      "walkable": true,
+      "layer": "foreground"
+    },
+    "12": {
+      "name": "とげ岩下",
+      "walkable": false,
+      "layer": "decoration"
+    },
+    "15": {
+      "name": "石壁下左端",
+      "walkable": false,
+      "layer": "decoration"
+    },
+    "16": {
+      "name": "石壁下右端",
+      "walkable": false,
+      "layer": "decoration"
+    }
+  },
+  "events": {
+    "1": {
+      "name": "外看板",
+      "eventId": "1",
+      "layer": "event",
+      "icon": "📜",
+      "trigger": "adjacent"
+    },
+    "2": {
+      "name": "村人イベント（隣接）",
+      "eventId": "2",
+      "layer": "event",
+      "icon": "👤",
+      "trigger": "adjacent"
+    },
+    "3": {
+      "name": "隠し宝箱イベント（踏む）",
+      "eventId": "3",
+      "layer": "event",
+      "icon": "💎",
+      "trigger": "step"
+    },
+    "4": {
+      "name": "商人イベント（隣接）",
+      "eventId": "4",
+      "layer": "event",
+      "icon": "🛒",
+      "trigger": "adjacent"
+    },
+    "5": {
+      "name": "石碑イベント（自動隣接）",
+      "eventId": "5",
+      "layer": "event",
+      "icon": "🗿",
+      "trigger": "auto_adjacent"
+    }
+  }
+}

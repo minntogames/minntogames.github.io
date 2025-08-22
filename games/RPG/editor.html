@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG マップエディター</title>
+    <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>RPG マップエディター</h1>
+            <div class="toolbar">
+                <button id="newMap">新規マップ</button>
+                <button id="loadMap">マップ読み込み</button>
+                <button id="saveMap">マップ保存</button>
+                <button id="exportJson">JSON出力</button>
+                <span class="separator">|</span>
+                <label>幅: <input type="number" id="mapWidth" value="20" min="1" max="100"></label>
+                <label>高さ: <input type="number" id="mapHeight" value="20" min="1" max="100"></label>
+                <button id="resizeMap">サイズ変更</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="layer-selector">
+                    <h3>レイヤー選択</h3>
+                    <div class="layer-buttons">
+                        <button id="groundLayer" class="layer-btn active">基本マップ</button>
+                        <button id="decorationLayer" class="layer-btn">デコレーション</button>
+                        <button id="eventLayer" class="layer-btn">イベント</button>
+                    </div>
+                </div>
+
+                <div class="tile-palette">
+                    <h3>タイルパレット</h3>
+                    <div id="groundTiles" class="tile-grid">
+                        <!-- 基本タイルがここに生成される -->
+                    </div>
+                    <div id="decorationTiles" class="tile-grid" style="display: none;">
+                        <!-- デコレーションタイルがここに生成される -->
+                    </div>
+                    <div id="eventTiles" class="tile-grid" style="display: none;">
+                        <!-- イベントタイルがここに生成される -->
+                    </div>
+                </div>
+
+                <div class="tools">
+                    <h3>ツール</h3>
+                    <div class="tool-buttons">
+                        <button id="paintTool" class="tool-btn active">ペイント</button>
+                        <button id="eraseTool" class="tool-btn">消しゴム</button>
+                        <button id="fillTool" class="tool-btn">塗りつぶし</button>
+                    </div>
+                </div>
+
+                <div class="info">
+                    <h3>情報</h3>
+                    <div id="mapInfo">
+                        <p>マップサイズ: <span id="currentSize">20x20</span></p>
+                        <p>選択中のタイル: <span id="selectedTile">なし</span></p>
+                        <p>現在のレイヤー: <span id="currentLayer">基本マップ</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-container">
+                <div class="canvas-container">
+                    <canvas id="mapCanvas" width="800" height="600"></canvas>
+                    <div id="grid-overlay"></div>
+                </div>
+                
+                <div class="canvas-controls">
+                    <label>ズーム: 
+                        <input type="range" id="zoomSlider" min="0.5" max="4" step="0.1" value="2">
+                        <span id="zoomValue">200%</span>
+                    </label>
+                    <button id="centerView">中央に戻る</button>
+                    <label>
+                        <input type="checkbox" id="showGrid" checked> グリッド表示
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="mousePos">マウス位置: (0, 0)</span>
+            <span id="status">準備完了</span>
+        </div>
+    </div>
+
+    <!-- ファイル入力用の隠しinput -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;">
+
+    <script src="editor.js"></script>
+</body>
+</html>

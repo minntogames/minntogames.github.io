@@ -1,0 +1,103 @@
+{
+  "events": {
+    "1": {
+      "id": "1",
+      "type": "dialog",
+      "trigger": "adjacent",
+      "name": "看板",
+      "icon": "📋",
+      "dialog": {
+        "text": [
+          "この先の洞窟、敵が出現につき立ち入り注意！"
+        ],
+        "speaker": "看板"
+      }
+    },
+    "2": {
+      "id": "2",
+      "type": "dialog",
+      "trigger": "adjacent",
+      "name": "看板",
+      "icon": "🏞️",
+      "dialog": {
+        "text": [
+          "池です"
+        ],
+        "speaker": "看板"
+      }
+    },
+    "3": {
+      "id": "3",
+      "type": "transport",
+      "trigger": "adjacent",
+      "name": "ダンジョン入口",
+      "icon": "🕳️",
+      "transport": {
+        "mapFile": "maps/map2.json",
+        "targetX": 1,
+        "targetY": 0,
+        "direction": 0
+      }
+    },
+    "4": {
+      "id": "4",
+      "type": "transport",
+      "trigger": "adjacent",
+      "name": "ダンジョン出口",
+      "icon": "🕳️",
+      "transport": {
+        "mapFile": "maps/map.json",
+        "targetX": 8,
+        "targetY": 1,
+        "direction": 1
+      }
+    },
+    "5": {
+      "id": "5",
+      "type": "dialog",
+      "trigger": "auto_adjacent",
+      "name": "古い石碑",
+      "icon": "🗿",
+      "dialog": {
+        "text": [
+          "『古代の言葉で刻まれた石碑』",
+          "「勇気ある者よ、試練の先に真の力が待つ」",
+          "文字が微かに光っているような気がする..."
+        ],
+        "speaker": "石碑"
+      }
+    },
+    "6": {
+      "id": "6",
+      "type": "transport",
+      "trigger": "auto_adjacent",
+      "name": "ダンジョン入口",
+      "icon": "⚔️",
+      "transport": {
+        "mapFile": "maps/map2.json",
+        "targetX": 1,
+        "targetY": 1,
+        "direction": 1
+      }
+    },
+    "7": {
+      "id": "7",
+      "type": "transport",
+      "trigger": "adjacent",
+      "name": "村への扉",
+      "icon": "🚪",
+      "transport": {
+        "mapFile": "maps/map.json",
+        "targetX": 5,
+        "targetY": 5,
+        "direction": 3
+      },
+      "dialog": {
+        "text": [
+          "村へ戻りますか？"
+        ],
+        "speaker": "システム"
+      }
+    }
+  }
+}
