@@ -1948,12 +1948,12 @@
         "img": [
             "42.webp"
         ],
-        "imgsize": "290%",
+        "imgsize": "390%",
         "imgThumbsize": [],
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-280px -220px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-150px -120px"
     },
     {
         "id": 43,
@@ -1989,12 +1989,12 @@
         "img": [
             "43.webp"
         ],
-        "imgsize": "290%",
+        "imgsize": "390%",
         "imgThumbsize": [],
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-280px -220px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-150px -110px"
     },
     {
         "id": 44,
@@ -2030,12 +2030,12 @@
         "img": [
             "44.webp"
         ],
-        "imgsize": "290%",
+        "imgsize": "390%",
         "imgThumbsize": [],
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-280px -160px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-150px -80px"
     },
     {
         "id": 45,
