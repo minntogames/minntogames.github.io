@@ -946,8 +946,10 @@ function createLanguageMaps() {
   for (const type in settings) {
     if (settings[type].en && settings[type].ja) {
       for (let i = 0; i < settings[type].en.length; i++) {
-        const enLowerCase = settings[type].en[i].toLowerCase();
-        const jaLowerCase = settings[type].ja[i].toLowerCase();
+        const enStr = String(settings[type].en[i] || '');
+        const jaStr = String(settings[type].ja[i] || '');
+        const enLowerCase = enStr.toLowerCase();
+        const jaLowerCase = jaStr.toLowerCase();
 
         // For filtering: map UI display (ja/en lowercase) to canonical English lowercase
         languageMaps[type][jaLowerCase] = enLowerCase;
@@ -1202,9 +1204,10 @@ function hideMiniPopup() {
  * キャラクターリストをフィルターし、表示を更新する
  */
 function filterCharacters() {
-  const keyword = document.getElementById('searchName').value.trim().toLowerCase();
-  const characterListContainer = document.getElementById('characterList');
-  const noCharactersMessage = document.getElementById('noCharactersMessage');
+  try {
+    const keyword = document.getElementById('searchName').value.trim().toLowerCase();
+    const characterListContainer = document.getElementById('characterList');
+    const noCharactersMessage = document.getElementById('noCharactersMessage');
 
   // ▼完全一致・部分一致両方を抽出
   let exactMatches = [];
@@ -1243,29 +1246,65 @@ function filterCharacters() {
       const fightingStyleArr = Array.isArray(c.fightingStyle) && Array.isArray(c.fightingStyle[0]) ? c.fightingStyle : [c.fightingStyle];
       const attributeArr = Array.isArray(c.attribute) && Array.isArray(c.attribute[0]) ? c.attribute : [c.attribute];
       const raceMatch = activeFilters.race.length === 0 ||
-        c.race.some(r => {
-          const canonicalRace = languageMaps.race[r.toLowerCase()] || r.toLowerCase();
+        (Array.isArray(c.race) && c.race.some(r => {
+          if (!r || typeof r !== 'string') return false; // null, undefined, 非文字列を除外
+          const rStr = String(r).trim(); // 文字列に変換してトリム
+          if (!rStr) return false; // 空文字列を除外
+          
+          // 直接一致をチェック
+          const rLower = rStr.toLowerCase();
+          if (activeFilters.race.includes(rLower)) return true;
+          
+          // 言語マッピングを使用した一致をチェック
+          const canonicalRace = languageMaps.race[rLower] || rLower;
           return activeFilters.race.includes(canonicalRace);
-        });
+        }));
       const styleMatch = activeFilters.fightingStyle.length === 0 ||
         (Array.isArray(fightingStyleArr[i] || fightingStyleArr[0])
           ? (fightingStyleArr[i] || fightingStyleArr[0]).some(s => {
-              const canonicalStyle = languageMaps.fightingStyle[(s || '').toLowerCase()] || (s || '').toLowerCase();
+              if (!s || typeof s !== 'string') return false; // null, undefined, 非文字列を除外
+              const sStr = String(s).trim(); // 文字列に変換してトリム
+              if (!sStr) return false; // 空文字列を除外
+              
+              // 直接一致をチェック
+              const sLower = sStr.toLowerCase();
+              if (activeFilters.fightingStyle.includes(sLower)) return true;
+              
+              // 言語マッピングを使用した一致をチェック
+              const canonicalStyle = languageMaps.fightingStyle[sLower] || sLower;
               return activeFilters.fightingStyle.includes(canonicalStyle);
             })
           : false);
       const attrMatch = activeFilters.attribute.length === 0 ||
         (Array.isArray(attributeArr[i] || attributeArr[0])
           ? (attributeArr[i] || attributeArr[0]).some(a => {
-              const canonicalAttr = languageMaps.attribute[(a || '').toLowerCase()] || (a || '').toLowerCase();
+              if (!a || typeof a !== 'string') return false; // null, undefined, 非文字列を除外
+              const aStr = String(a).trim(); // 文字列に変換してトリム
+              if (!aStr) return false; // 空文字列を除外
+              
+              // 直接一致をチェック
+              const aLower = aStr.toLowerCase();
+              if (activeFilters.attribute.includes(aLower)) return true;
+              
+              // 言語マッピングを使用した一致をチェック
+              const canonicalAttr = languageMaps.attribute[aLower] || aLower;
               return activeFilters.attribute.includes(canonicalAttr);
             })
           : false);
       const groupMatch = activeFilters.group.length === 0 ||
-        c.group.some(g => {
-          const canonicalGroup = languageMaps.group[g.toLowerCase()] || g.toLowerCase();
+        (Array.isArray(c.group) && c.group.some(g => {
+          if (!g || typeof g !== 'string') return false; // null, undefined, 非文字列を除外
+          const gStr = String(g).trim(); // 文字列に変換してトリム
+          if (!gStr) return false; // 空文字列を除外
+          
+          // 直接一致をチェック
+          const gLower = gStr.toLowerCase();
+          if (activeFilters.group.includes(gLower)) return true;
+          
+          // 言語マッピングを使用した一致をチェック
+          const canonicalGroup = languageMaps.group[gLower] || gLower;
           return activeFilters.group.includes(canonicalGroup);
-        });
+        }));
       const worldMatch = activeFilters.world.length === 0 ||
         activeFilters.world.includes(String(c.world));
       const favoritesMatch = activeFilters.favorites.length === 0 ||
@@ -1298,6 +1337,41 @@ function filterCharacters() {
   } else {
     characterListContainer.innerHTML = '';
     noCharactersMessage.style.display = 'block';
+  }
+  } catch (error) {
+    console.error('filterCharacters エラー:', error);
+    console.log('エラー発生時のactiveFilters:', activeFilters);
+    console.log('エラー発生時のcharactersサンプル:', characters.slice(0, 3));
+    
+    // エラーの詳細な場所を特定するために、各キャラクターのデータ型をチェック
+    characters.slice(0, 5).forEach((char, index) => {
+      console.log(`Character ${index + 1} (ID: ${char.id}):`, {
+        race: char.race,
+        raceTypes: char.race ? char.race.map((r, i) => `[${i}]: ${JSON.stringify(r)} (${typeof r})`) : 'undefined',
+        group: char.group, 
+        groupTypes: char.group ? char.group.map((g, i) => `[${i}]: ${JSON.stringify(g)} (${typeof g})`) : 'undefined',
+        fightingStyle: char.fightingStyle,
+        attribute: char.attribute
+      });
+    });
+    
+    // 設定データも確認
+    console.log('Settings sample:', {
+      race: settings.race ? {
+        ja: settings.race.ja.slice(0, 3),
+        en: settings.race.en.slice(0, 3)
+      } : 'undefined',
+      group: settings.group ? {
+        ja: settings.group.ja.slice(0, 3), 
+        en: settings.group.en.slice(0, 3)
+      } : 'undefined'
+    });
+    
+    // 言語マッピングの状態も確認
+    console.log('Language mappings sample:', {
+      race: Object.keys(languageMaps.race || {}).slice(0, 5),
+      group: Object.keys(languageMaps.group || {}).slice(0, 5)
+    });
   }
 }
 
@@ -1387,7 +1461,10 @@ function toggleFilterOption(type, value, element) {
   }
   
   // フィルターの表示値(日本語)を正規の英語名に変換してactiveFiltersに格納
-  const canonicalValue = type === 'world' ? value : (languageMaps[type][value.toLowerCase()] || value.toLowerCase());
+  const canonicalValue = type === 'world' ? value : (() => {
+    const valueStr = String(value || '');
+    return languageMaps[type][valueStr.toLowerCase()] || valueStr.toLowerCase();
+  })();
   const index = activeFilters[type].indexOf(canonicalValue);
   if (index === -1) {
     activeFilters[type].push(canonicalValue);
@@ -1484,7 +1561,8 @@ function getDisplayTerm(type, termInCharacterData, targetLanguage) {
   if (!canonicalEnTerm && displayLanguageMaps[type] && displayLanguageMaps[type].enToJa) {
     // 日本語から英語への逆引き
     for (const [enTerm, jaTerm] of Object.entries(displayLanguageMaps[type].enToJa)) {
-      if (jaTerm.toLowerCase() === lowerCaseTermInCharacterData) {
+      const jaTermStr = String(jaTerm || '');
+      if (jaTermStr.toLowerCase() === lowerCaseTermInCharacterData) {
         canonicalEnTerm = enTerm;
         break;
       }
@@ -1748,8 +1826,17 @@ function renderRelatedCharacters(groups, currentId, showAll = false) {
   let related = characters.filter(c => 
     c.id !== currentId &&
     c.group.some(g => {
-      const canonicalGroups = groups.map(gName => languageMaps.group[gName.toLowerCase()] || gName.toLowerCase());
-      const characterGroups = c.group.map(cName => languageMaps.group[cName.toLowerCase()] || cName.toLowerCase());
+      if (typeof g !== 'string') return false; // 文字列でない場合は無視
+      const canonicalGroups = groups.map(gName => {
+        if (typeof gName !== 'string') return '';
+        const gNameStr = String(gName || '');
+        return languageMaps.group[gNameStr.toLowerCase()] || gNameStr.toLowerCase();
+      });
+      const characterGroups = c.group.map(cName => {
+        if (typeof cName !== 'string') return '';
+        const cNameStr = String(cName || '');
+        return languageMaps.group[cNameStr.toLowerCase()] || cNameStr.toLowerCase();
+      });
       return canonicalGroups.some(cg => characterGroups.includes(cg));
     })
   );

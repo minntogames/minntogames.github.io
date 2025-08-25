@@ -318,17 +318,49 @@ $Shortcut.Save()
                 # エラーが発生した場合は無視（入力途中など）
                 pass
 
-    def _validate_json(self):
-        # 必須項目や型チェック（例: id, name, img など）
-        errors = []
-        for i, char in enumerate(self.characters):
-            if 'id' not in char or not isinstance(char['id'], int):
-                errors.append(f"{i+1}番目のキャラ: idが整数で未設定")
-            if 'name' not in char or not char['name']:
-                errors.append(f"{i+1}番目のキャラ: nameが未設定")
-            if 'img' not in char or not char['img']:
-                errors.append(f"{i+1}番目のキャラ: imgが未設定")
-        return errors
+    def create_image_preview_area(self):
+        """画像プレビューエリアを作成"""
+        # 画像プレビューフレーム
+        image_frame = tk.LabelFrame(self.detail_frame, text="画像プレビュー", padx=5, pady=5)
+        image_frame.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
+        
+        # プレビューコントロール
+        control_frame = tk.Frame(image_frame)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        tk.Label(control_frame, text="プレビューモード:").pack(side=tk.LEFT)
+        self.preview_mode = tk.StringVar(value="PC")
+        tk.Radiobutton(control_frame, text="PC (200px)", variable=self.preview_mode, 
+                      value="PC", command=self.update_image_preview).pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(control_frame, text="モバイル (120px)", variable=self.preview_mode, 
+                      value="mobile", command=self.update_image_preview).pack(side=tk.LEFT, padx=5)
+        
+        tk.Button(control_frame, text="プレビュー更新", 
+                 command=self.update_image_preview).pack(side=tk.RIGHT, padx=5)
+        
+        # プレビューキャンバス（PCサイズとモバイルサイズ）
+        canvas_frame = tk.Frame(image_frame)
+        canvas_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # PCプレビュー
+        pc_frame = tk.LabelFrame(canvas_frame, text="PC表示 (200px)", padx=5, pady=5)
+        pc_frame.pack(side=tk.LEFT, padx=5)
+        self.pc_preview_canvas = tk.Canvas(pc_frame, width=200, height=200, bg='white', bd=1, relief=tk.SUNKEN)
+        self.pc_preview_canvas.pack()
+        
+        # モバイルプレビュー
+        mobile_frame = tk.LabelFrame(canvas_frame, text="モバイル表示 (120px)", padx=5, pady=5)
+        mobile_frame.pack(side=tk.LEFT, padx=5)
+        self.mobile_preview_canvas = tk.Canvas(mobile_frame, width=120, height=120, bg='white', bd=1, relief=tk.SUNKEN)
+        self.mobile_preview_canvas.pack()
+        
+        # 詳細表示用キャンバス
+        detail_frame = tk.LabelFrame(canvas_frame, text="詳細表示", padx=5, pady=5)
+        detail_frame.pack(side=tk.LEFT, padx=5, fill=tk.BOTH, expand=True)
+        self.detail_preview_canvas = tk.Canvas(detail_frame, width=300, height=300, bg='#f0f0f0', bd=1, relief=tk.SUNKEN)
+        self.detail_preview_canvas.pack()
+        
+        self.tk_images = {}  # 画像参照保持用
     def _get_next_id(self):
         ids = [c.get('id', 0) for c in self.characters if isinstance(c.get('id', 0), int)]
         return max(ids, default=0) + 1
@@ -433,10 +465,8 @@ $Shortcut.Save()
         self.detail_canvas.bind("<MouseWheel>", _on_mousewheel)
         self.detail_frame.bind("<MouseWheel>", _on_mousewheel)
 
-        # 画像表示用キャンバス
-        self.img_canvas = tk.Canvas(self.detail_frame, width=320, height=320, bg='#eee', bd=2, relief=tk.SUNKEN)
-        self.img_canvas.grid(row=0, column=0, columnspan=2, pady=(0, 10))
-        self.tk_img = None  # 画像参照保持用
+        # 画像プレビューエリア
+        self.create_image_preview_area()
 
         self.fields = {}
         self.labels = ['id', 'name', 'name_en', 'name_Kana', 'description', 'world', 'race', 'fightingStyle', 'attribute', 'height', 'age', 'personality', 'group', 'img', 'imgsize', 'imgThumbsize', 'imageZoomPosition', 'imageThumbPosition', 'imgsize_mobile', 'imageZoomPosition_mobile']
@@ -472,8 +502,65 @@ $Shortcut.Save()
             # 編集検知
             if isinstance(entry, tk.Text):
                 entry.bind('<KeyRelease>', self._set_edited)
+                # 画像関連フィールドは即座にプレビュー更新
+                if label in ['imgsize', 'imgThumbsize', 'imageZoomPosition', 'imageThumbPosition', 'imgsize_mobile', 'imageZoomPosition_mobile', 'img']:
+                    entry.bind('<KeyRelease>', lambda e, l=label: [self._set_edited(e), self.schedule_preview_update()])
             else:
                 entry.bind('<KeyRelease>', self._set_edited)
+                # 画像関連フィールドは即座にプレビュー更新
+                if label in ['imgsize', 'imgThumbsize', 'imageZoomPosition', 'imageThumbPosition', 'imgsize_mobile', 'imageZoomPosition_mobile', 'img']:
+                    entry.bind('<KeyRelease>', lambda e, l=label: [self._set_edited(e), self.schedule_preview_update()])
+                    
+            # 画像関連フィールドに専用コントロールを追加
+            if label in ['imgsize', 'imgsize_mobile']:
+                control_frame = tk.Frame(self.detail_frame)
+                control_frame.grid(row=row+1, column=1, sticky=tk.W)
+                
+                # よく使うサイズのボタン
+                sizes = ['100%', '150%', '200%', '250%', '300%']
+                for size in sizes:
+                    btn = tk.Button(control_frame, text=size, width=6,
+                                  command=lambda s=size, e=entry: self.set_field_value(e, s))
+                    btn.pack(side=tk.LEFT, padx=2)
+                row += 1
+                    
+            elif label in ['imageZoomPosition', 'imageZoomPosition_mobile']:
+                control_frame = tk.Frame(self.detail_frame)
+                control_frame.grid(row=row+1, column=1, sticky=tk.W)
+                
+                # 位置調整ボタン
+                pos_frame = tk.Frame(control_frame)
+                pos_frame.pack(side=tk.LEFT)
+                
+                # 上下左右ボタン配置
+                tk.Button(pos_frame, text='↑', width=3,
+                         command=lambda e=entry: self.adjust_position(e, 0, -10)).grid(row=0, column=1)
+                tk.Button(pos_frame, text='←', width=3,
+                         command=lambda e=entry: self.adjust_position(e, -10, 0)).grid(row=1, column=0)
+                tk.Button(pos_frame, text='○', width=3,
+                         command=lambda e=entry: self.set_field_value(e, '0px 0px')).grid(row=1, column=1)
+                tk.Button(pos_frame, text='→', width=3,
+                         command=lambda e=entry: self.adjust_position(e, 10, 0)).grid(row=1, column=2)
+                tk.Button(pos_frame, text='↓', width=3,
+                         command=lambda e=entry: self.adjust_position(e, 0, 10)).grid(row=2, column=1)
+                
+                # 微調整ボタン
+                fine_frame = tk.Frame(control_frame)
+                fine_frame.pack(side=tk.LEFT, padx=20)
+                tk.Label(fine_frame, text="微調整:").pack()
+                
+                adj_frame = tk.Frame(fine_frame)
+                adj_frame.pack()
+                tk.Button(adj_frame, text='+1', width=3,
+                         command=lambda e=entry: self.adjust_position(e, 1, 0)).grid(row=0, column=0)
+                tk.Button(adj_frame, text='-1', width=3,
+                         command=lambda e=entry: self.adjust_position(e, -1, 0)).grid(row=0, column=1)
+                tk.Button(adj_frame, text='+1', width=3,
+                         command=lambda e=entry: self.adjust_position(e, 0, 1)).grid(row=1, column=0)
+                tk.Button(adj_frame, text='-1', width=3,
+                         command=lambda e=entry: self.adjust_position(e, 0, -1)).grid(row=1, column=1)
+                
+                row += 1
             # 選択肢ドロップダウン＋追加ボタン
             if label in ['race', 'fightingStyle', 'attribute', 'group']:
                 sframe = tk.Frame(self.detail_frame)
@@ -745,6 +832,236 @@ $Shortcut.Save()
 
         # 画像表示処理
         self.show_character_image(char, style_idx)
+        
+        # プレビュー更新
+        self.update_image_preview()
+
+    def parse_size_value(self, value):
+        """サイズ値を解析してピクセル値を返す"""
+        if not value:
+            return 100
+        value = str(value).strip()
+        if value.endswith('%'):
+            try:
+                return float(value[:-1])
+            except:
+                return 100
+        elif value.endswith('px'):
+            try:
+                return float(value[:-2])
+            except:
+                return 100
+        else:
+            try:
+                return float(value)
+            except:
+                return 100
+
+    def parse_position_value(self, value):
+        """位置値を解析してx, y座標を返す"""
+        if not value:
+            return 0, 0
+        value = str(value).strip()
+        parts = value.split()
+        if len(parts) >= 2:
+            try:
+                x = float(parts[0].replace('px', ''))
+                y = float(parts[1].replace('px', ''))
+                return x, y
+            except:
+                return 0, 0
+        return 0, 0
+
+    def update_image_preview(self):
+        """画像プレビューを更新"""
+        if not hasattr(self, 'selected_index') or self.selected_index is None:
+            return
+        if not hasattr(self, 'pc_preview_canvas'):
+            return
+            
+        char_idx, style_idx = self.listbox_items[self.selected_index]
+        char = self._get_buffer(char_idx)
+        
+        # 現在のフィールド値を取得
+        current_values = {}
+        for key in ['imgsize', 'imgThumbsize', 'imageZoomPosition', 'imageThumbPosition', 'imgsize_mobile', 'imageZoomPosition_mobile']:
+            entry = self.fields.get(key)
+            if entry:
+                if isinstance(entry, tk.Text):
+                    current_values[key] = entry.get('1.0', tk.END).strip()
+                else:
+                    current_values[key] = entry.get().strip()
+            else:
+                current_values[key] = ''
+        
+        # 画像ファイル名を取得
+        img_val = char.get('img', '')
+        img_file = None
+        if isinstance(img_val, list) and img_val:
+            if style_idx is not None and style_idx < len(img_val):
+                img_file = img_val[style_idx]
+            else:
+                img_file = img_val[0]
+        elif isinstance(img_val, str):
+            img_file = img_val
+
+        if not img_file or not isinstance(img_file, str) or not img_file.strip():
+            # 画像がない場合はプレースホルダーを表示
+            self.clear_preview_canvases()
+            return
+
+        # 画像パス
+        img_path = os.path.join(os.path.dirname(__file__), '../img', img_file)
+        if not os.path.exists(img_path):
+            # プレースホルダー画像
+            self.clear_preview_canvases()
+            return
+
+        try:
+            from PIL import Image, ImageTk
+            
+            # 元画像を読み込み
+            original_img = Image.open(img_path)
+            
+            # PCプレビュー
+            self.create_preview_image(original_img, self.pc_preview_canvas, 200, 200,
+                                    current_values.get('imgsize', ''), 
+                                    current_values.get('imageZoomPosition', ''),
+                                    "PC")
+            
+            # モバイルプレビュー
+            self.create_preview_image(original_img, self.mobile_preview_canvas, 120, 120,
+                                    current_values.get('imgsize_mobile', ''), 
+                                    current_values.get('imageZoomPosition_mobile', ''),
+                                    "mobile")
+            
+            # 詳細プレビュー（現在のモードに合わせて）
+            if hasattr(self, 'preview_mode') and self.preview_mode.get() == "mobile":
+                self.create_preview_image(original_img, self.detail_preview_canvas, 300, 300,
+                                        current_values.get('imgsize_mobile', ''), 
+                                        current_values.get('imageZoomPosition_mobile', ''),
+                                        "detail_mobile")
+            else:
+                self.create_preview_image(original_img, self.detail_preview_canvas, 300, 300,
+                                        current_values.get('imgsize', ''), 
+                                        current_values.get('imageZoomPosition', ''),
+                                        "detail_pc")
+            
+        except Exception as e:
+            print(f"画像プレビューエラー: {e}")
+            self.clear_preview_canvases()
+
+    def create_preview_image(self, original_img, canvas, canvas_width, canvas_height, size_value, position_value, preview_type):
+        """指定されたキャンバスに画像プレビューを作成"""
+        canvas.delete('all')
+        
+        # サイズ計算
+        size_percent = self.parse_size_value(size_value) if size_value else 100
+        
+        # 元画像サイズ
+        orig_w, orig_h = original_img.size
+        
+        # 基準サイズを決定（PCは200px、モバイルは120px）
+        if "mobile" in preview_type:
+            base_size = 120
+        else:
+            base_size = 200
+            
+        # 詳細表示の場合は拡大
+        if "detail" in preview_type:
+            scale_factor = 300 / base_size
+        else:
+            scale_factor = 1.0
+        
+        # 実際の表示サイズ
+        display_size = (base_size * size_percent / 100) * scale_factor
+        
+        # 画像をリサイズ
+        aspect_ratio = orig_w / orig_h
+        if aspect_ratio > 1:  # 横長
+            new_w = int(display_size)
+            new_h = int(display_size / aspect_ratio)
+        else:  # 縦長または正方形
+            new_w = int(display_size * aspect_ratio)
+            new_h = int(display_size)
+        
+        if new_w > 0 and new_h > 0:
+            resized_img = original_img.resize((new_w, new_h), Image.LANCZOS)
+        else:
+            resized_img = original_img.resize((50, 50), Image.LANCZOS)
+            new_w, new_h = 50, 50
+        
+        # 位置計算
+        pos_x, pos_y = self.parse_position_value(position_value)
+        if "detail" in preview_type:
+            pos_x *= scale_factor
+            pos_y *= scale_factor
+        
+        # キャンバス中央を基準とした位置
+        center_x = canvas_width // 2
+        center_y = canvas_height // 2
+        
+        # 最終位置
+        final_x = center_x + pos_x
+        final_y = center_y + pos_y
+        
+        # PhotoImageに変換
+        tk_img = ImageTk.PhotoImage(resized_img)
+        self.tk_images[preview_type] = tk_img  # 参照を保持
+        
+        # キャンバスに描画
+        canvas.create_image(final_x, final_y, image=tk_img)
+        
+        # 枠線を描画（表示領域を示す）
+        border_color = "#cccccc"
+        canvas.create_rectangle(2, 2, canvas_width-2, canvas_height-2, outline=border_color, width=1)
+        
+        # 中央線を描画
+        canvas.create_line(center_x, 0, center_x, canvas_height, fill="#e0e0e0", width=1)
+        canvas.create_line(0, center_y, canvas_width, center_y, fill="#e0e0e0", width=1)
+
+    def clear_preview_canvases(self):
+        """すべてのプレビューキャンバスをクリア"""
+        if not hasattr(self, 'pc_preview_canvas'):
+            return
+        for canvas in [self.pc_preview_canvas, self.mobile_preview_canvas, self.detail_preview_canvas]:
+            canvas.delete('all')
+            # キャンバスサイズを取得
+            width = canvas.winfo_reqwidth() if canvas.winfo_reqwidth() > 1 else 200
+            height = canvas.winfo_reqheight() if canvas.winfo_reqheight() > 1 else 200
+            canvas.create_text(width//2, height//2, text='画像なし', fill='gray')
+
+    def schedule_preview_update(self):
+        """プレビュー更新をスケジュール（連続入力時の負荷軽減）"""
+        if hasattr(self, '_preview_update_after'):
+            self.after_cancel(self._preview_update_after)
+        self._preview_update_after = self.after(300, self.update_image_preview)
+
+    def set_field_value(self, entry, value):
+        """フィールドに値を設定"""
+        if isinstance(entry, tk.Text):
+            entry.delete('1.0', tk.END)
+            entry.insert('1.0', value)
+        else:
+            entry.delete(0, tk.END)
+            entry.insert(0, value)
+        self._set_edited()
+        self.schedule_preview_update()
+
+    def adjust_position(self, entry, dx, dy):
+        """位置を調整"""
+        current = entry.get() if hasattr(entry, 'get') else entry.get('1.0', tk.END).strip()
+        
+        # 現在の位置を解析
+        x, y = self.parse_position_value(current)
+        
+        # 新しい位置
+        new_x = x + dx
+        new_y = y + dy
+        
+        # 新しい値を設定
+        new_value = f"{int(new_x)}px {int(new_y)}px"
+        self.set_field_value(entry, new_value)
 
     def show_character_image(self, char, style_idx):
         # 画像ファイル名を取得

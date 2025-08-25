@@ -1,0 +1,168 @@
+{
+  "base_size": [
+    768,
+    900
+  ],
+  "analysis_date": "2025-08-26",
+  "total_files": 48,
+  "base_size_count": 35,
+  "different_size_count": 13,
+  "error_count": 0,
+  "base_size_files": [
+    "1-0.webp",
+    "1-1.webp",
+    "14.webp",
+    "15.webp",
+    "16.webp",
+    "17.webp",
+    "18.webp",
+    "19.webp",
+    "2-1.webp",
+    "20.webp",
+    "21.webp",
+    "22.webp",
+    "23.webp",
+    "24.webp",
+    "25.webp",
+    "26.webp",
+    "27.webp",
+    "28.webp",
+    "29.webp",
+    "3-1.webp",
+    "30.webp",
+    "31.webp",
+    "32.webp",
+    "33.webp",
+    "34.webp",
+    "35.webp",
+    "36.webp",
+    "37.webp",
+    "38.webp",
+    "39.webp",
+    "40.webp",
+    "41.webp",
+    "42.webp",
+    "43.webp",
+    "44.webp"
+  ],
+  "different_size_files": [
+    {
+      "filename": "10.webp",
+      "size": [
+        768,
+        816
+      ],
+      "ratio_x": 1.0,
+      "ratio_y": 0.9066666666666666
+    },
+    {
+      "filename": "11.webp",
+      "size": [
+        459,
+        631
+      ],
+      "ratio_x": 0.59765625,
+      "ratio_y": 0.7011111111111111
+    },
+    {
+      "filename": "12.webp",
+      "size": [
+        654,
+        900
+      ],
+      "ratio_x": 0.8515625,
+      "ratio_y": 1.0
+    },
+    {
+      "filename": "13.webp",
+      "size": [
+        487,
+        722
+      ],
+      "ratio_x": 0.6341145833333334,
+      "ratio_y": 0.8022222222222222
+    },
+    {
+      "filename": "2-0.webp",
+      "size": [
+        409,
+        847
+      ],
+      "ratio_x": 0.5325520833333334,
+      "ratio_y": 0.9411111111111111
+    },
+    {
+      "filename": "3-0.webp",
+      "size": [
+        334,
+        723
+      ],
+      "ratio_x": 0.4348958333333333,
+      "ratio_y": 0.8033333333333333
+    },
+    {
+      "filename": "4.webp",
+      "size": [
+        498,
+        780
+      ],
+      "ratio_x": 0.6484375,
+      "ratio_y": 0.8666666666666667
+    },
+    {
+      "filename": "5.webp",
+      "size": [
+        445,
+        737
+      ],
+      "ratio_x": 0.5794270833333334,
+      "ratio_y": 0.8188888888888889
+    },
+    {
+      "filename": "6.webp",
+      "size": [
+        361,
+        716
+      ],
+      "ratio_x": 0.4700520833333333,
+      "ratio_y": 0.7955555555555556
+    },
+    {
+      "filename": "7.webp",
+      "size": [
+        619,
+        878
+      ],
+      "ratio_x": 0.8059895833333334,
+      "ratio_y": 0.9755555555555555
+    },
+    {
+      "filename": "8.webp",
+      "size": [
+        443,
+        697
+      ],
+      "ratio_x": 0.5768229166666666,
+      "ratio_y": 0.7744444444444445
+    },
+    {
+      "filename": "9.webp",
+      "size": [
+        467,
+        701
+      ],
+      "ratio_x": 0.6080729166666666,
+      "ratio_y": 0.7788888888888889
+    },
+    {
+      "filename": "placeholder.png",
+      "size": [
+        520,
+        362
+      ],
+      "ratio_x": 0.6770833333333334,
+      "ratio_y": 0.4022222222222222
+    }
+  ],
+  "errors": []
+}

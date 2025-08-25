@@ -295,12 +295,16 @@
             "2-0.webp",
             "2-1.webp"
         ],
-        "imgsize": "140%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-40px -80px",
-        "imageThumbPosition": [],
-        "imgsize_mobile": "150%",
-        "imageZoomPosition_mobile": "-35px -65px"
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -150px",
+        "imageThumbPosition": [
+            ""
+        ],
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 3,
@@ -343,12 +347,16 @@
             "3-0.webp",
             "3-1.webp"
         ],
-        "imgsize": "250%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-150px -110px",
-        "imageThumbPosition": [],
-        "imgsize_mobile": "320%",
-        "imageZoomPosition_mobile": "-140px -100px"
+        "imgsize": "500%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-390px -320px",
+        "imageThumbPosition": [
+            ""
+        ],
+        "imgsize_mobile": "600%",
+        "imageZoomPosition_mobile": "-290px -250px"
     },
     {
         "id": 4,
@@ -384,12 +392,16 @@
         "img": [
             "4.webp"
         ],
-        "imgsize": "170%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-60px -0px",
-        "imageThumbPosition": [],
-        "imgsize_mobile": "200%",
-        "imageZoomPosition_mobile": "-60px -10px"
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -110px",
+        "imageThumbPosition": [
+            ""
+        ],
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -70px"
     },
     {
         "id": 5,
@@ -425,12 +437,16 @@
         "img": [
             "5.webp"
         ],
-        "imgsize": "150%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-60px -20px",
-        "imageThumbPosition": [],
-        "imgsize_mobile": "190%",
-        "imageZoomPosition_mobile": "-65px -30px"
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -150px",
+        "imageThumbPosition": [
+            ""
+        ],
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 6,
@@ -466,12 +482,14 @@
         "img": [
             "6.webp"
         ],
-        "imgsize": "130%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-50px -100px",
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -250px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "150%",
-        "imageZoomPosition_mobile": "-40px -80px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -160px"
     },
     {
         "id": 7,
@@ -508,12 +526,14 @@
         "img": [
             "7.webp"
         ],
-        "imgsize": "230%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-130px -140px",
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-95px -100px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 8,
@@ -549,12 +569,14 @@
         "img": [
             "8.webp"
         ],
-        "imgsize": "170%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-60px -10px",
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "190%",
-        "imageZoomPosition_mobile": "-55px -10px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 9,
@@ -590,12 +612,14 @@
         "img": [
             "9.webp"
         ],
-        "imgsize": "180%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-80px -50px",
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "190%",
-        "imageZoomPosition_mobile": "-60px -30px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 10,
@@ -632,11 +656,13 @@
             "10.webp"
         ],
         "imgsize": "300%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-190px -70px",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -120px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "320%",
-        "imageZoomPosition_mobile": "-130px -40px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -80px"
     },
     {
         "id": 11,
@@ -649,7 +675,9 @@
             "棒人間"
         ],
         "fightingStyle": [
-            []
+            [
+                "None"
+            ]
         ],
         "attribute": [
             [
@@ -670,12 +698,14 @@
         "img": [
             "11.webp"
         ],
-        "imgsize": "180%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-90px -30px",
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -230px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": "-60px -10px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -140px"
     },
     {
         "id": 12,
@@ -711,12 +741,14 @@
         "img": [
             "12.webp"
         ],
-        "imgsize": "250%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-130px -160px",
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": "-80px -100px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 13,
@@ -752,12 +784,14 @@
         "img": [
             "13.webp"
         ],
-        "imgsize": "180%",
-        "imgThumbsize": [],
-        "imageZoomPosition": "-80px -70px",
+        "imgsize": "300%",
+        "imgThumbsize": [
+            ""
+        ],
+        "imageZoomPosition": "-190px -230px",
         "imageThumbPosition": [],
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": "-50px -60px"
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -140px"
     },
     {
         "id": 14,
