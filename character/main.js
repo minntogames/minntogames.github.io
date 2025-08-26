@@ -731,24 +731,11 @@ function showDataManager() {
   
   const manager = document.createElement('div');
   manager.id = 'dataManager';
-  manager.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 2px solid #ddd;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    z-index: 10000;
-    min-width: 280px;
-    max-width: 400px;
-  `;
+  manager.className = 'data-manager-popup';
   
   manager.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
-      <h4 style="margin: 0; color: #333; font-size: 1.2em;">
+    <div class="data-manager-header">
+      <h4 class="data-manager-title">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           <polyline points="14,2 14,8 20,8"/>
@@ -758,10 +745,10 @@ function showDataManager() {
         </svg>
         データ管理
       </h4>
-      <button onclick="showDataManager()" style="background: none; border: none; font-size: 24px; color: #999; cursor: pointer; padding: 0; line-height: 1;" title="閉じる">&times;</button>
+      <button onclick="showDataManager()" class="data-manager-close" title="閉じる">&times;</button>
     </div>
     <div style="margin-bottom: 12px;">
-      <button onclick="exportAllData()" class="data-manager-btn export-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-bottom: 8px; padding: 12px; background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.18s;">
+      <button onclick="exportAllData()" class="data-manager-btn export-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7,10 12,15 17,10"/>
@@ -772,7 +759,7 @@ function showDataManager() {
     </div>
     <div style="margin-bottom: 15px;">
       <input type="file" id="importFile" accept=".bmcd" style="display: none;" onchange="handleImportFile(this)">
-      <button onclick="document.getElementById('importFile').click()" class="data-manager-btn import-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: linear-gradient(135deg, #28a745, #1e7e34); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.18s;">
+      <button onclick="document.getElementById('importFile').click()" class="data-manager-btn import-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="17,8 12,3 7,8"/>
@@ -781,7 +768,7 @@ function showDataManager() {
         インポート
       </button>
     </div>
-    <p style="font-size: 12px; color: #666; margin: 0; text-align: center; line-height: 1.4;">
+    <p class="data-manager-description">
       お気に入り、メモ、設定データを<br>BMCD形式(.bmcd)でバックアップ・復元
     </p>
   `;
@@ -1644,7 +1631,7 @@ function updateThemeButtonText() {
   if (btn) {
     let label = 'テーマ切替 (現在: ライト)';
     if (currentTheme === 'dark') label = 'テーマ切替 (現在: ダーク)';
-    if (currentTheme === 'modern') label = 'テーマ切替 (現在: モダン)';
+    if (currentTheme === 'modern') label = 'テーマ切替 (現在: ネオン)';
     btn.textContent = label;
   }
 }

@@ -2214,3 +2214,155 @@ body.theme-modern .btn-cancel:hover {
   align-items: center; 
   gap: 8px;
 }
+
+/* データ管理ポップアップのスタイル */
+.data-manager-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  z-index: 10000;
+  min-width: 280px;
+  max-width: 400px;
+}
+
+.data-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.data-manager-title {
+  margin: 0;
+  color: #333;
+  font-size: 1.2em;
+}
+
+.data-manager-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.data-manager-close:hover {
+  color: #666;
+}
+
+.data-manager-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.18s;
+  margin-bottom: 8px;
+}
+
+.export-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.export-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-1px);
+}
+
+.import-btn {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  color: white;
+}
+
+.import-btn:hover {
+  background: linear-gradient(135deg, #1e7e34, #155724);
+  transform: translateY(-1px);
+}
+
+.data-manager-description {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ダークテーマ対応 */
+body.theme-dark .data-manager-popup {
+  background: #2c3e50;
+  border-color: #4a5568;
+}
+
+body.theme-dark .data-manager-title {
+  color: #e9ecef;
+}
+
+body.theme-dark .data-manager-close {
+  color: #a0aec0;
+}
+
+body.theme-dark .data-manager-close:hover {
+  color: #e9ecef;
+}
+
+body.theme-dark .data-manager-description {
+  color: #a0aec0;
+}
+
+/* ネオン/モダンテーマ対応 */
+body.theme-modern .data-manager-popup {
+  background: #1a1a2e;
+  border: 2px solid #00ff88;
+  box-shadow: 0 8px 24px rgba(0, 255, 136, 0.3);
+}
+
+body.theme-modern .data-manager-title {
+  color: #00ff88;
+}
+
+body.theme-modern .data-manager-close {
+  color: #ff6b9d;
+}
+
+body.theme-modern .data-manager-close:hover {
+  color: #ff8fb3;
+}
+
+body.theme-modern .export-btn {
+  background: linear-gradient(135deg, #00ff88, #00cc6a);
+  color: #1a1a2e;
+}
+
+body.theme-modern .export-btn:hover {
+  background: linear-gradient(135deg, #00cc6a, #00a855);
+  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+}
+
+body.theme-modern .import-btn {
+  background: linear-gradient(135deg, #ff6b9d, #ff4757);
+  color: #1a1a2e;
+}
+
+body.theme-modern .import-btn:hover {
+  background: linear-gradient(135deg, #ff4757, #ff3742);
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+}
+
+body.theme-modern .data-manager-description {
+  color: #c792ea;
+}

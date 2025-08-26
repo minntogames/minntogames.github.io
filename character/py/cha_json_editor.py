@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
+from json_formatter import save_json_with_custom_format
 
 JSON_PATH = os.path.join(os.path.dirname(__file__), '../cha.json')
 
@@ -198,11 +199,96 @@ class ChaEditor(tk.Tk):
         filemenu.add_command(label='キャラ保存 (Ctrl+S)', command=self.save_current_buffer)
         filemenu.add_command(label='全体保存 (Ctrl+Shift+S)', command=self.save_all_buffers_and_json)
         filemenu.add_separator()
+        filemenu.add_command(label='JSONを1行形式で再フォーマット', command=self.reformat_json_compact)
+        filemenu.add_separator()
+        filemenu.add_command(label='Pillowライブラリインストール', command=self.install_pillow)
         filemenu.add_command(label='デスクトップショートカット作成', command=self.create_desktop_shortcut)
         filemenu.add_separator()
         filemenu.add_command(label='終了', command=self.quit)
         menubar.add_cascade(label='ファイル', menu=filemenu)
         self.config(menu=menubar)
+
+    def install_pillow(self):
+        """Pillowライブラリのインストールを支援"""
+        try:
+            import subprocess
+            import sys
+            
+            result = messagebox.askyesno(
+                'Pillowインストール', 
+                'Pillow (PIL) ライブラリをインストールしますか？\n'
+                '画像プレビュー機能に必要です。\n\n'
+                '実行コマンド: pip install Pillow'
+            )
+            
+            if result:
+                try:
+                    # pipでPillowをインストール
+                    process = subprocess.Popen(
+                        [sys.executable, '-m', 'pip', 'install', 'Pillow'],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    stdout, stderr = process.communicate()
+                    
+                    if process.returncode == 0:
+                        messagebox.showinfo(
+                            'インストール完了', 
+                            'Pillowのインストールが完了しました。\n'
+                            'アプリケーションを再起動してください。'
+                        )
+                    else:
+                        messagebox.showerror(
+                            'インストールエラー', 
+                            f'Pillowのインストールに失敗しました:\n{stderr}'
+                        )
+                except Exception as e:
+                    messagebox.showerror(
+                        'インストールエラー', 
+                        f'インストール中にエラーが発生しました:\n{e}\n\n'
+                        '手動でインストールしてください:\n'
+                        'pip install Pillow'
+                    )
+        except Exception as e:
+            messagebox.showerror(
+                'エラー', 
+                f'インストール機能でエラーが発生しました:\n{e}\n\n'
+                '手動でインストールしてください:\n'
+                'pip install Pillow'
+            )
+
+    def reformat_json_compact(self):
+        """現在のJSONファイルを1行形式で再フォーマット"""
+        try:
+            # 現在の編集内容をすべて保存
+            if self.selected_index is not None:
+                char_idx, style_idx = self.listbox_items[self.selected_index]
+                self._update_buffer_from_fields(char_idx, style_idx)
+            self._save_all_buffers()
+            self.data[1:] = self.characters
+            
+            # バックアップを作成
+            backup_path = JSON_PATH + '.backup'
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=4)
+            
+            # カスタム形式で再フォーマット
+            compact_fields = {
+                'en', 'ja',  # settings内の配列
+                'name', 'name_en', 'race', 'fightingStyle', 'attribute', 
+                'imgThumbsize', 'imageThumbPosition'  # キャラ内の配列
+            }
+            save_json_with_custom_format(self.data, JSON_PATH, compact_fields)
+            
+            messagebox.showinfo('フォーマット完了', 
+                              f'JSONファイルを1行形式で再フォーマットしました。\n'
+                              f'バックアップ: {backup_path}')
+            self._editing = False
+            self._update_edit_indicator()
+            
+        except Exception as e:
+            messagebox.showerror('エラー', f'再フォーマットに失敗しました\n{e}')
 
     def create_desktop_shortcut(self):
         """デスクトップにアプリのショートカットを作成"""
@@ -613,8 +699,13 @@ $Shortcut.Save()
         self.data[1:] = self.characters
         
         try:
-            with open(JSON_PATH, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, ensure_ascii=False, indent=4)
+            # カスタム形式で保存（指定フィールドを1行形式に）
+            compact_fields = {
+                'en', 'ja',  # settings内の配列
+                'name', 'name_en', 'race', 'fightingStyle', 'attribute', 
+                'imgThumbsize', 'imageThumbPosition'  # キャラ内の配列
+            }
+            save_json_with_custom_format(self.data, JSON_PATH, compact_fields)
             messagebox.showinfo('保存', f'キャラ{char_idx+1}の編集内容を保存しました')
             self._editing = False
             self._update_edit_indicator()
@@ -639,8 +730,13 @@ $Shortcut.Save()
         
         # JSON保存
         try:
-            with open(JSON_PATH, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, ensure_ascii=False, indent=4)
+            # カスタム形式で保存（指定フィールドを1行形式に）
+            compact_fields = {
+                'en', 'ja',  # settings内の配列
+                'name', 'name_en', 'race', 'fightingStyle', 'attribute', 
+                'imgThumbsize', 'imageThumbPosition'  # キャラ内の配列
+            }
+            save_json_with_custom_format(self.data, JSON_PATH, compact_fields)
             messagebox.showinfo('保存', 'すべての編集内容をJSONファイルに保存しました')
             self._editing = False
             self._update_edit_indicator()
@@ -907,19 +1003,25 @@ $Shortcut.Save()
 
         if not img_file or not isinstance(img_file, str) or not img_file.strip():
             # 画像がない場合はプレースホルダーを表示
-            self.clear_preview_canvases()
+            self.clear_preview_canvases('画像なし')
             return
 
         # 画像パス
         img_path = os.path.join(os.path.dirname(__file__), '../img', img_file)
         if not os.path.exists(img_path):
             # プレースホルダー画像
-            self.clear_preview_canvases()
+            self.clear_preview_canvases('画像ファイルなし')
             return
 
         try:
             from PIL import Image, ImageTk
-            
+        except ImportError:
+            # Pillowがインストールされていない場合
+            print("警告: PIL (Pillow) がインストールされていません。画像プレビュー機能を使用するにはインストールしてください。")
+            self.clear_preview_canvases('PIL未インストール')
+            return
+
+        try:
             # 元画像を読み込み
             original_img = Image.open(img_path)
             
@@ -947,12 +1049,28 @@ $Shortcut.Save()
                                         current_values.get('imageZoomPosition', ''),
                                         "detail_pc")
             
+        except ImportError:
+            # Pillowがインストールされていない場合
+            print("警告: PIL (Pillow) がインストールされていません。画像プレビュー機能を使用するにはインストールしてください。")
+            self.clear_preview_canvases()
+            # 簡易メッセージを表示
+            if hasattr(self, 'pc_preview_canvas'):
+                self.pc_preview_canvas.delete('all')
+                self.pc_preview_canvas.create_text(100, 100, text='PIL未インストール', fill='red')
         except Exception as e:
             print(f"画像プレビューエラー: {e}")
-            self.clear_preview_canvases()
+            self.clear_preview_canvases('画像エラー')
 
     def create_preview_image(self, original_img, canvas, canvas_width, canvas_height, size_value, position_value, preview_type):
         """指定されたキャンバスに画像プレビューを作成"""
+        try:
+            from PIL import Image, ImageTk
+        except ImportError:
+            # Pillowがない場合は何もしない
+            canvas.delete('all')
+            canvas.create_text(canvas_width//2, canvas_height//2, text='PIL未インストール', fill='red')
+            return
+            
         canvas.delete('all')
         
         # サイズ計算
@@ -985,11 +1103,16 @@ $Shortcut.Save()
             new_w = int(display_size * aspect_ratio)
             new_h = int(display_size)
         
-        if new_w > 0 and new_h > 0:
-            resized_img = original_img.resize((new_w, new_h), Image.LANCZOS)
-        else:
-            resized_img = original_img.resize((50, 50), Image.LANCZOS)
-            new_w, new_h = 50, 50
+        try:
+            if new_w > 0 and new_h > 0:
+                resized_img = original_img.resize((new_w, new_h), Image.LANCZOS)
+            else:
+                resized_img = original_img.resize((50, 50), Image.LANCZOS)
+                new_w, new_h = 50, 50
+        except Exception:
+            # リサイズに失敗した場合
+            canvas.create_text(canvas_width//2, canvas_height//2, text='画像エラー', fill='red')
+            return
         
         # 位置計算
         pos_x, pos_y = self.parse_position_value(position_value)
@@ -1005,12 +1128,16 @@ $Shortcut.Save()
         final_x = center_x + pos_x
         final_y = center_y + pos_y
         
-        # PhotoImageに変換
-        tk_img = ImageTk.PhotoImage(resized_img)
-        self.tk_images[preview_type] = tk_img  # 参照を保持
-        
-        # キャンバスに描画
-        canvas.create_image(final_x, final_y, image=tk_img)
+        try:
+            # PhotoImageに変換
+            tk_img = ImageTk.PhotoImage(resized_img)
+            self.tk_images[preview_type] = tk_img  # 参照を保持
+            
+            # キャンバスに描画
+            canvas.create_image(final_x, final_y, image=tk_img)
+        except Exception:
+            canvas.create_text(canvas_width//2, canvas_height//2, text='描画エラー', fill='red')
+            return
         
         # 枠線を描画（表示領域を示す）
         border_color = "#cccccc"
@@ -1020,7 +1147,7 @@ $Shortcut.Save()
         canvas.create_line(center_x, 0, center_x, canvas_height, fill="#e0e0e0", width=1)
         canvas.create_line(0, center_y, canvas_width, center_y, fill="#e0e0e0", width=1)
 
-    def clear_preview_canvases(self):
+    def clear_preview_canvases(self, message='画像なし'):
         """すべてのプレビューキャンバスをクリア"""
         if not hasattr(self, 'pc_preview_canvas'):
             return
@@ -1029,7 +1156,10 @@ $Shortcut.Save()
             # キャンバスサイズを取得
             width = canvas.winfo_reqwidth() if canvas.winfo_reqwidth() > 1 else 200
             height = canvas.winfo_reqheight() if canvas.winfo_reqheight() > 1 else 200
-            canvas.create_text(width//2, height//2, text='画像なし', fill='gray')
+            
+            # メッセージの色を決定
+            text_color = 'red' if 'PIL' in message or 'エラー' in message else 'gray'
+            canvas.create_text(width//2, height//2, text=message, fill=text_color)
 
     def schedule_preview_update(self):
         """プレビュー更新をスケジュール（連続入力時の負荷軽減）"""
@@ -1064,42 +1194,28 @@ $Shortcut.Save()
         self.set_field_value(entry, new_value)
 
     def show_character_image(self, char, style_idx):
-        # 画像ファイル名を取得
-        img_val = char.get('img', '')
-        img_file = None
-        if isinstance(img_val, list):
-            if img_val:
-                if style_idx is not None and style_idx < len(img_val):
-                    img_file = img_val[style_idx]
-                else:
-                    img_file = img_val[0]
-        elif isinstance(img_val, str):
-            img_file = img_val
-        # 画像パスを決定
-        if img_file and isinstance(img_file, str) and img_file.strip():
-            img_path = os.path.join(os.path.dirname(__file__), '../img', img_file)
-            if not os.path.exists(img_path):
-                img_path = os.path.join(os.path.dirname(__file__), '../img/placeholder.png')
-        else:
-            img_path = os.path.join(os.path.dirname(__file__), '../img/placeholder.png')
-        # 画像表示（縦横比維持で中央に表示）
+        """キャラクター画像の表示処理（新しいプレビューシステム用に最適化）"""
+        # 既存の画像プレビュー更新機能を使用
+        self.update_image_preview()
+
+    def _validate_json(self):
+        """JSONデータのバリデーション"""
+        errors = []
+        
         try:
-            from PIL import Image, ImageTk
-            img = Image.open(img_path)
-            max_w, max_h = 300, 300
-            w, h = img.size
-            scale = min(max_w / w, max_h / h)
-            new_w, new_h = int(w * scale), int(h * scale)
-            img = img.resize((new_w, new_h), Image.LANCZOS)
-            self.tk_img = ImageTk.PhotoImage(img)
-            self.img_canvas.delete('all')
-            # キャンバス中央に配置
-            x = (max_w // 2) + 10  # gridの余白分微調整
-            y = (max_h // 2) + 10
-            self.img_canvas.create_image(x, y, image=self.tk_img)
+            # 基本的なJSONシリアライズテスト
+            json.dumps(self.data, ensure_ascii=False)
         except Exception as e:
-            self.img_canvas.delete('all')
-            self.img_canvas.create_text(160, 160, text='画像なし', fill='gray')
+            errors.append(f"JSONシリアライズエラー: {e}")
+        
+        # キャラクターデータの基本チェック
+        for i, char in enumerate(self.characters):
+            if 'id' not in char:
+                errors.append(f"キャラ{i+1}: IDが設定されていません")
+            elif not isinstance(char['id'], int):
+                errors.append(f"キャラ{i+1}: IDは数値である必要があります")
+        
+        return errors
 
     def save_changes(self):
         if self.selected_index is None:
@@ -1122,8 +1238,13 @@ $Shortcut.Save()
             self._save_buffer_to_char(char_idx)
             # charactersの内容をdataに反映
             self.data[1:] = self.characters
-            with open(JSON_PATH, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, ensure_ascii=False, indent=4)
+            # カスタム形式で保存（指定フィールドを1行形式に）
+            compact_fields = {
+                'en', 'ja',  # settings内の配列
+                'name', 'name_en', 'race', 'fightingStyle', 'attribute', 
+                'imgThumbsize', 'imageThumbPosition'  # キャラ内の配列
+            }
+            save_json_with_custom_format(self.data, JSON_PATH, compact_fields)
             self.build_listbox_items(preserve_selection=True)  # 選択状態を保持
             self._editing = False
             self._update_edit_indicator()
