@@ -1,0 +1,738 @@
+/* ピクセルアート風キャラクターカードスタイル */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Press Start 2P', monospace;
+    background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ヘッダー */
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 4px solid #00ff88;
+    border-radius: 0px;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    image-rendering: pixelated;
+}
+
+.page-header h1 {
+    color: #00ff88;
+    font-size: 24px;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 0px #003d1a;
+}
+
+.page-header p {
+    color: #ffffff;
+    font-size: 12px;
+    margin-bottom: 20px;
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.control-btn, .control-select {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 10px 15px;
+    border: 3px solid #00ff88;
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff88;
+    cursor: pointer;
+    transition: all 0.2s;
+    image-rendering: pixelated;
+}
+
+.control-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #00ff88;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.control-label input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: #00ff88;
+}
+
+.control-btn:hover, .control-select:hover, .control-label:hover {
+    background: rgba(0, 255, 136, 0.2);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    transform: scale(1.05);
+}
+
+/* 自動スクロールボタンの特別なスタイル */
+#autoScrollToggle {
+    position: relative;
+    overflow: hidden;
+}
+
+#autoScrollToggle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+#autoScrollToggle:hover::before {
+    left: 100%;
+}
+
+/* ローディング */
+.loading {
+    text-align: center;
+    padding: 50px;
+    color: #00ff88;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(0, 255, 136, 0.3);
+    border-top: 4px solid #00ff88;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* カードコンテナのデフォルト */
+#cardsContainer {
+    display: grid;
+}
+
+/* カードグリッド */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 30px;
+    padding: 20px;
+    align-items: start;
+}
+
+/* ボスカードをグリッドで2列にまたがらせる */
+.cards-grid .character-card.boss-card {
+    grid-column: span 1;
+    max-width: 500px;
+    justify-self: center;
+}
+
+/* 横並び表示スタイル */
+.cards-horizontal {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 25px;
+    padding: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+}
+
+.cards-horizontal .character-card {
+    flex-shrink: 0;
+    width: 350px;
+}
+
+.cards-horizontal .character-card.boss-card {
+    width: 500px;
+}
+
+/* オリジナルスタイルの横並びレイアウト用 */
+#cardsContainer.original-style.horizontal-layout .character-card {
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+}
+
+#cardsContainer.original-style.horizontal-layout .character-card.boss-card {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+#cardsContainer.original-style.horizontal-scroll .character-card {
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+}
+
+#cardsContainer.original-style.horizontal-scroll .character-card.boss-card {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* カードスタイル */
+.character-card {
+    position: relative;
+    background: #000;
+    border: 4px solid;
+    border-radius: 0px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    image-rendering: pixelated;
+    height: 450px;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+}
+
+.character-card:hover {
+    transform: scale(1.05) translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* 世界線カラー */
+.character-card.world-1 { border-color: #00c3ff; }
+.character-card.world-2 { border-color: #ff7e5f; }
+.character-card.world-3 { border-color: #a8edea; }
+
+/* HPバッジ */
+.hp-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #e74c3c;
+    color: white;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%);
+    z-index: 10;
+    text-shadow: 1px 1px 0px #000;
+    min-width: 60px;
+    text-align: center;
+}
+
+/* キャラクター名バー */
+.character-name {
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 12px;
+    font-size: 11px;
+    text-align: center;
+    border-bottom: 2px solid;
+    text-shadow: 1px 1px 0px #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.character-card.world-1 .character-name { border-color: #00c3ff; }
+.character-card.world-2 .character-name { border-color: #ff7e5f; }
+.character-card.world-3 .character-name { border-color: #a8edea; }
+
+/* キャラクター画像エリア */
+.character-image {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.character-image img {
+    max-width: 95%;
+    max-height: 95%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    filter: contrast(1.1) saturate(1.2);
+    position: relative;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+/* MOTHER2背景Canvas */
+.mother2-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    opacity: 0.7;
+    image-rendering: pixelated;
+    border-radius: 0;
+}
+
+/* 背景グラデーション */
+.character-card.world-1 .character-image {
+    background: linear-gradient(135deg, #74b9ff, #0984e3);
+}
+
+.character-card.world-2 .character-image {
+    background: linear-gradient(135deg, #fd79a8, #e84393);
+}
+
+.character-card.world-3 .character-image {
+    background: linear-gradient(135deg, #fdcb6e, #e17055);
+}
+
+/* キャラクター情報 */
+.character-info {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 12px;
+    border-top: 2px solid;
+    font-size: 9px;
+    line-height: 14px;
+}
+
+.character-card.world-1 .character-info { border-color: #00c3ff; }
+.character-card.world-2 .character-info { border-color: #ff7e5f; }
+.character-card.world-3 .character-info { border-color: #a8edea; }
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    color: #fff;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    color: #bbb;
+}
+
+.info-value {
+    color: #fff;
+    font-weight: bold;
+}
+
+/* 属性アイコン */
+.attribute-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.attribute-fire { background: #e74c3c; }
+.attribute-water { background: #3498db; }
+.attribute-earth { background: #8b4513; }
+.attribute-wind { background: #95a5a6; }
+.attribute-light { background: #f1c40f; }
+.attribute-darkness { background: #2c3e50; }
+.attribute-holy { background: #ecf0f1; }
+.attribute-poison { background: #9b59b6; }
+.attribute-electricity { background: #f39c12; }
+.attribute-ice { background: #74b9ff; }
+.attribute-psychic { background: #e91e63; }
+.attribute-none { background: #7f8c8d; }
+.attribute-spiral { background: linear-gradient(45deg, #e74c3c, #3498db, #f1c40f); }
+
+/* エラーメッセージ */
+.error-message {
+    text-align: center;
+    padding: 50px;
+    color: #e74c3c;
+    font-size: 14px;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+    .page-header h1 {
+        font-size: 18px;
+    }
+    
+    .cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .character-card {
+        height: 380px;
+    }
+    
+    .controls {
+        align-items: center;
+    }
+    
+    .control-btn, .control-select {
+        font-size: 8px;
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+    }
+    
+    .character-card {
+        height: 340px;
+    }
+    
+    .page-header {
+        padding: 20px;
+    }
+    
+    .page-header h1 {
+        font-size: 14px;
+    }
+}
+
+/* 特殊効果 */
+.character-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 49%, rgba(255,255,255,0.1) 50%, transparent 51%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.character-card:hover::before {
+    opacity: 1;
+}
+
+/* ピクセル化効果 */
+.pixelated {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* 横並びレイアウト */
+#cardsContainer.horizontal-layout {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px;
+    padding-bottom: 40px;
+    align-items: flex-start;
+}
+
+#cardsContainer.horizontal-layout .character-card {
+    flex: 0 0 auto;
+    width: 350px;
+    min-width: 350px;
+    max-width: 350px;
+    height: 450px;
+}
+
+#cardsContainer.horizontal-layout .character-card.boss-card {
+    width: 500px;
+    min-width: 500px;
+    max-width: 500px;
+}
+
+/* 完全横並びレイアウト（スクロール） */
+#cardsContainer.horizontal-scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 15px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px;
+    padding-bottom: 40px;
+    scroll-behavior: smooth;
+    align-items: flex-start;
+}
+
+#cardsContainer.horizontal-scroll .character-card {
+    flex: 0 0 auto;
+    width: 350px;
+    min-width: 350px;
+    max-width: 350px;
+    height: 450px;
+}
+
+#cardsContainer.horizontal-scroll .character-card.boss-card {
+    width: 500px;
+    min-width: 500px;
+    max-width: 500px;
+}
+
+/* カスタムスクロールバー */
+#cardsContainer.horizontal-layout::-webkit-scrollbar,
+#cardsContainer.horizontal-scroll::-webkit-scrollbar {
+    height: 12px;
+}
+
+#cardsContainer.horizontal-layout::-webkit-scrollbar-track,
+#cardsContainer.horizontal-scroll::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 6px;
+}
+
+#cardsContainer.horizontal-layout::-webkit-scrollbar-thumb,
+#cardsContainer.horizontal-scroll::-webkit-scrollbar-thumb {
+    background: #00ff88;
+    border-radius: 6px;
+    border: 2px solid #1a1a1a;
+}
+
+#cardsContainer.horizontal-layout::-webkit-scrollbar-thumb:hover,
+#cardsContainer.horizontal-scroll::-webkit-scrollbar-thumb:hover {
+    background: #00cc66;
+}
+
+/* オリジナルスタイルモード */
+#cardsContainer.original-style .character-card {
+    height: 320px;
+    width: 200px;
+    max-width: 200px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    overflow: visible;
+    position: relative;
+}
+
+/* オリジナルスタイルのボスカード */
+#cardsContainer.original-style .character-card.boss-card {
+    width: 280px;
+    max-width: 280px;
+}
+
+/* 六角形HP表示 */
+#cardsContainer.original-style .hp-badge {
+    position: relative;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background: #e74c3c;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    z-index: 10;
+    font-size: 10px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0px #000;
+    margin-bottom: -15px;
+}
+
+/* HP値の桁数に応じた六角形の幅調整 */
+#cardsContainer.original-style .hp-badge.hp-short {
+    width: 80px;  /* 1-3桁 */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+#cardsContainer.original-style .hp-badge.hp-medium {
+    width: 100px; /* 4-5桁 */
+    clip-path: polygon(50% 0%, 90% 20%, 90% 80%, 50% 100%, 10% 80%, 10% 20%);
+}
+
+#cardsContainer.original-style .hp-badge.hp-long {
+    width: 120px; /* 6桁以上 */
+    clip-path: polygon(50% 0%, 85% 17%, 85% 83%, 50% 100%, 15% 83%, 15% 17%);
+}
+
+#cardsContainer.original-style .hp-badge.hp-extra-long {
+    width: 140px; /* 7桁以上 */
+    clip-path: polygon(50% 0%, 82% 15%, 82% 85%, 50% 100%, 18% 85%, 18% 15%);
+}
+
+#cardsContainer.original-style .hp-badge .hp-value {
+    font-size: 16px;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+/* HP値の桁数に応じたフォントサイズ調整 */
+#cardsContainer.original-style .hp-badge.hp-medium .hp-value {
+    font-size: 14px;
+}
+
+#cardsContainer.original-style .hp-badge.hp-long .hp-value {
+    font-size: 12px;
+}
+
+#cardsContainer.original-style .hp-badge.hp-extra-long .hp-value {
+    font-size: 10px;
+}
+
+/* 別スタイルのキャラクター表示 */
+.character-card.alt-style {
+    border: 2px solid #ff6b35;
+    box-shadow: 0 0 15px rgba(255, 107, 53, 0.3);
+}
+
+.character-card.alt-style .character-name {
+    color: #ff6b35;
+}
+
+.character-card.alt-style .hp-badge {
+    background: #ff6b35;
+}
+
+/* ボスカードの横幅拡張 */
+.character-card.boss-card {
+    max-width: 500px;
+    width: 100%;
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    position: relative;
+}
+
+.character-card.boss-card::before {
+    content: '👑';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 24px;
+    z-index: 20;
+    background: #ffd700;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffaa00;
+}
+
+.character-card.boss-card .character-name {
+    color: #ffd700;
+    text-shadow: 2px 2px 0px #aa7700;
+}
+
+.character-card.boss-card .hp-badge {
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    border: 2px solid #aa7700;
+}
+
+#cardsContainer.original-style .hp-badge .hp-label {
+    font-size: 8px;
+    line-height: 1;
+}
+
+/* オリジナルスタイルの名前 */
+#cardsContainer.original-style .character-name {
+    height: 40px; /* 2の比率を調整 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 3px solid #ffffff;
+    border-bottom: 3px solid #ffffff;
+    border-left: none;
+    border-right: none;
+    font-size: 12px;
+    text-align: center;
+    padding: 10px;
+    margin: 0;
+    background: linear-gradient(#4f4f4f,10% , #d8d8d8, 80%,#4f4f4f);
+    color: #000000;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
+
+/* オリジナルスタイルの画像エリア */
+#cardsContainer.original-style .character-image {
+    height: 220px; /* 3の比率を調整 */
+    flex: none;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    position: relative;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+/* オリジナルスタイルでも世界線別グラデーション適用 */
+#cardsContainer.original-style .character-card.world-1 .character-image {
+    background: linear-gradient(135deg, #74b9ff, #0984e3);
+}
+
+#cardsContainer.original-style .character-card.world-2 .character-image {
+    background: linear-gradient(135deg, #fd79a8, #e84393);
+}
+
+#cardsContainer.original-style .character-card.world-3 .character-image {
+    background: linear-gradient(135deg, #fdcb6e, #e17055);
+}
+
+#cardsContainer.original-style .character-image img {
+    max-width: 95%;
+    max-height: 95%;
+}
+
+/* オリジナルスタイルでもMOTHER2背景を表示 */
+#cardsContainer.original-style .mother2-background {
+    opacity: 0.6;
+}
+
+/* オリジナルスタイルの情報エリアを非表示 */
+#cardsContainer.original-style .character-info {
+    display: none;
+}
+
+/* グリッドレイアウトでオリジナルスタイル使用時 */
+#cardsContainer.original-style.cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+}
+
+/* 横並びレイアウトでオリジナルスタイル使用時 */
+#cardsContainer.original-style.horizontal-layout .character-card,
+#cardsContainer.original-style.horizontal-scroll .character-card {
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+    height: 320px;
+}

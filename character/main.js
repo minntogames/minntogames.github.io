@@ -1334,9 +1334,9 @@ function filterCharacters() {
     characters.slice(0, 5).forEach((char, index) => {
       console.log(`Character ${index + 1} (ID: ${char.id}):`, {
         race: char.race,
-        raceTypes: char.race ? char.race.map((r, i) => `[${i}]: ${JSON.stringify(r)} (${typeof r})`) : 'undefined',
+        raceTypes: Array.isArray(char.race) ? char.race.map((r, i) => `[${i}]: ${JSON.stringify(r)} (${typeof r})`) : 'not an array',
         group: char.group, 
-        groupTypes: char.group ? char.group.map((g, i) => `[${i}]: ${JSON.stringify(g)} (${typeof g})`) : 'undefined',
+        groupTypes: Array.isArray(char.group) ? char.group.map((g, i) => `[${i}]: ${JSON.stringify(g)} (${typeof g})`) : 'not an array',
         fightingStyle: char.fightingStyle,
         attribute: char.attribute
       });
@@ -1739,14 +1739,14 @@ function showCharacterDetails(charId, imgIndex = 0) {
         ${titleRowHtml}
         <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
         <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('race')}:</strong> ${character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('attribute')}:</strong> ${attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
+        <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race || 'N/A')}</p>
+        <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle || 'N/A')}</p>
+        <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute || 'N/A')}</p>
         <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
         ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
         <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
         <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('group')}:</strong> ${character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') || 'N/A'}</p>
+        <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group || 'N/A')}</p>
         <div class="memo-section">
           <p>
             <strong>${getTranslatedLabel('memo')}:</strong>
@@ -1819,11 +1819,11 @@ function renderRelatedCharacters(groups, currentId, showAll = false) {
         const gNameStr = String(gName || '');
         return languageMaps.group[gNameStr.toLowerCase()] || gNameStr.toLowerCase();
       });
-      const characterGroups = c.group.map(cName => {
+      const characterGroups = Array.isArray(c.group) ? c.group.map(cName => {
         if (typeof cName !== 'string') return '';
         const cNameStr = String(cName || '');
         return languageMaps.group[cNameStr.toLowerCase()] || cNameStr.toLowerCase();
-      });
+      }) : [];
       return canonicalGroups.some(cg => characterGroups.includes(cg));
     })
   );
@@ -3237,3 +3237,402 @@ function clearCustomTagsFilter() {
   const filterOptions = container.querySelectorAll('.filter-option');
   filterOptions.forEach(option => option.classList.remove('selected'));
 }
+
+// コンテキストメニュー管理
+let currentContextMenu = null;
+
+/**
+ * 右クリックコンテキストメニューを表示
+ * @param {MouseEvent} event - マウスイベント
+ * @param {number} charId - キャラクターID
+ */
+function showContextMenu(event, charId) {
+  console.log('showContextMenu called with charId:', charId); // デバッグログ
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // 既存のコンテキストメニューを削除
+  hideContextMenu();
+  
+  const character = characters.find(c => c.id === charId);
+  if (!character) {
+    console.error('Character not found:', charId);
+    return;
+  }
+  
+  console.log('Creating context menu for character:', character.name); // デバッグログ
+  
+  // コンテキストメニューを作成
+  const contextMenu = document.createElement('div');
+  contextMenu.className = 'context-menu';
+  contextMenu.id = 'characterContextMenu';
+  
+  const menuItems = [
+    {
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+      text: '詳細を表示',
+      action: () => showCharacterDetails(charId),
+      closeMenu: true
+    },
+    {
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+      text: favorites.includes(charId) ? 'お気に入りから削除' : 'お気に入りに追加',
+      action: () => toggleFavoriteFromContextMenu(charId),
+      closeMenu: false
+    },
+    { separator: true },
+    // {
+    //   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="m4 16 6-6 2 2 6-6"/></svg>',
+    //   text: '画像をコピー',
+    //   action: () => copyCharacterImage(character),
+    //   closeMenu: true
+    // },
+    {
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+      text: 'リンクをコピー',
+      action: () => copyCharacterLink(charId),
+      closeMenu: true
+    },
+    { separator: true },
+    {
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 7.27A2.25 2.25 0 0 1 19 9.62v8.5a.25.25 0 0 1-.25.25H5.25a.25.25 0 0 1-.25-.25v-8.5a2.25 2.25 0 0 1-1.5-2.35l.75-3A2.25 2.25 0 0 1 6.35 2.5h11.3a2.25 2.25 0 0 1 2.1 1.52l.75 3Z"/><path d="m9 9 3 3 3-3"/></svg>',
+      text: 'カスタムタグを追加',
+      action: () => showTagSelectionPopup(charId),
+      closeMenu: true
+    },
+    {
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>',
+      text: 'データをコピー',
+      action: () => copyCharacterData(character),
+      closeMenu: true
+    }
+  ];
+  
+  // メニューアイテムを生成
+  menuItems.forEach(item => {
+    if (item.separator) {
+      const separator = document.createElement('div');
+      separator.className = 'context-menu-separator';
+      contextMenu.appendChild(separator);
+    } else {
+      const menuItem = document.createElement('div');
+      menuItem.className = 'context-menu-item';
+      menuItem.innerHTML = `${item.icon}<span>${item.text}</span>`;
+      menuItem.onclick = (event) => {
+        event.stopPropagation(); // イベントバブリングを防ぐ
+        item.action();
+        if (item.closeMenu) {
+          hideContextMenu();
+        }
+      };
+      contextMenu.appendChild(menuItem);
+    }
+  });
+  
+  // ドキュメントに追加
+  document.body.appendChild(contextMenu);
+  currentContextMenu = contextMenu;
+  
+  // コンテキストメニュー自体のクリックイベントを止める
+  contextMenu.addEventListener('click', function(event) {
+    event.stopPropagation();
+  });
+  
+  console.log('Context menu created and added to DOM'); // デバッグログ
+  
+  // 位置調整
+  positionContextMenu(contextMenu, event.clientX, event.clientY);
+  
+  // 表示（アニメーション付き）
+  contextMenu.style.display = 'block';
+  requestAnimationFrame(() => {
+    contextMenu.classList.add('show');
+  });
+  console.log('Context menu should now be visible'); // デバッグログ
+}
+
+/**
+ * コンテキストメニューの位置を調整
+ * @param {HTMLElement} menu - メニュー要素
+ * @param {number} x - X座標
+ * @param {number} y - Y座標
+ */
+function positionContextMenu(menu, x, y) {
+  // まず一時的に表示して正確なサイズを取得
+  menu.style.visibility = 'hidden';
+  menu.style.display = 'block';
+  
+  const menuRect = menu.getBoundingClientRect();
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+  
+  let left = x;
+  let top = y;
+  
+  // 右端はみ出し調整（優先度：左側に表示 > 右端に合わせる）
+  if (left + menuRect.width > windowWidth) {
+    // マウス位置より左側に表示を試みる
+    const leftSidePosition = x - menuRect.width;
+    if (leftSidePosition >= 10) {
+      left = leftSidePosition;
+    } else {
+      // 左側に表示できない場合は右端に合わせる
+      left = windowWidth - menuRect.width - 10;
+    }
+  }
+  
+  // 下端はみ出し調整（優先度：上側に表示 > 下端に合わせる）
+  if (top + menuRect.height > windowHeight) {
+    // マウス位置より上側に表示を試みる
+    const topSidePosition = y - menuRect.height;
+    if (topSidePosition >= 10) {
+      top = topSidePosition;
+    } else {
+      // 上側に表示できない場合は下端に合わせる
+      top = windowHeight - menuRect.height - 10;
+    }
+  }
+  
+  // 最小位置調整（画面の端から最低10px空ける）
+  left = Math.max(10, Math.min(left, windowWidth - menuRect.width - 10));
+  top = Math.max(10, Math.min(top, windowHeight - menuRect.height - 10));
+  
+  // スクロール位置を考慮
+  menu.style.left = (left + scrollX) + 'px';
+  menu.style.top = (top + scrollY) + 'px';
+  
+  // 表示状態に戻す
+  menu.style.visibility = 'visible';
+}
+
+/**
+ * コンテキストメニューを隠す
+ */
+function hideContextMenu() {
+  if (currentContextMenu) {
+    currentContextMenu.classList.remove('show');
+    setTimeout(() => {
+      if (currentContextMenu) {
+        currentContextMenu.remove();
+        currentContextMenu = null;
+      }
+    }, 150); // アニメーション時間と同期
+  }
+}
+
+/**
+ * キャラクター画像をクリップボードにコピー
+ * @param {object} character - キャラクターデータ
+ */
+async function copyCharacterImage(character) {
+  try {
+    const imgArr = character.img ? character.img.split('|') : ['placeholder.png'];
+    const imagePath = `img/${imgArr[0]}`;
+    
+    // 画像をフェッチしてBlobに変換
+    const response = await fetch(imagePath);
+    const blob = await response.blob();
+    
+    // クリップボードに書き込み
+    await navigator.clipboard.write([
+      new ClipboardItem({ [blob.type]: blob })
+    ]);
+    
+    showNotification('画像をクリップボードにコピーしました');
+  } catch (error) {
+    console.error('画像のコピーに失敗:', error);
+    showNotification('画像のコピーに失敗しました', 'error');
+  }
+}
+
+/**
+ * キャラクターのリンクをクリップボードにコピー
+ * @param {number} charId - キャラクターID
+ */
+async function copyCharacterLink(charId) {
+  try {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('char', charId);
+    
+    await navigator.clipboard.writeText(currentUrl.toString());
+    showNotification('リンクをクリップボードにコピーしました');
+  } catch (error) {
+    console.error('リンクのコピーに失敗:', error);
+    showNotification('リンクのコピーに失敗しました', 'error');
+  }
+}
+
+/**
+ * キャラクターデータをJSONとしてクリップボードにコピー
+ * @param {object} character - キャラクターデータ
+ */
+async function copyCharacterData(character) {
+  try {
+    const jsonData = JSON.stringify(character, null, 2);
+    await navigator.clipboard.writeText(jsonData);
+    showNotification('データをクリップボードにコピーしました');
+  } catch (error) {
+    console.error('データのコピーに失敗:', error);
+    showNotification('データのコピーに失敗しました', 'error');
+  }
+}
+
+/**
+ * コンテキストメニューからお気に入りを切り替え（メニューを閉じない）
+ * @param {number} charId - キャラクターID
+ */
+function toggleFavoriteFromContextMenu(charId) {
+  console.log('toggleFavoriteFromContextMenu called for charId:', charId); // デバッグログ
+  
+  // お気に入りを切り替え
+  toggleFavorite(charId);
+  
+  // メニューのお気に入りアイテムのテキストとアイコンを更新
+  updateContextMenuFavoriteItem(charId);
+  
+  // 通知を表示
+  const isFavorite = favorites.includes(charId);
+  const character = characters.find(c => c.id === charId);
+  const characterName = character ? (character.name ? character.name[0] : 'キャラクター') : 'キャラクター';
+  showNotification(
+    isFavorite ? `${characterName}をお気に入りに追加しました` : `${characterName}をお気に入りから削除しました`
+  );
+  
+  console.log('toggleFavoriteFromContextMenu completed, menu should stay open'); // デバッグログ
+}
+
+/**
+ * コンテキストメニューのお気に入りアイテムを更新
+ * @param {number} charId - キャラクターID
+ */
+function updateContextMenuFavoriteItem(charId) {
+  const contextMenu = document.getElementById('characterContextMenu');
+  if (!contextMenu) return;
+  
+  const isFavorite = favorites.includes(charId);
+  const favoriteItem = contextMenu.querySelector('.context-menu-item:nth-child(2)'); // 2番目のアイテム（お気に入り）
+  
+  if (favoriteItem) {
+    const newIcon = isFavorite 
+      ? '<svg viewBox="0 0 24 24" fill="#ff6b00" stroke="#ff6b00" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+    
+    const newText = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
+    
+    favoriteItem.innerHTML = `${newIcon}<span>${newText}</span>`;
+  }
+}
+function showNotification(message, type = 'success') {
+  // 既存の通知を削除
+  const existingNotification = document.querySelector('.notification');
+  if (existingNotification) {
+    existingNotification.remove();
+  }
+  
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    z-index: 10002;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    background: ${type === 'error' ? '#ff4757' : '#2ed573'};
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // アニメーション表示
+  requestAnimationFrame(() => {
+    notification.style.opacity = '1';
+    notification.style.transform = 'translateX(0)';
+  });
+  
+  // 3秒後に自動削除
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(100%)';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+// グローバルクリックでコンテキストメニューを閉じる（メニュー内のクリックは除外）
+document.addEventListener('click', function(event) {
+  if (currentContextMenu && !currentContextMenu.contains(event.target)) {
+    hideContextMenu();
+  }
+});
+document.addEventListener('scroll', hideContextMenu);
+window.addEventListener('resize', hideContextMenu);
+
+// カード要素の右クリックメニューイベントを設定
+document.addEventListener('contextmenu', function(event) {
+  const cardElement = event.target.closest('.card');
+  if (cardElement) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const charId = parseInt(cardElement.getAttribute('data-char-id'));
+    if (charId) {
+      showContextMenu(event, charId);
+    }
+    return false;
+  }
+});
+
+// 画像の右クリックメニューとドラッグを無効化
+document.addEventListener('DOMContentLoaded', function() {
+  // 既存の画像要素に対して
+  const images = document.querySelectorAll('.card img');
+  images.forEach(img => {
+    img.addEventListener('contextmenu', function(e) {
+      // 画像の右クリックのみを防止（カードの右クリックは許可）
+      e.stopPropagation();
+      e.preventDefault();
+      return false;
+    });
+    img.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+      return false;
+    });
+  });
+});
+
+// 動的に追加される画像に対してもイベントを設定
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    mutation.addedNodes.forEach(function(node) {
+      if (node.nodeType === 1) { // Element node
+        const images = node.querySelectorAll ? node.querySelectorAll('.card img') : [];
+        images.forEach(img => {
+          img.addEventListener('contextmenu', function(e) {
+            // 画像の右クリックのみを防止（カードの右クリックは許可）
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+          });
+          img.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+            return false;
+          });
+        });
+      }
+    });
+  });
+});
+
+// オブザーバーを開始
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+});

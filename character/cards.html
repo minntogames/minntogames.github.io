@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャラクターカード - ピクセルアートスタイル</title>
+    <link rel="stylesheet" href="cards-style.css">
+    <link rel="stylesheet" href="battle-backgrounds.css">
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1>🎮 キャラクターカード</h1>
+            <p>ピクセルアート風のキャラクター表示</p>
+            <div class="controls">
+                <button id="backToMain" class="control-btn">📋 メイン画面に戻る</button>
+                <select id="sortSelect" class="control-select">
+                    <option value="id">ID順</option>
+                    <option value="name">名前順</option>
+                    <option value="hp" selected>HP順</option>
+                    <option value="world">世界線順</option>
+                </select>
+                <select id="orderSelect" class="control-select">
+                    <option value="asc" selected>昇順 ⬆️</option>
+                    <option value="desc">降順 ⬇️</option>
+                </select>
+                <select id="filterWorld" class="control-select">
+                    <option value="">全世界線</option>
+                    <option value="1">世界線1</option>
+                    <option value="2">世界線2</option>
+                    <option value="3">世界線3</option>
+                </select>
+                <select id="layoutSelect" class="control-select">
+                    <option value="grid">グリッド表示</option>
+                    <option value="horizontal" selected>横並び(1行)</option>
+                    <option value="horizontal-scroll">横並び(スクロール)</option>
+                </select>
+                <select id="styleSelect" class="control-select">
+                    <option value="default">ピクセルアート</option>
+                    <option value="original" selected>オリジナル</option>
+                </select>
+                <label class="control-label">
+                    <input type="checkbox" id="enableBackgrounds" checked> 戦闘背景
+                </label>
+                <label class="control-label">
+                    <input type="checkbox" id="showAltStyles" checked> 別スタイル表示
+                </label>
+                <select id="globalBackground" class="control-select">
+                    <option value="auto">自動選択</option>
+                    <option value="none">背景なし</option>
+                    <option value="psychedelic">サイケデリック</option>
+                    <option value="geometric">幾何学模様</option>
+                    <option value="energy">エネルギー波動</option>
+                    <option value="starfield">星空ワープ</option>
+                    <option value="liquid">液体金属</option>
+                    <option value="glitch">デジタルグリッチ</option>
+                    <option value="crystal">クリスタル</option>
+                    <option value="wave">対称波動</option>
+                    <option value="ripple">波紋</option>
+                </select>
+                <button id="autoScrollToggle" class="control-btn" style="display: none;">🔄 自動スクロール: OFF</button>
+            </div>
+        </header>
+
+        <div id="loadingIndicator" class="loading">
+            <div class="loading-spinner"></div>
+            <p>キャラクターデータを読み込み中...</p>
+        </div>
+
+        <div id="cardsContainer" class="cards-grid" style="display: none;">
+            <!-- カードがここに動的に生成されます -->
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;">
+            <p>⚠️ データの読み込みに失敗しました</p>
+        </div>
+    </div>
+
+    </script>
+    <script src="battle-backgrounds.js"></script>
+    <script src="cards-script.js"></script>
+</body>
+</html>
