@@ -97,6 +97,15 @@
         </svg>
         カスタムタグ
       </button>
+      
+      <button onclick="console.log('使い方ガイドボタンがクリックされました'); showUsageGuide();" class="hamburger-lang-btn" id="usageGuideBtn" title="サイトの使い方">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
+        </svg>
+        使い方
+      </button>
     </div>
   </div>
 
@@ -300,6 +309,75 @@
   <!-- キャラクターが見つからなかった場合のメッセージ -->
   <div id="noCharactersMessage" class="no-characters-message" style="display: none;">
     対象のキャラが見つかりませんでした
+  </div>
+
+  <!-- 使い方ガイドポップアップ -->
+  <div id="usageGuidePopup" class="popup-overlay" style="display: none;">
+    <div class="popup-content usage-guide-content">
+      <span class="close" onclick="closeUsageGuide()">&times;</span>
+      <h2>🎮 キャラ図鑑の使い方</h2>
+      
+      <div class="usage-section">
+        <h3>📝 基本的な使い方</h3>
+        <ul>
+          <li><strong>検索</strong>: 上部の検索ボックスでキャラクター名、武器名、カスタムタグで検索できます</li>
+          <li><strong>フィルター</strong>: 種族、戦闘スタイル、属性、グループで絞り込み検索ができます</li>
+          <li><strong>キャラクター詳細</strong>: カードをクリックすると詳細情報が表示されます</li>
+          <li><strong>お気に入り</strong>: ❤️ボタンでお気に入りに追加/削除できます</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>🔍 予測変換機能</h3>
+        <ul>
+          <li>検索時に候補が自動表示されます</li>
+          <li><strong>キャラクター名</strong>: 日本語・英語・カナで検索</li>
+          <li><strong>武器名</strong>: 「武器：浄冥の宝珠 (所有者: ミント)」形式で表示</li>
+          <li><strong>カスタムタグ</strong>: 「カスタムタグ：強いキャラ」形式で表示</li>
+          <li>↑↓キーで選択、Enterで決定、Escで閉じる</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>🏷️ カスタムタグ機能</h3>
+        <ul>
+          <li><strong>編集モード</strong>: メニューから編集モードを有効にしてキャラクターを選択</li>
+          <li><strong>一括編集</strong>: 複数キャラクターを選択して一括でタグを追加</li>
+          <li><strong>タグ管理</strong>: メニューの「カスタムタグ」からタグの作成・編集・削除</li>
+          <li><strong>タグ検索</strong>: カスタムタグでも検索・フィルタリング可能</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>⚙️ 設定機能</h3>
+        <ul>
+          <li><strong>武器アイコン表示</strong>: フィルター時のみ/常に表示/非表示を切り替え</li>
+          <li><strong>検索設定</strong>: 武器名検索・カスタムタグ検索のオン/オフ</li>
+          <li><strong>強調表示</strong>: 予測変換でのマッチ部分ハイライトのオン/オフ</li>
+          <li><strong>テーマ</strong>: ライト/ダーク/モダンテーマの切り替え</li>
+          <li><strong>言語</strong>: 日本語/英語の表示切り替え</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>⌨️ キーボードショートカット</h3>
+        <ul>
+          <li><kbd>Ctrl+F</kbd> 検索欄にフォーカス</li>
+          <li><kbd>F</kbd> フィルター開く</li>
+          <li><kbd>Escape</kbd> ポップアップを閉じる</li>
+          <li><kbd>←→</kbd> キャラクター詳細で前後のキャラクターに移動</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>💾 データ管理</h3>
+        <ul>
+          <li><strong>エクスポート</strong>: お気に入りやカスタムタグをJSONファイルで保存</li>
+          <li><strong>インポート</strong>: 保存したデータを読み込み</li>
+          <li><strong>データ同期</strong>: 複数デバイス間でのデータ共有が可能</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <!-- キーボードショートカット説明 -->

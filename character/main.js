@@ -2976,12 +2976,19 @@ function initKeyboardShortcuts() {
   document.addEventListener('keydown', function(e) {
     // ポップアップが開いている時の処理
     const detailsPopup = document.getElementById('detailsPopup');
-    const isPopupOpen = detailsPopup.style.display === 'block';
+    const usageGuidePopup = document.getElementById('usageGuidePopup');
+    const isDetailsPopupOpen = detailsPopup.style.display === 'block';
+    const isUsageGuideOpen = usageGuidePopup.style.display === 'block';
     
-    // Escape でポップアップを閉じる
-    if (e.key === 'Escape' && isPopupOpen) {
-      closeDetailsPopup();
-      return;
+    // Escape でポップアップを閉じる（優先順位: 使い方ガイド > キャラ詳細）
+    if (e.key === 'Escape') {
+      if (isUsageGuideOpen) {
+        closeUsageGuide();
+        return;
+      } else if (isDetailsPopupOpen) {
+        closeDetailsPopup();
+        return;
+      }
     }
     
     // 入力欄にフォーカスがある時はショートカットを無効にする
@@ -4394,10 +4401,41 @@ function updateHighlightStatusText() {
   }
 }
 
+/**
+ * 使い方ガイドを表示
+ */
+function showUsageGuide() {
+  console.log('showUsageGuide 関数が呼び出されました');
+  const popup = document.getElementById('usageGuidePopup');
+  console.log('popup 要素:', popup);
+  if (popup) {
+    popup.style.display = 'block';
+    // モーダル表示時のスクロール防止
+    document.body.classList.add('modal-open');
+    console.log('使い方ガイドが表示されました');
+  } else {
+    console.error('usageGuidePopup 要素が見つかりません');
+  }
+}
+
+/**
+ * 使い方ガイドを閉じる
+ */
+function closeUsageGuide() {
+  const popup = document.getElementById('usageGuidePopup');
+  if (popup) {
+    popup.style.display = 'none';
+    // スクロール防止を解除
+    document.body.classList.remove('modal-open');
+  }
+}
+
 // グローバル関数として公開
 window.toggleWeaponSearch = toggleWeaponSearch;
 window.toggleCustomTagSearch = toggleCustomTagSearch;
 window.toggleHighlightMode = toggleHighlightMode;
+window.showUsageGuide = showUsageGuide;
+window.closeUsageGuide = closeUsageGuide;
 
 // ===============================================
 // 編集モード関連の関数
