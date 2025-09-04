@@ -388,6 +388,10 @@ $Shortcut.Save()
             self.build_listbox_items(preserve_selection=True)
 
     def _set_edited(self, event=None):
+        # キャラクター移動中の場合は編集状態を変更しない
+        if hasattr(self, '_changing_character') and self._changing_character:
+            return
+            
         if not self._editing:
             self._editing = True
             self._update_edit_indicator()
@@ -404,14 +408,36 @@ $Shortcut.Save()
                 # エラーが発生した場合は無視（入力途中など）
                 pass
 
+    def _on_user_input(self, event=None):
+        """ユーザーの手動入力のみを検知"""
+        # キャラクター変更中は無視
+        if hasattr(self, '_changing_character') and self._changing_character:
+            return
+        
+        # 明示的なユーザー操作のみ処理
+        if event and hasattr(event, 'widget'):
+            widget = event.widget
+            # フォーカスがあり、実際にキー入力があった場合のみ
+            if widget.focus_get() == widget:
+                self._set_edited(event)
+
+    def _on_user_select(self, event=None):
+        """ユーザーの手動選択のみを検知（Combobox用）"""
+        if hasattr(self, '_changing_character') and self._changing_character:
+            return
+        
+        # Comboboxの値変更時のみ
+        if event and hasattr(event, 'widget'):
+            self._set_edited(event)
+
     def create_image_preview_area(self):
         """画像プレビューエリアを作成"""
         # 画像プレビューフレーム
-        image_frame = tk.LabelFrame(self.detail_frame, text="画像プレビュー", padx=5, pady=5)
-        image_frame.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
+        self.image_frame = tk.LabelFrame(self.detail_frame, text="画像プレビュー", padx=5, pady=5)
+        self.image_frame.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
         
         # プレビューコントロール
-        control_frame = tk.Frame(image_frame)
+        control_frame = tk.Frame(self.image_frame)
         control_frame.pack(fill=tk.X, pady=(0, 10))
         
         tk.Label(control_frame, text="プレビューモード:").pack(side=tk.LEFT)
@@ -421,32 +447,51 @@ $Shortcut.Save()
         tk.Radiobutton(control_frame, text="モバイル (120px)", variable=self.preview_mode, 
                       value="mobile", command=self.update_image_preview).pack(side=tk.LEFT, padx=5)
         
+        # 🆕 最小化/最大化ボタンを追加
+        self.preview_minimized = False
+        self.toggle_preview_btn = tk.Button(control_frame, text="▼ 最小化", 
+                                          command=self.toggle_preview_size)
+        self.toggle_preview_btn.pack(side=tk.RIGHT, padx=5)
+        
         tk.Button(control_frame, text="プレビュー更新", 
                  command=self.update_image_preview).pack(side=tk.RIGHT, padx=5)
         
         # プレビューキャンバス（PCサイズとモバイルサイズ）
-        canvas_frame = tk.Frame(image_frame)
-        canvas_frame.pack(fill=tk.BOTH, expand=True)
+        self.canvas_frame = tk.Frame(self.image_frame)
+        self.canvas_frame.pack(fill=tk.BOTH, expand=True)
         
         # PCプレビュー
-        pc_frame = tk.LabelFrame(canvas_frame, text="PC表示 (200px)", padx=5, pady=5)
+        pc_frame = tk.LabelFrame(self.canvas_frame, text="PC表示 (200px)", padx=5, pady=5)
         pc_frame.pack(side=tk.LEFT, padx=5)
         self.pc_preview_canvas = tk.Canvas(pc_frame, width=200, height=200, bg='white', bd=1, relief=tk.SUNKEN)
         self.pc_preview_canvas.pack()
         
         # モバイルプレビュー
-        mobile_frame = tk.LabelFrame(canvas_frame, text="モバイル表示 (120px)", padx=5, pady=5)
+        mobile_frame = tk.LabelFrame(self.canvas_frame, text="モバイル表示 (120px)", padx=5, pady=5)
         mobile_frame.pack(side=tk.LEFT, padx=5)
         self.mobile_preview_canvas = tk.Canvas(mobile_frame, width=120, height=120, bg='white', bd=1, relief=tk.SUNKEN)
         self.mobile_preview_canvas.pack()
         
         # 詳細表示用キャンバス
-        detail_frame = tk.LabelFrame(canvas_frame, text="詳細表示", padx=5, pady=5)
+        detail_frame = tk.LabelFrame(self.canvas_frame, text="詳細表示", padx=5, pady=5)
         detail_frame.pack(side=tk.LEFT, padx=5, fill=tk.BOTH, expand=True)
         self.detail_preview_canvas = tk.Canvas(detail_frame, width=300, height=300, bg='#f0f0f0', bd=1, relief=tk.SUNKEN)
         self.detail_preview_canvas.pack()
         
         self.tk_images = {}  # 画像参照保持用
+
+    def toggle_preview_size(self):
+        """プレビューエリアの最小化/最大化を切り替え"""
+        if self.preview_minimized:
+            # 最大化
+            self.canvas_frame.pack(fill=tk.BOTH, expand=True)
+            self.toggle_preview_btn.config(text="▼ 最小化")
+            self.preview_minimized = False
+        else:
+            # 最小化
+            self.canvas_frame.pack_forget()
+            self.toggle_preview_btn.config(text="▲ 最大化")
+            self.preview_minimized = True
     def _get_next_id(self):
         ids = [c.get('id', 0) for c in self.characters if isinstance(c.get('id', 0), int)]
         return max(ids, default=0) + 1
@@ -457,6 +502,7 @@ $Shortcut.Save()
         self.resizable(True, True)
         self.data = []
         self.selected_index = None
+        self._changing_character = False  # 🔧 キャラクター切り替え中フラグを追加
         self._init_undo_redo()
         self._init_edit_buffers()
         self._create_menu()
@@ -513,6 +559,7 @@ $Shortcut.Save()
         self.listbox = tk.Listbox(left_frame, width=40)
         self.listbox.pack(fill=tk.BOTH, expand=True)
         self.listbox.bind('<<ListboxSelect>>', self.on_select)
+        self.listbox.bind('<Button-1>', self.on_listbox_click)
 
         # フッターメニューをウィンドウ全体の下部に配置
         footer_frame = tk.Frame(self)
@@ -585,17 +632,27 @@ $Shortcut.Save()
                 entry = tk.Entry(self.detail_frame, width=60)
             entry.grid(row=row, column=1, sticky=tk.W)
             self.fields[label] = entry
-            # 編集検知
+            # ユーザー入力のみを検知する新しい方式
             if isinstance(entry, tk.Text):
-                entry.bind('<KeyRelease>', self._set_edited)
+                # キー入力と貼り付けのみ検知
+                entry.bind('<KeyPress>', self._on_user_input)
+                entry.bind('<Button-2>', self._on_user_input)  # 中クリック貼り付け
+                entry.bind('<Control-v>', self._on_user_input)  # Ctrl+V貼り付け
                 # 画像関連フィールドは即座にプレビュー更新
                 if label in ['imgsize', 'imgThumbsize', 'imageZoomPosition', 'imageThumbPosition', 'imgsize_mobile', 'imageZoomPosition_mobile', 'img']:
-                    entry.bind('<KeyRelease>', lambda e, l=label: [self._set_edited(e), self.schedule_preview_update()])
+                    entry.bind('<KeyPress>', lambda e, l=label: [self._on_user_input(e), self.schedule_preview_update()])
+                    entry.bind('<Button-2>', lambda e, l=label: [self._on_user_input(e), self.schedule_preview_update()])
+                    entry.bind('<Control-v>', lambda e, l=label: [self._on_user_input(e), self.schedule_preview_update()])
             else:
-                entry.bind('<KeyRelease>', self._set_edited)
+                # キー入力と貼り付けのみ検知
+                entry.bind('<KeyPress>', self._on_user_input)
+                entry.bind('<Button-2>', self._on_user_input)  # 中クリック貼り付け
+                entry.bind('<Control-v>', self._on_user_input)  # Ctrl+V貼り付け
                 # 画像関連フィールドは即座にプレビュー更新
                 if label in ['imgsize', 'imgThumbsize', 'imageZoomPosition', 'imageThumbPosition', 'imgsize_mobile', 'imageZoomPosition_mobile', 'img']:
-                    entry.bind('<KeyRelease>', lambda e, l=label: [self._set_edited(e), self.schedule_preview_update()])
+                    entry.bind('<KeyPress>', lambda e, l=label: [self._on_user_input(e), self.schedule_preview_update()])
+                    entry.bind('<Button-2>', lambda e, l=label: [self._on_user_input(e), self.schedule_preview_update()])
+                    entry.bind('<Control-v>', lambda e, l=label: [self._on_user_input(e), self.schedule_preview_update()])
                     
             # 画像関連フィールドに専用コントロールを追加
             if label in ['imgsize', 'imgsize_mobile']:
@@ -667,7 +724,7 @@ $Shortcut.Save()
                 combo.bind('<<ComboboxSelected>>', on_close)
                 combo.bind('<Button-1>', on_dropdown)
                 combo.bind('<FocusOut>', on_close)
-                combo.bind('<<ComboboxSelected>>', self._set_edited)
+                combo.bind('<<ComboboxSelected>>', self._on_user_select)
                 row += 1
             row += 1
         # birthday専用フィールド
@@ -679,6 +736,10 @@ $Shortcut.Save()
             tk.Label(b_frame, text=part).grid(row=0, column=i*2, sticky=tk.W)
             entry = tk.Entry(b_frame, width=8)
             entry.grid(row=0, column=i*2+1, sticky=tk.W)
+            # ユーザー入力のみを検知
+            entry.bind('<KeyPress>', self._on_user_input)
+            entry.bind('<Button-2>', self._on_user_input)  # 中クリック貼り付け
+            entry.bind('<Control-v>', self._on_user_input)  # Ctrl+V貼り付け
             self.birthday_fields[part] = entry
         row += 1
         self.save_btn = tk.Button(self.detail_frame, text='保存', command=self.save_changes)
@@ -834,102 +895,134 @@ $Shortcut.Save()
         except Exception as e:
             messagebox.showerror('エラー', f'cha.jsonの読み込みに失敗しました\n{e}')
 
+    def on_listbox_click(self, event):
+        """リストボックスクリック時の処理"""
+        # クリックされた位置のアイテムを確実に選択
+        index = self.listbox.nearest(event.y)
+        if 0 <= index < self.listbox.size():
+            self.listbox.selection_clear(0, tk.END)
+            self.listbox.selection_set(index)
+            self.listbox.activate(index)
+            # 手動選択フラグを設定
+            self._manual_selection = True
+            # 即座にSelectイベントを発生（遅延なし）
+            self.listbox.event_generate('<<ListboxSelect>>')
+
     def on_select(self, event):
         sel = self.listbox.curselection()
         if not sel:
             return
         idx = sel[0]
         
-        # 前のキャラクターの編集内容を一時保存
-        if hasattr(self, 'selected_index') and self.selected_index is not None and self.selected_index != idx:
-            prev_char_idx, prev_style_idx = self.listbox_items[self.selected_index]
-            self._update_buffer_from_fields(prev_char_idx, prev_style_idx)
+        # 重複選択を防ぐ（ただし、手動クリックの場合は許可）
+        if (hasattr(self, 'selected_index') and self.selected_index == idx 
+            and not hasattr(self, '_manual_selection')):
+            return
         
-        self.selected_index = idx
-        char_idx, style_idx = self.listbox_items[idx]
+        # 手動選択フラグをリセット
+        if hasattr(self, '_manual_selection'):
+            delattr(self, '_manual_selection')
         
-        # 編集バッファからデータを取得
-        char = self._get_buffer(char_idx)
+        # キャラクター変更中フラグを設定（編集判定を無効化）
+        self._changing_character = True
         
-        # 条件式に基づくフィールド表示
-        for key, entry in self.fields.items():
-            val = char.get(key, '')
+        try:
+            # 前のキャラクターの編集内容を一時保存
+            if hasattr(self, 'selected_index') and self.selected_index is not None and self.selected_index != idx:
+                prev_char_idx, prev_style_idx = self.listbox_items[self.selected_index]
+                self._update_buffer_from_fields(prev_char_idx, prev_style_idx)
             
-            if key in self.never_array_fields:
-                # 未配列フィールド：常に単一値表示
-                display_val = str(val) if val is not None else ''
+            self.selected_index = idx
+            char_idx, style_idx = self.listbox_items[idx]
+            
+            # 編集バッファからデータを取得
+            char = self._get_buffer(char_idx)
+            
+            # 条件式に基づくフィールド表示
+            for key, entry in self.fields.items():
+                val = char.get(key, '')
                 
-            elif key in self.style_array_fields:
-                # スタイル配列対応フィールド
-                display_val = ''
-                
-                if key in self.nested_array_fields:
-                    # 配列内配列フィールド（race, fightingStyle, attribute）
-                    if isinstance(val, list):
-                        if style_idx is not None and style_idx < len(val):
-                            style_data = val[style_idx]
-                            if isinstance(style_data, list):
-                                display_val = '\n'.join(str(x) for x in style_data if x)
-                            else:
-                                display_val = str(style_data) if style_data else ''
-                        else:
-                            display_val = ''
-                    else:
-                        # 文字列の場合、最初のスタイルのみ表示
-                        display_val = str(val) if style_idx == 0 and val else ''
-                else:
-                    # その他のスタイル配列対応フィールド
-                    if isinstance(val, list):
-                        if style_idx is not None and style_idx < len(val):
-                            style_data = val[style_idx]
-                            if isinstance(style_data, list):
-                                display_val = '\n'.join(str(x) for x in style_data if x)
-                            else:
-                                display_val = str(style_data) if style_data else ''
-                        else:
-                            display_val = ''
-                    else:
-                        # 文字列の場合、最初のスタイルのみ表示
-                        display_val = str(val) if style_idx == 0 and val else ''
-                        
-            elif key in self.array_fields:
-                # 常に配列のフィールド
-                if isinstance(val, list):
-                    display_val = '\n'.join(str(x) for x in val if x)
-                else:
-                    display_val = str(val) if val else ''
+                if key in self.never_array_fields:
+                    # 未配列フィールド：常に単一値表示
+                    display_val = str(val) if val is not None else ''
                     
-            else:
-                # その他のフィールド
-                display_val = str(val) if val is not None else ''
-            
-            # 表示
-            if isinstance(entry, tk.Text):
-                entry.delete('1.0', tk.END)
-                entry.insert('1.0', display_val)
-            else:
-                entry.delete(0, tk.END)
-                entry.insert(0, display_val)
+                elif key in self.style_array_fields:
+                    # スタイル配列対応フィールド
+                    display_val = ''
+                    
+                    if key in self.nested_array_fields:
+                        # 配列内配列フィールド（race, fightingStyle, attribute）
+                        if isinstance(val, list):
+                            if style_idx is not None and style_idx < len(val):
+                                style_data = val[style_idx]
+                                if isinstance(style_data, list):
+                                    display_val = '\n'.join(str(x) for x in style_data if x)
+                                else:
+                                    display_val = str(style_data) if style_data else ''
+                            else:
+                                display_val = ''
+                        else:
+                            # 文字列の場合、最初のスタイルのみ表示
+                            display_val = str(val) if style_idx == 0 and val else ''
+                    else:
+                        # その他のスタイル配列対応フィールド
+                        if isinstance(val, list):
+                            if style_idx is not None and style_idx < len(val):
+                                style_data = val[style_idx]
+                                if isinstance(style_data, list):
+                                    display_val = '\n'.join(str(x) for x in style_data if x)
+                                else:
+                                    display_val = str(style_data) if style_data else ''
+                            else:
+                                display_val = ''
+                        else:
+                            # 文字列の場合、最初のスタイルのみ表示
+                            display_val = str(val) if style_idx == 0 and val else ''
+                            
+                elif key in self.array_fields:
+                    # 常に配列のフィールド
+                    if isinstance(val, list):
+                        display_val = '\n'.join(str(x) for x in val if x)
+                    else:
+                        display_val = str(val) if val else ''
+                        
+                else:
+                    # その他のフィールド
+                    display_val = str(val) if val is not None else ''
                 
-        # birthday object対応（条件式準拠）
-        b = char.get('birthday', {})
-        if isinstance(b, dict):
-            for part in ['year', 'month', 'day']:
-                v = b.get(part, None)
-                self.birthday_fields[part].delete(0, tk.END)
-                if v is not None:
-                    self.birthday_fields[part].insert(0, str(v))
-        else:
-            for part in ['year', 'month', 'day']:
-                self.birthday_fields[part].delete(0, tk.END)
-                
-        self.selected_char_idx = char_idx
-        self.selected_style_idx = style_idx
+                # 表示（_changing_characterフラグで保護されているので、単純に値を設定）
+                if isinstance(entry, tk.Text):
+                    entry.delete('1.0', tk.END)
+                    entry.insert('1.0', display_val)
+                else:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, display_val)
+                        
+            # birthday object対応（条件式準拠）
+            b = char.get('birthday', {})
+            if isinstance(b, dict):
+                for part in ['year', 'month', 'day']:
+                    v = b.get(part, None)
+                    entry = self.birthday_fields[part]
+                    entry.delete(0, tk.END)
+                    if v is not None:
+                        entry.insert(0, str(v))
+            else:
+                for part in ['year', 'month', 'day']:
+                    entry = self.birthday_fields[part]
+                    entry.delete(0, tk.END)
+                    
+            self.selected_char_idx = char_idx
+            self.selected_style_idx = style_idx
 
-        # 画像表示処理
-        self.show_character_image(char, style_idx)
-        
-        # プレビュー更新
+            # 画像表示処理
+            self.show_character_image(char, style_idx)
+            
+        finally:
+            # キャラクター変更中フラグを解除
+            self._changing_character = False
+            
+        # フラグ解除後にプレビュー更新
         self.update_image_preview()
 
     def parse_size_value(self, value):
@@ -1163,6 +1256,10 @@ $Shortcut.Save()
 
     def schedule_preview_update(self):
         """プレビュー更新をスケジュール（連続入力時の負荷軽減）"""
+        # キャラクター変更中は無視
+        if hasattr(self, '_changing_character') and self._changing_character:
+            return
+            
         if hasattr(self, '_preview_update_after'):
             self.after_cancel(self._preview_update_after)
         self._preview_update_after = self.after(300, self.update_image_preview)
@@ -1430,7 +1527,7 @@ $Shortcut.Save()
             self.save_changes()
 
     def _normalize_characters_data(self):
-        """条件式に基づくキャラクターデータの正規化"""
+        """条件式に基づくキャラクターデータの正規化（別スタイルがない場合は配列化しない）"""
         for char in self.characters:
             # 未配列フィールドの正規化（常に文字列または単一値）
             for field in self.never_array_fields:
@@ -1445,45 +1542,73 @@ $Shortcut.Save()
                             else:
                                 char[field] = ''
             
-            # スタイル配列対応フィールドの正規化
+            # スタイル配列対応フィールドの正規化（別スタイルがない場合は単一値に変換）
             for field in self.style_array_fields:
                 if field in char:
                     value = char[field]
                     
                     if field in self.nested_array_fields:
-                        # 配列内配列フィールドの正規化
+                        # 配列内配列フィールドの正規化（race, fightingStyle, attribute）
                         if isinstance(value, list):
                             if len(value) == 1:
                                 inner_array = value[0]
                                 if isinstance(inner_array, list):
                                     if len(inner_array) == 1:
-                                        # [[value]] -> value
+                                        # [[value]] -> value（単一スタイルの場合）
                                         char[field] = inner_array[0] if inner_array[0] else ''
                                     elif len(inner_array) == 0:
                                         # [[]] -> ''
                                         char[field] = ''
+                                    # else: 複数要素がある場合は配列のまま保持
                                 else:
                                     # [value] -> value
                                     char[field] = inner_array if inner_array else ''
                             elif len(value) == 0:
                                 char[field] = ''
+                            # else: 複数スタイルがある場合は配列のまま保持
                     else:
                         # その他のスタイル配列対応フィールドの正規化
                         if isinstance(value, list):
                             if len(value) == 1:
+                                # [value] -> value（単一スタイルの場合）
                                 char[field] = value[0] if value[0] else ''
                             elif len(value) == 0:
                                 char[field] = ''
+                            # else: 複数スタイルがある場合は配列のまま保持
             
-            # 配列フィールドの正規化
+            # 常に配列フィールドの正規化（group等は常に配列のまま）
             for field in self.array_fields:
-                if field in char:
+                if field in char and field not in self.style_array_fields:
+                    # style_array_fieldsに含まれていない配列フィールドのみ処理
                     value = char[field]
                     if isinstance(value, list):
                         if len(value) == 0 or (len(value) == 1 and value[0] == ''):
                             char[field] = ['']
                     elif not value:
                         char[field] = ['']
+            
+            # 多重配列フィールドの特別処理（imgThumbsize, imageThumbPosition）
+            for field in ['imgThumbsize', 'imageThumbPosition']:
+                if field in char:
+                    value = char[field]
+                    if isinstance(value, list):
+                        if len(value) == 1:
+                            # 単一スタイルの場合
+                            inner_value = value[0]
+                            if isinstance(inner_value, list):
+                                if len(inner_value) == 1:
+                                    # [[value]] -> [value]（一層削除）
+                                    char[field] = inner_value
+                                elif len(inner_value) == 0:
+                                    # [[]] -> ['']
+                                    char[field] = ['']
+                                # else: 複数要素がある場合は [inner_value] のまま保持
+                            else:
+                                # [value] の場合はそのまま保持
+                                pass
+                        elif len(value) == 0:
+                            char[field] = ['']
+                        # else: 複数スタイルがある場合は配列のまま保持
             
             # 数値フィールドの正規化
             if 'height' in char:

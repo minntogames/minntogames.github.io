@@ -673,6 +673,285 @@ let gachaMissCount = 0; // ハズレ回数
 let goldenCatCount = 0; // normal-golden入手回数
 let duplicateCount = 0; // 重複入手回数
 
+// ログインボーナス管理
+let loginBonusData = {
+    lastLoginDate: null, // 最後のログイン日（YYYY-MM-DD形式、日本時間）
+    consecutiveDays: 0,  // 連続ログイン日数
+    totalLoginDays: 0,   // 合計ログイン日数
+    todayReceived: false, // 今日のボーナスを受け取ったか
+    maxConsecutiveDays: 0, // 最大連続ログイン日数の記録
+    streakBrokenAt: 0    // 連続記録が途切れた時の日数（三日坊主実績用）
+};
+
+// ログインボーナスの報酬設定（日数別）
+const LOGIN_BONUS_REWARDS = [
+    { day: 1, coins: 5, fishCoins: 0, message: "初回ログイン！" },
+    { day: 2, coins: 10, fishCoins: 0, message: "2日目達成！" },
+    { day: 3, coins: 15, fishCoins: 5, message: "3日目達成！" },
+    { day: 4, coins: 20, fishCoins: 0, message: "4日目達成！" },
+    { day: 5, coins: 25, fishCoins: 10, message: "5日目達成！" },
+    { day: 6, coins: 30, fishCoins: 0, message: "6日目達成！" },
+    { day: 7, coins: 50, fishCoins: 20, message: "7日目達成！ボーナス！" },
+    // 8日目以降はリピート（7日周期）
+];
+
+// 日本時間での現在日付を取得する関数
+function getJapanDate() {
+    const now = new Date();
+    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    return japanTime.toISOString().split('T')[0]; // YYYY-MM-DD形式
+}
+
+// ログインボーナスデータをローカルストレージから読み込み
+function loadLoginBonusData() {
+    const saved = localStorage.getItem('jump_login_bonus');
+    if (saved) {
+        try {
+            loginBonusData = JSON.parse(saved);
+            // 新しいフィールドがない場合はデフォルト値を設定
+            if (loginBonusData.maxConsecutiveDays === undefined) {
+                loginBonusData.maxConsecutiveDays = 0;
+            }
+            if (loginBonusData.streakBrokenAt === undefined) {
+                loginBonusData.streakBrokenAt = 0;
+            }
+        } catch (e) {
+            console.error("Login bonus data parse error:", e);
+            loginBonusData = {
+                lastLoginDate: null,
+                consecutiveDays: 0,
+                totalLoginDays: 0,
+                todayReceived: false,
+                maxConsecutiveDays: 0,
+                streakBrokenAt: 0
+            };
+        }
+    }
+}
+
+// ログインボーナスデータをローカルストレージに保存
+function saveLoginBonusData() {
+    localStorage.setItem('jump_login_bonus', JSON.stringify(loginBonusData));
+    
+    // データベースにも保存
+    saveUserData(userId, {
+        loginBonusData: loginBonusData
+    });
+}
+
+// 日付が連続しているかチェック
+function isConsecutiveDay(lastDate, currentDate) {
+    if (!lastDate) return false;
+    
+    const last = new Date(lastDate);
+    const current = new Date(currentDate);
+    const diffTime = current.getTime() - last.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays === 1;
+}
+
+// ログインボーナスをチェックして処理
+function checkLoginBonus() {
+    const today = getJapanDate();
+    
+    // 今日既にボーナスを受け取っていれば処理しない
+    if (loginBonusData.lastLoginDate === today && loginBonusData.todayReceived) {
+        updateLoginBonusIcon(); // アイコン状態を更新
+        return;
+    }
+    
+    // 新しい日のログイン
+    if (loginBonusData.lastLoginDate !== today) {
+        // 連続ログインの判定
+        if (isConsecutiveDay(loginBonusData.lastLoginDate, today)) {
+            loginBonusData.consecutiveDays += 1;
+        } else {
+            // 連続ログインが途切れた場合の記録
+            if (loginBonusData.consecutiveDays > 0) {
+                loginBonusData.streakBrokenAt = loginBonusData.consecutiveDays;
+            }
+            loginBonusData.consecutiveDays = 1; // リセット
+        }
+        
+        // 最大連続日数の更新
+        if (loginBonusData.consecutiveDays > loginBonusData.maxConsecutiveDays) {
+            loginBonusData.maxConsecutiveDays = loginBonusData.consecutiveDays;
+        }
+        
+        loginBonusData.lastLoginDate = today;
+        loginBonusData.totalLoginDays += 1;
+        loginBonusData.todayReceived = false;
+        
+        saveLoginBonusData();
+        
+        // アイコン状態を更新（ボーナス有りエフェクトを表示）
+        updateLoginBonusIcon();
+        
+        // 実績チェック（ログイン関連実績）
+        checkAchievements();
+        
+        // ログインボーナスポップアップを表示
+        setTimeout(() => {
+            showLoginBonusPopup();
+        }, 1000); // 1秒後に表示
+    }
+}
+
+// ログインボーナスの報酬を取得する関数
+function getLoginBonusReward(day) {
+    // 7日周期でリピート
+    const cycleDay = ((day - 1) % 7) + 1;
+    return LOGIN_BONUS_REWARDS[cycleDay - 1] || LOGIN_BONUS_REWARDS[0];
+}
+
+// ログインボーナスポップアップを表示
+function showLoginBonusPopup() {
+    const popup = document.getElementById('login-bonus-popup-overlay');
+    if (!popup) return;
+    
+    const currentDay = loginBonusData.consecutiveDays;
+    const reward = getLoginBonusReward(currentDay);
+    
+    // ポップアップ内容を更新
+    updateLoginBonusPopupContent(currentDay, reward);
+    
+    popup.classList.add('show');
+}
+
+// ログインボーナスポップアップ内容を更新
+function updateLoginBonusPopupContent(currentDay, reward) {
+    const dayElement = document.getElementById('login-bonus-day');
+    const messageElement = document.getElementById('login-bonus-message');
+    const gridElement = document.getElementById('login-bonus-grid');
+    const receiveButton = document.getElementById('receive-login-bonus-button');
+    
+    if (dayElement) {
+        dayElement.textContent = `${currentDay}日目`;
+    }
+    
+    if (messageElement) {
+        messageElement.textContent = reward.message;
+    }
+    
+    if (gridElement) {
+        gridElement.innerHTML = '';
+        
+        // 7日分のグリッドを生成
+        for (let i = 1; i <= 7; i++) {
+            const dayReward = getLoginBonusReward(i);
+            const dayElement = document.createElement('div');
+            dayElement.className = 'login-bonus-day-item';
+            
+            // 現在の日より前は受け取り済み、現在の日は今日、それ以降は未受け取り
+            if (i < currentDay) {
+                dayElement.classList.add('received');
+            } else if (i === currentDay) {
+                dayElement.classList.add('today');
+            } else {
+                dayElement.classList.add('future');
+            }
+            
+            dayElement.innerHTML = `
+                <div class="day-number">Day ${i}</div>
+                <div class="day-reward">
+                    <div>🪙 ${dayReward.coins}</div>
+                    ${dayReward.fishCoins > 0 ? `<div>🐟 ${dayReward.fishCoins}</div>` : ''}
+                </div>
+            `;
+            
+            gridElement.appendChild(dayElement);
+        }
+    }
+    
+    if (receiveButton) {
+        receiveButton.onclick = () => receiveLoginBonus(reward);
+        receiveButton.disabled = loginBonusData.todayReceived;
+        receiveButton.textContent = loginBonusData.todayReceived ? '受け取り済み' : '受け取る';
+    }
+}
+
+// ログインボーナスを受け取る
+function receiveLoginBonus(reward) {
+    if (loginBonusData.todayReceived) return;
+    
+    // 報酬を付与
+    playerCoins += reward.coins;
+    fishCoins += reward.fishCoins;
+    
+    // 受け取り済みにする
+    loginBonusData.todayReceived = true;
+    
+    // 保存
+    saveLoginBonusData();
+    savePlayerCoins();
+    
+    // UI更新
+    updateCoinDisplay();
+    updateFishCoinDisplay();
+    
+    // ボタンを無効化
+    const receiveButton = document.getElementById('receive-login-bonus-button');
+    if (receiveButton) {
+        receiveButton.disabled = true;
+        receiveButton.textContent = '受け取り済み';
+    }
+    
+    // ログインボーナスアイコンの状態を更新（ボーナス有りエフェクトを削除）
+    updateLoginBonusIcon();
+    
+    // 実績チェック（ログイン関連実績）
+    checkAchievements();
+    
+    // 成功メッセージ
+    showLoginBonusSuccess(reward);
+}
+
+// ログインボーナス受け取り成功表示
+function showLoginBonusSuccess(reward) {
+    const successElement = document.getElementById('login-bonus-success');
+    if (successElement) {
+        successElement.innerHTML = `
+            <div class="success-message">
+                <div class="success-icon">✨</div>
+                <div class="success-text">ボーナス受け取り完了！</div>
+                <div class="success-rewards">
+                    <div>🪙 +${reward.coins} コイン</div>
+                    ${reward.fishCoins > 0 ? `<div>🐟 +${reward.fishCoins} おさかなコイン</div>` : ''}
+                </div>
+            </div>
+        `;
+        successElement.style.display = 'block';
+        
+        // 3秒後に自動で閉じる
+        setTimeout(() => {
+            const popup = document.getElementById('login-bonus-popup-overlay');
+            if (popup) {
+                popup.classList.remove('show');
+            }
+        }, 3000);
+    }
+}
+
+// ログインボーナスアイコンの状態更新
+function updateLoginBonusIcon() {
+    const icon = document.getElementById('login-bonus-icon-html');
+    if (!icon) return;
+    
+    const today = getJapanDate();
+    // 今日のログインボーナスがまだ受け取られていない場合にボーナス表示
+    const hasBonus = (loginBonusData.lastLoginDate !== today) || 
+                     (loginBonusData.lastLoginDate === today && !loginBonusData.todayReceived);
+    
+    if (hasBonus) {
+        icon.classList.add('has-bonus');
+        console.log('Login bonus available - showing bonus effect');
+    } else {
+        icon.classList.remove('has-bonus');
+        console.log('Login bonus not available - hiding bonus effect');
+    }
+}
+
 // 実績システム
 const ACHIEVEMENTS = {
     first_journey: {
@@ -682,6 +961,47 @@ const ACHIEVEMENTS = {
         icon: '🚀',
         rarity: 'BRONZE',
         condition: (stats, data) => stats.playCount >= 1
+    },
+    first_login: {
+        id: 'first_login',
+        name: '最初の一歩',
+        description: '1回ログインする',
+        icon: '👣',
+        rarity: 'BRONZE',
+        condition: (stats, data) => data.loginBonusData && data.loginBonusData.totalLoginDays >= 1
+    },
+    consecutive_login_3: {
+        id: 'consecutive_login_3',
+        name: 'おはよう習慣',
+        description: '3日連続ログインする',
+        icon: '🌅',
+        rarity: 'BRONZE',
+        condition: (stats, data) => data.loginBonusData && data.loginBonusData.consecutiveDays >= 3
+    },
+    consecutive_login_7: {
+        id: 'consecutive_login_7',
+        name: '一週間の約束',
+        description: '7日連続ログインする',
+        icon: '📅',
+        rarity: 'SILVER',
+        condition: (stats, data) => data.loginBonusData && data.loginBonusData.consecutiveDays >= 7
+    },
+    total_login_30: {
+        id: 'total_login_30',
+        name: '常連さん',
+        description: '合計30日ログインする',
+        icon: '⭐',
+        rarity: 'SILVER',
+        condition: (stats, data) => data.loginBonusData && data.loginBonusData.totalLoginDays >= 30
+    },
+    streak_broken_3: {
+        id: 'streak_broken_3',
+        name: '三日坊主',
+        description: '連続ログインが3日で途切れる',
+        icon: '😅',
+        rarity: 'GOLD',
+        hidden: true,
+        condition: (stats, data) => data.loginBonusData && data.loginBonusData.streakBrokenAt === 3
     },
     hit_by_circle: {
         id: 'hit_by_circle',
@@ -904,9 +1224,10 @@ const ACHIEVEMENTS = {
     golden_cat: {
         id: 'golden_cat',
         name: 'ネコをあがめよ',
-        description: 'normal-goldenを引く',
+        description: 'シロ(ゴールデン)を引く',
         icon: '👑',
         rarity: 'GOLD',
+        hidden: true,
         condition: (stats, data) => data.goldenCatCount >= 1
     },
     duplicate_character: {
@@ -1054,7 +1375,8 @@ function saveStatistics() {
         secretCharacterCount,
         gachaMissCount,
         goldenCatCount,
-        duplicateCount
+        duplicateCount,
+        loginBonusData
     });
 }
 
@@ -1103,7 +1425,8 @@ function checkAchievements() {
         secretCharacterCount,
         gachaMissCount,
         goldenCatCount,
-        duplicateCount
+        duplicateCount,
+        loginBonusData
     };
     
     console.log('Checking achievements with stats:', stats);
@@ -1159,7 +1482,8 @@ function checkAchievements() {
                 secretCharacterCount: secretCharacterCount,
                 gachaMissCount: gachaMissCount,
                 goldenCatCount: goldenCatCount,
-                duplicateCount: duplicateCount
+                duplicateCount: duplicateCount,
+                loginBonusData: loginBonusData
             });
         }
     }
@@ -1185,11 +1509,12 @@ function showAchievementNotifications(achievements) {
             const rarityInfo = ACHIEVEMENT_RARITY[achievement.rarity];
             const rarityColor = rarityInfo ? rarityInfo.color : '#CD7F32';
             const rarityName = rarityInfo ? rarityInfo.name : 'ブロンズ';
+            const isHidden = achievement.hidden;
             
             notification.innerHTML = `
                 <div class="achievement-notification-icon">${achievement.icon}</div>
                 <div class="achievement-notification-content">
-                    <div class="achievement-notification-title">実績を解除しました！</div>
+                    <div class="achievement-notification-title">${isHidden ? '隠し実績を発見しました！' : '実績を解除しました！'}</div>
                     <div class="achievement-notification-name">
                         <span style="color: ${rarityColor}; font-weight: bold;">${rarityName}</span> ${achievement.name}
                     </div>
@@ -1228,22 +1553,50 @@ function showAchievementsPopup() {
     // 実績アイテムを生成
     Object.values(ACHIEVEMENTS).forEach(achievement => {
         const isUnlocked = unlockedAchievements[achievement.id];
+        const isHidden = achievement.hidden && !isUnlocked;
+        
+        // 隠し実績が未解除の場合はスキップ
+        if (isHidden) return;
+        
         const item = document.createElement('div');
         item.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
         
-        // レア度による背景色を設定
+        // レア度による色と背景色を設定
         const rarityInfo = ACHIEVEMENT_RARITY[achievement.rarity];
         if (isUnlocked && rarityInfo) {
+            // 解除済み実績の色設定
             item.style.borderColor = rarityInfo.color;
             item.style.borderWidth = '2px';
             item.style.borderStyle = 'solid';
+            // レア度に応じた背景色を設定
+            let backgroundColor;
+            if (achievement.rarity === 'BRONZE') {
+                backgroundColor = 'rgba(205, 127, 50, 0.15)'; // ブロンズ色の透明版
+            } else if (achievement.rarity === 'SILVER') {
+                backgroundColor = 'rgba(192, 192, 192, 0.15)'; // シルバー色の透明版
+            } else if (achievement.rarity === 'GOLD') {
+                backgroundColor = 'rgba(255, 215, 0, 0.15)'; // ゴールド色の透明版
+            } else if (achievement.rarity === 'PLATINUM') {
+                backgroundColor = 'rgba(229, 228, 226, 0.15)'; // プラチナ色の透明版
+            } else {
+                backgroundColor = 'rgba(205, 127, 50, 0.15)'; // デフォルトはブロンズ
+            }
+            item.style.backgroundColor = backgroundColor;
+            item.style.color = rarityInfo.color;
+        } else {
+            // 未解除実績の色設定
+            item.style.borderColor = '#555555';
+            item.style.borderWidth = '2px';
+            item.style.borderStyle = 'solid';
+            item.style.backgroundColor = 'rgba(85, 85, 85, 0.15)'; // 濃灰色の透明な背景
+            item.style.color = '#555555'; // 濃灰色のテキスト
         }
         
         item.innerHTML = `
-            <div class="achievement-icon ${isUnlocked ? '' : 'locked'}">
+            <div class="achievement-icon ${isUnlocked ? '' : 'locked'}" style="color: inherit;">
                 ${isUnlocked ? achievement.icon : '❔'}
             </div>
-            <div class="achievement-name">
+            <div class="achievement-name" style="color: inherit;">
                 ${isUnlocked ? achievement.name : '？？？'}
             </div>
             ${isUnlocked && rarityInfo ? `
@@ -1283,13 +1636,13 @@ function showAchievementDetail(achievement, isUnlocked) {
             ${isUnlocked ? achievement.name : '？？？'}
         </div>
         <div class="achievement-detail-description">
-            ${achievement.description}
+            ${isUnlocked ? achievement.description : '？？？'}
         </div>
         <div class="achievement-detail-rarity" style="color: ${rarityColor}; font-weight: bold; margin-top: 8px;">
-            ${rarityName}
+            ${isUnlocked ? rarityName : '？？？'}
         </div>
         <div class="achievement-detail-coins" style="color: #FFD700; font-weight: bold; margin-top: 4px;">
-            報酬: ${coinsReward} コイン
+            報酬: ${isUnlocked ? coinsReward : '？'} コイン
         </div>
         ${isUnlocked ? `
             <div class="achievement-detail-date">
@@ -1779,6 +2132,40 @@ async function loadCoinsAndSkins(userId) {
     }
 }
 
+// データベースからログインボーナスデータを読み込み
+async function loadLoginBonusFromDatabase(userId) {
+    try {
+        const data = await fetchUData(userId);
+        if (data && data.loginBonusData) {
+            try {
+                let dbLoginBonusData;
+                if (typeof data.loginBonusData === 'string') {
+                    dbLoginBonusData = JSON.parse(data.loginBonusData);
+                } else {
+                    dbLoginBonusData = data.loginBonusData;
+                }
+                
+                // データベースのデータで更新（ローカルデータより新しい場合）
+                if (dbLoginBonusData.lastLoginDate && 
+                    (!loginBonusData.lastLoginDate || 
+                     dbLoginBonusData.lastLoginDate >= loginBonusData.lastLoginDate)) {
+                    loginBonusData = {
+                        lastLoginDate: dbLoginBonusData.lastLoginDate || null,
+                        consecutiveDays: parseInt(dbLoginBonusData.consecutiveDays) || 0,
+                        totalLoginDays: parseInt(dbLoginBonusData.totalLoginDays) || 0,
+                        todayReceived: dbLoginBonusData.todayReceived || false
+                    };
+                    saveLoginBonusData(); // ローカルストレージにも保存
+                }
+            } catch (e) {
+                console.error("Failed to parse login bonus data from database:", e);
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load login bonus data from database:", error);
+    }
+}
+
 // ナイトメアモードを開放する
 async function unlockNightmareMode(userId) {
     if (!dbnightmareUnlocked && !nightmareUnlocked){
@@ -1798,6 +2185,12 @@ function startGame() {
     const achievementIcon = document.getElementById('achievements-icon-html');
     if (achievementIcon) {
         achievementIcon.style.display = 'none';
+    }
+    
+    // アイコンコンテナにhide-login-bonusクラスを追加してログインボーナスアイコンを非表示
+    const iconContainer = document.querySelector('.icon-container');
+    if (iconContainer) {
+        iconContainer.classList.add('hide-login-bonus');
     }
     
     // 初期化
@@ -2662,6 +3055,15 @@ function animate() {
                     achievementIcon.style.display = 'block';
                 }
                 
+                // アイコンコンテナからhide-login-bonusクラスを削除してログインボーナスアイコンを再表示
+                const iconContainer = document.querySelector('.icon-container');
+                if (iconContainer) {
+                    iconContainer.classList.remove('hide-login-bonus');
+                }
+                
+                // ログインボーナスアイコンの状態を更新
+                updateLoginBonusIcon();
+                
                 // 総上昇距離を更新
                 totalScore += currentReachedAltitude;
                 console.log(`Game over! Current altitude: ${currentReachedAltitude}m, Total score: ${totalScore}m`);
@@ -3425,6 +3827,8 @@ function saveUserData(userId, data = {}) {
     if (data.gachaMissCount !== null && data.gachaMissCount !== undefined) formData.append("gachaMissCount", data.gachaMissCount);
     if (data.goldenCatCount !== null && data.goldenCatCount !== undefined) formData.append("goldenCatCount", data.goldenCatCount);
     if (data.duplicateCount !== null && data.duplicateCount !== undefined) formData.append("duplicateCount", data.duplicateCount);
+    if (data.logindate !== null && data.logindate !== undefined) formData.append("logindate", data.logindate);
+    if (data.loginBonusData !== null && data.loginBonusData !== undefined) formData.append("loginBonusData", JSON.stringify(data.loginBonusData));
 
     fetch(gasWebAppUrl, {
         method: "POST",
@@ -4631,9 +5035,11 @@ async function initGame() {
     try {
         userId = getOrCreateUserId(); // ユーザーIDを初期化
         userName = getOrCreateUserName(); // ユーザー名を初期化
+        loadLoginBonusData(); // ログインボーナスデータを読み込み
         await getnightmare(); // ナイトメアモードの開放状態を取得
         await loadAltitudeFromSheet(userId); // 最高到達点をスプレッドシートからロード
         await loadCoinsAndSkins(userId); // コインと解放済みスキンを読み込み
+        await loadLoginBonusFromDatabase(userId); // データベースからログインボーナスデータを読み込み
         
         // ガチャリザルト用画像を事前ロード
         preloadGachaImages();
@@ -4644,13 +5050,22 @@ async function initGame() {
         // モード切り替えボタンを初期化
         initModeToggleButton();
         
+        // ログインボーナスをチェック
+        checkLoginBonus();
+        
+        // ログインボーナスアイコンの状態を更新
+        updateLoginBonusIcon();
+        
+        // 初期実績チェック（データロード完了後）
+        checkAchievements();
+        
         // 初期化完了時のデバッグ情報
-        console.log("=== Game initialization completed ===");
-        console.log("Normal max altitude:", maxAltitude);
-        console.log("Nightmare max altitude:", nightmareMaxAltitude);
-        console.log("Current mode:", isNightmareMode ? "Nightmare" : "Normal");
-        console.log("Nightmare unlocked:", nightmareUnlocked);
-        console.log("=====================================");
+        // console.log("=== Game initialization completed ===");
+        // console.log("Normal max altitude:", maxAltitude);
+        // console.log("Nightmare max altitude:", nightmareMaxAltitude);
+        // console.log("Current mode:", isNightmareMode ? "Nightmare" : "Normal");
+        // console.log("Nightmare unlocked:", nightmareUnlocked);
+        // console.log("=====================================");
     } catch (error) {
         console.error("ゲーム初期化中にエラーが発生しました:", error);
         // エラーが発生してもゲームを開始
@@ -4769,6 +5184,39 @@ document.addEventListener('DOMContentLoaded', function() {
         achievementDetailPopup.addEventListener('click', (e) => {
             if (e.target === achievementDetailPopup) {
                 achievementDetailPopup.classList.remove('show');
+            }
+        });
+    }
+    
+    // ログインボーナス関連のイベントリスナー
+    const loginBonusIcon = document.getElementById('login-bonus-icon-html');
+    const loginBonusPopup = document.getElementById('login-bonus-popup-overlay');
+    const closeLoginBonusButton = document.getElementById('closeLoginBonusButton');
+    
+    if (loginBonusIcon) {
+        loginBonusIcon.addEventListener('click', () => {
+            const today = getJapanDate();
+            
+            // 今日のデータがない場合はボーナスチェックを実行
+            if (loginBonusData.lastLoginDate !== today) {
+                checkLoginBonus();
+            } else {
+                // 既に今日ログインしている場合はポップアップを表示
+                showLoginBonusPopup();
+            }
+        });
+    }
+    
+    if (closeLoginBonusButton) {
+        closeLoginBonusButton.addEventListener('click', () => {
+            loginBonusPopup.classList.remove('show');
+        });
+    }
+    
+    if (loginBonusPopup) {
+        loginBonusPopup.addEventListener('click', (e) => {
+            if (e.target === loginBonusPopup) {
+                loginBonusPopup.classList.remove('show');
             }
         });
     }
