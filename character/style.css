@@ -5,9 +5,19 @@ body {
   padding: 20px;
 }
 
+/* 詳細画面表示時の背景スクロール防止 */
+body.modal-open {
+  overflow: hidden;
+  height: 100vh;
+}
+
 h1 {
   text-align: center;
   margin-bottom: 20px;
+}
+
+strong {
+  color: skyblue;
 }
 
 .search-container {
@@ -242,7 +252,7 @@ button,
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow: visible; /* 武器アイコン等の子要素がはみ出し可能 */
   transition: transform 0.2s ease;
   text-align: center;
   cursor: pointer; /* カーソルをポインターに変更 */
@@ -261,8 +271,9 @@ button,
 .card .imgframe {
   width: 200px;
   height: 200px;
-  /* 固定した幅からはみ出たものは隠してしまう */
+  /* 画像を固定した幅からはみ出さないようにクリップ */
   overflow: hidden;
+  border-radius: 8px 8px 0 0; /* カードの上部の角丸に合わせる */
 }
 
 .imgframe img {
@@ -330,7 +341,7 @@ button,
 #detailsPopup {
   display: none;
   position: fixed;
-  z-index: 1;
+  z-index: 100; /* 武器アイコンやハンバーガーメニューより上に */
   left: 0;
   top: 0;
   width: 100%; /* 画面幅いっぱいに */
@@ -349,10 +360,8 @@ button,
 #detailsPopup .popup-content {
   background-color: #fefefe; /* コンテンツの背景色 */
   margin: 0 auto; /* 中央寄せ */
-  width: 90%; /* コンテンツの幅を広げる */
-  max-width: 800px; /* 最大幅を調整 */
   height: auto; /* 高さはコンテンツに合わせる */
-  min-height: calc(100vh - 40px); /* 最小高さをビューポートの高さに合わせる (パディング考慮) */
+  min-height: 100vh; /* 最小高さをビューポートの高さに合わせる (パディング考慮) */
   padding: 30px; /* 詳細コンテンツのパディングを増やす */
   box-sizing: border-box;
   /* ポップアップの中央配置に関する指定を削除または変更 */
@@ -430,8 +439,8 @@ button,
 
 /* キャラクター詳細内の画像スタイル */
 .detail-image {
-  max-width: 100vw; /* 画像の最大幅 */
-  max-height: 100%; /* 画像の高さを固定し、object-fitが機能するようにする */
+  max-width: 90%; /* 画像の最大幅 */
+  max-height: 90%; /* 画像の高さを固定し、object-fitが機能するようにする */
   display: block; /* 中央寄せのためにブロック要素にする */
   margin: 0 auto 20px auto; /* 上下にマージン、左右中央寄せ */
   user-select: none;
@@ -576,7 +585,7 @@ button,
     margin-top: 10px;
   }
   .card {
-    width: 110px;
+    width: 120px;
   }
   .card .imgframe {
     width: 120px;
@@ -650,6 +659,32 @@ button,
   background: rgba(255, 107, 0, 0.1);
 }
 
+/* 右端の閉じるボタン */
+.close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 32px;
+  font-weight: bold;
+  color: #4a88a2;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+  line-height: 1;
+}
+
+.close:hover {
+  background: rgba(74, 136, 162, 0.1);
+  color: #2a5f78;
+  transform: scale(1.1);
+}
+
 /* ミニポップアップ */
 .mini-popup {
   position: absolute;
@@ -698,7 +733,7 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   position: fixed;
   top: 18px;
   left: 18px;
-  z-index: 2; /* ←下げる */
+  z-index: 10; /* 武器アイコンより上に表示 */
   display: block;
 }
 .hamburger-btn {
@@ -740,7 +775,7 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   border-radius: 0 16px 16px 0;
   box-shadow: 2px 0 16px rgba(0,0,0,0.13);
   padding: 32px 18px 18px 18px;
-  z-index: 3;
+  z-index: 15; /* ハンバーガーメニューより更に上 */
   transform: translateX(-110%);
   transition: transform 0.28s cubic-bezier(.4,0,.2,1);
   /* スクロール対応 */
@@ -786,7 +821,7 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   border: none;
   padding: 0;
   cursor: pointer;
-  z-index: 2;
+  z-index: 16; /* ドロワーより上 */
   border-radius: 50%;
   transition: background 0.15s;
   width: 36px;
@@ -871,6 +906,16 @@ body.theme-dark .hamburger-close-btn:hover {
 /* ダークテーマでのお気に入りボタンホバー */
 body.theme-dark .buttonCopyIcon.favorited:hover {
   background: rgba(255, 215, 0, 0.2);
+}
+
+/* ダークテーマの閉じるボタン */
+body.theme-dark .close {
+  color: #3a86ff;
+}
+
+body.theme-dark .close:hover {
+  background: rgba(58, 134, 255, 0.1);
+  color: #4a88a2;
 }
 body.theme-dark .search-clear-btn svg,
 body.theme-dark .buttonCopyIcon svg,
@@ -1075,6 +1120,16 @@ body.theme-modern .hamburger-close-btn:hover {
 body.theme-modern .buttonCopyIcon.favorited:hover {
   background: rgba(0, 195, 255, 0.2);
 }
+
+/* モダンテーマの閉じるボタン */
+body.theme-modern .close {
+  color: #00ff88;
+}
+
+body.theme-modern .close:hover {
+  background: rgba(0, 255, 136, 0.1);
+  color: #00cc6a;
+}
 body.theme-modern .name-suggestions {
   background: #e0faff;
   color: #156acc;
@@ -1157,6 +1212,15 @@ body.theme-modern .filter-section h4 {
   margin-bottom: 12px;
 }
 
+.character-title-row h2 {
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.character-title-row h2.weapon-title {
+  color: #4a88a2;
+  transform: scale(1.05);
+}
+
 /* コピー通知ミニポップアップ */
 .copy-popup {
   position: fixed;
@@ -1236,6 +1300,49 @@ body.theme-modern .copy-popup {
 /* お気に入りボタンのSVGスタイル */
 .favorite-btn svg {
   display: block;
+}
+
+/* 武器アイコン */
+.weapon-icon {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  z-index: 5;
+  background: rgba(74, 136, 162, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.weapon-icon:hover {
+  background: rgba(74, 136, 162, 1);
+  transform: scale(1.05);
+}
+
+.weapon-icon svg {
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* 武器画像のスタイル */
+.weapon-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* SVGフォールバックのスタイル */
+.weapon-fallback {
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 /* 詳細画面のお気に入りボタン */
@@ -1350,6 +1457,23 @@ body.theme-dark .favorite-btn.favorited:hover {
   background: rgba(255, 215, 0, 0.3);
 }
 
+/* ダークテーマの武器アイコン */
+body.theme-dark .weapon-icon {
+  background: rgba(58, 134, 255, 0.9);
+}
+
+body.theme-dark .weapon-icon:hover {
+  background: rgba(58, 134, 255, 1);
+}
+
+body.theme-dark .weapon-icon svg {
+  stroke: #ffffff;
+}
+
+body.theme-dark .weapon-fallback {
+  stroke: #ffffff;
+}
+
 body.theme-dark .detail-favorite-svg-btn {
   background: rgba(60, 60, 60, 0.9);
   border-color: #555;
@@ -1384,6 +1508,23 @@ body.theme-modern .detail-favorite-btn {
 body.theme-modern .detail-favorite-btn.favorited {
   background: linear-gradient(135deg, #00ff88 0%, #00c3ff 100%);
   color: #fff;
+}
+
+/* モダンテーマの武器アイコン */
+body.theme-modern .weapon-icon {
+  background: rgba(0, 255, 136, 0.9);
+}
+
+body.theme-modern .weapon-icon:hover {
+  background: rgba(0, 255, 136, 1);
+}
+
+body.theme-modern .weapon-icon svg {
+  stroke: #ffffff;
+}
+
+body.theme-modern .weapon-fallback {
+  stroke: #ffffff;
 }
 
 body.theme-modern .detail-favorite-svg-btn {
@@ -2063,7 +2204,8 @@ body.theme-modern .btn-cancel:hover {
   overflow-y: auto;
 }
 
-.tag-selection-item {
+.tag-selection-item,
+.tag-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2075,14 +2217,29 @@ body.theme-modern .btn-cancel:hover {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.tag-selection-item:hover {
+.tag-selection-item:hover,
+.tag-item:hover {
   background: #f8f9fa;
   border-color: #007bff;
 }
 
-.tag-selection-item.selected {
+.tag-selection-item.selected,
+.tag-item.selected {
   background: #e3f2fd;
   border-color: #007bff;
+}
+
+/* タグ色表示 */
+.tag-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+}
+
+.tag-name {
+  font-weight: 500;
+  color: #333;
 }
 
 /* キャラクター詳細でのタグ表示 */
@@ -2458,7 +2615,685 @@ body.theme-modern .context-menu-item:hover {
   color: #00ff88;
 }
 
+/* タブスタイル（武器情報用） */
+.character-tabs {
+  margin: 20px 0;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-nav {
+  display: flex;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tab-nav-item {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tab-nav-item:hover {
+  color: #4a88a2;
+  background: rgba(74, 136, 162, 0.05);
+}
+
+.tab-nav-item.active {
+  color: #4a88a2;
+  border-bottom-color: #4a88a2;
+  background: rgba(74, 136, 162, 0.1);
+}
+
+.tab-content {
+  display: none;
+  padding: 20px 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 武器情報スタイル */
+.weapon-info {
+  background: #f9f9f9;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 15px 0;
+  border-left: 4px solid #4a88a2;
+}
+
+.weapon-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.weapon-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.weapon-image {
+  max-width: 200px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: block;
+  margin: 0 auto;
+}
+
+.no-weapon {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 40px 20px;
+}
+
+/* 武器表示時のメイン画像スタイル */
+.detail-image.weapon-display-image {
+  max-width: 300px;
+  max-height: 300px;
+  object-fit: contain;
+  background: #f9f9f9;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* ダークテーマでのタブスタイル */
+body.theme-dark .character-tabs {
+  border-bottom-color: #444;
+}
+
+body.theme-dark .tab-nav-item {
+  color: #ccc;
+}
+
+body.theme-dark .tab-nav-item:hover {
+  color: #81c784;
+  background: rgba(129, 199, 132, 0.1);
+}
+
+body.theme-dark .tab-nav-item.active {
+  color: #81c784;
+  border-bottom-color: #81c784;
+  background: rgba(129, 199, 132, 0.15);
+}
+
+body.theme-dark .weapon-info {
+  background: #2a2a2a;
+  border-left-color: #81c784;
+}
+
+body.theme-dark .weapon-name {
+  color: #e0e0e0;
+}
+
+body.theme-dark .weapon-description {
+  color: #ccc;
+}
+
+body.theme-dark .detail-image.weapon-display-image {
+  background: #2a2a2a;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+body.theme-dark .character-title-row h2.weapon-title {
+  color: #81c784;
+}
+
+/* モダンテーマでのタブスタイル */
+body.theme-modern .character-tabs {
+  border-bottom-color: #00ff88;
+}
+
+body.theme-modern .tab-nav-item {
+  color: #c792ea;
+}
+
+body.theme-modern .tab-nav-item:hover {
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+}
+
+body.theme-modern .tab-nav-item.active {
+  color: #00ff88;
+  border-bottom-color: #00ff88;
+  background: rgba(0, 255, 136, 0.15);
+}
+
+body.theme-modern .weapon-info {
+  background: rgba(26, 26, 46, 0.8);
+  border-left-color: #00ff88;
+}
+
+body.theme-modern .weapon-name {
+  color: #00ff88;
+}
+
+body.theme-modern .weapon-description {
+  color: #e0e0e0;
+}
+
+body.theme-modern .detail-image.weapon-display-image {
+  background: rgba(26, 26, 46, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.2);
+}
+
+body.theme-modern .character-title-row h2.weapon-title {
+  color: #00ff88;
+}
+
+/* PC版専用レイアウト（1024px以上） */
+@media (min-width: 1024px) {
+
+  .popup-content[data-v-12839f6c] {
+    max-width: 100%;
+    width: 100vw;
+    max-height: 90vh;
+  }
+
+  #detailsPopup {
+    max-height: 100vh;
+    height: auto;
+  }
+
+  [data-v-12831233] {
+    display: none;
+  }
+
+  #characterDetails h2 {
+    font-size: 1em;
+  }
+
+  #relatedCharacters>.card {
+    width: 150px;
+    height: 220px;
+  }
+
+  #relatedCharacters>.card .imgframe {
+    width: 150px;
+    height: 150px;
+  }
+
+  .character-detail-content {
+    display: grid;
+    grid-template-columns: 500px 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 20px;
+    height: calc(100vh - 70px);
+    max-width: 100vw;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .detail-left-section {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+  }
+
+  .detail-right-top {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 120px;
+  }
+
+  .detail-right-bottom {
+    grid-column: 2;
+    grid-row: 2;
+    overflow-y: auto;
+    padding-right: 10px;
+    max-height: 100%;
+    min-height: 0;
+  }
+
+  /* スクロールバーのスタイリング */
+  .detail-right-bottom::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .detail-right-bottom::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .detail-right-bottom::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+
+  .detail-right-bottom::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+
+  /* タイトル行をPC版では右上に配置 */
+  .character-title-row {
+    justify-content: flex-start;
+    margin-bottom: 20px;
+  }
+
+  /* 画像を左側に固定配置 */
+  .detail-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    margin-bottom: 15px;
+  }
+
+  /* サムネイルリストも左側 */
+  .thumbnail-list {
+    margin-top: 10px;
+  }
+
+  /* 関連キャラクターセクション */
+  .related-characters-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #e0e0e0;
+  }
+
+  .related-characters-section h3 {
+    margin-bottom: 15px;
+    color: #333;
+  }
+  
+
+  .related-characters-section .card-container {
+    /* display: flex; */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .related-characters-section .card {
+    margin: 0;
+  }
+
+  /* PC版では外部の関連キャラクターエリアを非表示 */
+  #relatedCharacters:not(.related-characters-section .card-container) {
+    display: none;
+  }
+
+  /* 関係関連キャラクターも非表示 */
+  #relationCharacters {
+    display: none;
+  }
+
+  /* ダークテーマのスクロールバー */
+  body.theme-dark .detail-right-bottom::-webkit-scrollbar-track {
+    background: #333;
+  }
+
+  body.theme-dark .detail-right-bottom::-webkit-scrollbar-thumb {
+    background: #666;
+  }
+
+  body.theme-dark .detail-right-bottom::-webkit-scrollbar-thumb:hover {
+    background: #777;
+  }
+
+  body.theme-dark .related-characters-section {
+    border-top-color: #444;
+  }
+
+  body.theme-dark .related-characters-section h3 {
+    color: #e0e0e0;
+  }
+
+  /* モダンテーマのスクロールバー */
+  body.theme-modern .detail-right-bottom::-webkit-scrollbar-track {
+    background: rgba(26, 26, 46, 0.8);
+  }
+
+  body.theme-modern .detail-right-bottom::-webkit-scrollbar-thumb {
+    background: #00ff88;
+  }
+
+  body.theme-modern .detail-right-bottom::-webkit-scrollbar-thumb:hover {
+    background: #00cc6a;
+  }
+
+  body.theme-modern .related-characters-section {
+    border-top-color: #00ff88;
+  }
+
+  body.theme-modern .related-characters-section h3 {
+    color: #00ff88;
+  }
+}
+
+@media  (max-width: 900px) {
+  /* 武器画像のスタイル */
+  .weapon-image {
+    width: 22px;
+    height: 22px;
+  }
+
+  .weapon-icon {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* モバイル版では従来のレイアウトを維持 */
+@media (max-width: 1023px) {
+
+  .character-detail-content {
+    display: block;
+  }
+  
+  .detail-left-section,
+  .detail-right-top,
+  .detail-right-bottom {
+    display: block;
+    position: static;
+    overflow: visible;
+    height: auto;
+    max-height: none;
+  }
+}
+
 body.theme-modern .context-menu-separator {
   background: #00ff88;
   opacity: 0.3;
+}
+
+/* ===============================================
+   編集モードのスタイル
+   =============================================== */
+
+/* 編集モードボタン */
+.hamburger-edit-btn {
+  width: 100%;
+  padding: 10px 0;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-family: inherit;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-weight: 500;
+  transition: background 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hamburger-edit-btn:hover {
+  background: linear-gradient(135deg, #e55a2b, #e8851a);
+}
+
+.hamburger-edit-btn.active {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+}
+
+/* 編集ツールバー */
+.edit-toolbar {
+  background: #fff;
+  border: 2px solid #ff6b35;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.15);
+  margin: 0 auto 20px auto;
+  max-width: 700px;
+  padding: 16px 20px;
+}
+
+.edit-toolbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.edit-info {
+  font-weight: 600;
+  color: #ff6b35;
+  font-size: 1.1em;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.edit-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-btn-select {
+  background: #3498db;
+  color: white;
+}
+
+.edit-btn-select:hover {
+  background: #2980b9;
+  transform: translateY(-1px);
+}
+
+.edit-btn-clear {
+  background: #95a5a6;
+  color: white;
+}
+
+.edit-btn-clear:hover {
+  background: #7f8c8d;
+  transform: translateY(-1px);
+}
+
+.edit-btn-tag {
+  background: #e74c3c;
+  color: white;
+}
+
+.edit-btn-tag:hover:not(:disabled) {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+.edit-btn-tag:disabled {
+  background: #bdc3c7;
+  color: #7f8c8d;
+  cursor: not-allowed;
+}
+
+/* 編集モード時のカード選択状態 */
+.card.edit-mode {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card.edit-mode::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card.edit-mode:hover::before {
+  border-color: #3498db;
+}
+
+.card.edit-mode.selected::before {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+}
+
+/* 編集モード時の選択チェックボックス */
+.edit-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3; /* 武器アイコンより下、ハンバーガーメニューより下 */
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #e74c3c;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.card.edit-mode .edit-checkbox {
+  opacity: 1;
+}
+
+.card.edit-mode.selected .edit-checkbox {
+  background: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.edit-checkbox svg {
+  width: 14px;
+  height: 14px;
+  stroke: white;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.card.edit-mode.selected .edit-checkbox svg {
+  opacity: 1;
+}
+
+/* 一括タグ編集ポップアップ */
+.bulk-tag-section {
+  margin: 20px 0;
+}
+
+.bulk-tag-section h4 {
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.bulk-tag-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* ダークテーマでの編集モード */
+body.theme-dark .hamburger-edit-btn {
+  background: linear-gradient(135deg, #e67e22, #f39c12);
+}
+
+body.theme-dark .hamburger-edit-btn:hover {
+  background: linear-gradient(135deg, #d35400, #e67e22);
+}
+
+body.theme-dark .hamburger-edit-btn.active {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+}
+
+body.theme-dark .edit-toolbar {
+  background: #1a2540;
+  border-color: #f39c12;
+  box-shadow: 0 4px 16px rgba(243, 156, 18, 0.15);
+}
+
+body.theme-dark .edit-info {
+  color: #f39c12;
+}
+
+body.theme-dark .bulk-tag-section h4 {
+  color: #e9eaf6;
+}
+
+/* モダンテーマでの編集モード */
+body.theme-modern .hamburger-edit-btn {
+  background: linear-gradient(135deg, #ff8a65, #ffab40);
+}
+
+body.theme-modern .hamburger-edit-btn:hover {
+  background: linear-gradient(135deg, #ff7043, #ff9800);
+}
+
+body.theme-modern .hamburger-edit-btn.active {
+  background: linear-gradient(135deg, #66bb6a, #81c784);
+}
+
+body.theme-modern .edit-toolbar {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: #ffab40;
+  box-shadow: 0 4px 16px rgba(255, 171, 64, 0.15);
+}
+
+body.theme-modern .edit-info {
+  color: #ff8a65;
+}
+
+body.theme-modern .bulk-tag-section h4 {
+  color: #156acc;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .edit-toolbar-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .edit-actions {
+    justify-content: center;
+  }
+  
+  .edit-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .bulk-tag-actions {
+    flex-direction: column;
+  }
+  
+  .bulk-tag-actions .btn-save,
+  .bulk-tag-actions .btn-cancel {
+    width: 100%;
+  }
 }

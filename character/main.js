@@ -8,8 +8,13 @@ let activeFilters = {
   world: [], // 追加
   favorites: [], // お気に入りフィルター追加
   memo: [], // メモ済みフィルター追加
-  customTags: [] // カスタムタグフィルター追加
+  customTags: [], // カスタムタグフィルター追加
+  uniqueWeapon: [] // ユニーク武器フィルター追加
 };
+
+// 編集モード関連の変数
+let isEditMode = false;
+let selectedCharacters = new Set();
 
 // カスタムタグ関連の変数
 let customTags = {}; // カスタムタグのデータ {tagId: {name, color, characterIds: []}}
@@ -67,6 +72,16 @@ let userNotes = {};
 // フィルター状態管理
 let favoritesOnly = false;
 let memoOnly = false;
+let uniqueWeaponOnly = false;
+
+// 武器アイコン表示設定
+// 'filterOnly': フィルター時のみ, 'always': 常に表示, 'never': 非表示
+let weaponIconDisplayMode = 'filterOnly';
+
+// 検索設定
+let weaponSearchEnabled = true;  // 武器名での検索を有効にするか
+let customTagSearchEnabled = true;  // カスタムタグでの検索を有効にするか
+let highlightEnabled = true;  // 予測変換の強調表示を有効にするか
 
 // ===============================================
 // IndexedDB管理クラス
@@ -920,8 +935,7 @@ fetch('cha.json')
     
     if (targetId) {
       showCharacterDetails(targetId, targetImgIndex);
-      document.getElementById('detailsPopup').style.display = 'block';
-      updateHamburgerMenuVisibility();
+      // showCharacterDetails内で詳細表示設定済み
     }
 });
 
@@ -1029,14 +1043,50 @@ function renderCharacter(char) {
   else if (world === "3") worldClass = "card-world-3";
 
   const isFavorite = favorites.includes(char.id);
+  
+  // 武器アイコン表示の判定
+  const hasWeapon = char.weapon && Array.isArray(char.weapon) && char.weapon.length > 0;
+  let showWeaponIcon = false;
+  
+  switch (weaponIconDisplayMode) {
+    case 'always':
+      showWeaponIcon = hasWeapon;
+      break;
+    case 'never':
+      showWeaponIcon = false;
+      break;
+    case 'filterOnly':
+    default:
+      showWeaponIcon = activeFilters.uniqueWeapon.length > 0 && hasWeapon;
+      break;
+  }
+  
+  // 武器画像のパスを取得（最初の武器の画像を使用）
+  const weaponImg = hasWeapon && char.weapon[0] && char.weapon[0].img ? char.weapon[0].img : null;
+
+  // 編集モードのクラスと選択状態
+  const editModeClass = isEditMode ? 'edit-mode' : '';
+  const selectedClass = isEditMode && selectedCharacters.has(char.id) ? 'selected' : '';
+  const cardClasses = `card ${worldClass} ${editModeClass} ${selectedClass}`.trim();
 
   return `
-    <div class="card ${worldClass}" data-char-id="${char.id}"
+    <div class="${cardClasses}" data-char-id="${char.id}"
+      onclick="handleCardClick(${char.id}, event)"
       onmouseenter="onCardHover(this, ${char.id})"
       onmouseleave="onCardLeave()"
       ontouchstart="onCardHover(this, ${char.id})"
       ontouchend="onCardLeave()"
-    >
+      oncontextmenu="showContextMenu(event, ${char.id})">
+      
+      <!-- 編集モード用チェックボックス -->
+      ${isEditMode ? `
+      <div class="edit-checkbox">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <polyline points="20,6 9,17 4,12"/>
+        </svg>
+      </div>
+      ` : ''}
+      
       <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" 
               onclick="event.stopPropagation(); toggleFavorite(${char.id})"
               title="${isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}"
@@ -1045,10 +1095,30 @@ function renderCharacter(char) {
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
       </button>
-      <div class="imgframe" onclick="showCharacterDetails(${char.id})">
-        <img src="img/${imgArr[0]}" alt="${nameArr[0]}の画像" onerror="this.src='img/placeholder.png';" style="width:${imgWidth};object-position:${objectPosition};">
+      ${showWeaponIcon ? `
+      <div class="weapon-icon">
+        ${weaponImg ? `
+        <img src="img/${weaponImg}" alt="武器" class="weapon-image">
+        <svg class="weapon-fallback" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" style="display: none;">
+          <path d="M6.5 6.5h11L16 8.5v7L14.5 17h-5L8 15.5v-7z"/>
+          <path d="M6.5 6.5L4 4"/>
+          <path d="M17.5 6.5L20 4"/>
+          <path d="M12 8.5V13"/>
+        </svg>
+        ` : `
+        <svg class="weapon-fallback" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2">
+          <path d="M6.5 6.5h11L16 8.5v7L14.5 17h-5L8 15.5v-7z"/>
+          <path d="M6.5 6.5L4 4"/>
+          <path d="M17.5 6.5L20 4"/>
+          <path d="M12 8.5V13"/>
+        </svg>
+        `}
       </div>
-      <h2 title="${displayName}" onclick="showCharacterDetails(${char.id})">${displayNameShort}</h2>
+      ` : ''}
+      <div class="imgframe">
+        <img src="img/${imgArr[0]}" alt="${nameArr[0]}の画像" style="width:${imgWidth};object-position:${objectPosition};">
+      </div>
+      <h2 title="${displayName}">${displayNameShort}</h2>
     </div>
   `;
 }
@@ -1205,14 +1275,70 @@ function filterCharacters() {
     let matchType = null;
     // 完全一致
     if (keyword !== '') {
+      let nameMatch = false;
+      let weaponMatch = false;
+      let customTagMatch = false;
+      
+      // 名前での一致チェック
       if (nameArr.some(n => (n || '').toLowerCase() === keyword) ||
           nameEnArr.some(n => (n || '').toLowerCase() === keyword)) {
+        nameMatch = true;
         matchType = 'exact';
-      } else if (
-        nameArr.some(n => (n || '').toLowerCase().includes(keyword)) ||
-        nameEnArr.some(n => (n || '').toLowerCase().includes(keyword))
-      ) {
-        matchType = 'partial';
+      }
+      
+      // 武器名での一致チェック (設定が有効な場合)
+      if (weaponSearchEnabled && c.weapon && Array.isArray(c.weapon)) {
+        const weaponExactMatch = c.weapon.some(weaponObj => {
+          if (!weaponObj || !weaponObj.name) return false;
+          const weaponNames = Array.isArray(weaponObj.name) ? weaponObj.name : [weaponObj.name];
+          return weaponNames.some(name => (name || '').toLowerCase() === keyword);
+        });
+        if (weaponExactMatch) {
+          weaponMatch = true;
+          matchType = 'exact';
+        }
+      }
+      
+      // カスタムタグでの一致チェック (設定が有効な場合)
+      if (customTagSearchEnabled && characterTags[c.id]) {
+        const userTagNames = characterTags[c.id].map(tagId => 
+          (customTags[tagId] && customTags[tagId].name || '').toLowerCase()
+        );
+        if (userTagNames.some(tagName => tagName === keyword)) {
+          customTagMatch = true;
+          matchType = 'exact';
+        }
+      }
+      
+      // 完全一致がない場合、部分一致をチェック
+      if (!nameMatch && !weaponMatch && !customTagMatch) {
+        // 名前での部分一致
+        if (nameArr.some(n => (n || '').toLowerCase().includes(keyword)) ||
+            nameEnArr.some(n => (n || '').toLowerCase().includes(keyword))) {
+          matchType = 'partial';
+        }
+        
+        // 武器名での部分一致 (設定が有効な場合)
+        if (!matchType && weaponSearchEnabled && c.weapon && Array.isArray(c.weapon)) {
+          const weaponPartialMatch = c.weapon.some(weaponObj => {
+            if (!weaponObj || !weaponObj.name) return false;
+            const weaponNames = Array.isArray(weaponObj.name) ? weaponObj.name : [weaponObj.name];
+            return weaponNames.some(name => (name || '').toLowerCase().includes(keyword));
+          });
+          if (weaponPartialMatch) {
+            matchType = 'partial';
+          }
+        }
+        
+        // カスタムタグでの部分一致 (設定が有効な場合)
+        if (!matchType && customTagSearchEnabled && characterTags[c.id]) {
+          const userTagNames = characterTags[c.id].map(tagId => 
+            (customTags[tagId] && customTags[tagId].name || '').toLowerCase()
+          );
+          if (userTagNames.some(tagName => tagName.includes(keyword))) {
+            matchType = 'partial';
+          }
+        }
       }
     } else {
       matchType = 'partial'; // 空欄時は全件
@@ -1304,7 +1430,11 @@ function filterCharacters() {
       const customTagsMatch = activeFilters.customTags.length === 0 ||
         (characterTags[c.id] && activeFilters.customTags.some(tagId => characterTags[c.id].includes(tagId)));
       
-      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch && favoritesMatch && memoMatch && customTagsMatch) {
+      // ユニーク武器フィルター
+      const uniqueWeaponMatch = activeFilters.uniqueWeapon.length === 0 ||
+        (c.weapon && Array.isArray(c.weapon) && c.weapon.length > 0);
+      
+      if (raceMatch && styleMatch && attrMatch && groupMatch && worldMatch && favoritesMatch && memoMatch && customTagsMatch && uniqueWeaponMatch) {
         filterMatch = true;
         break;
       }
@@ -1321,6 +1451,8 @@ function filterCharacters() {
   if (filtered.length > 0) {
     characterListContainer.innerHTML = filtered.map(renderCharacter).join("");
     noCharactersMessage.style.display = 'none';
+    // 動的に生成された画像要素にイベントリスナーを設定
+    setupDynamicImageEventListeners();
   } else {
     characterListContainer.innerHTML = '';
     noCharactersMessage.style.display = 'block';
@@ -1360,6 +1492,28 @@ function filterCharacters() {
       group: Object.keys(languageMaps.group || {}).slice(0, 5)
     });
   }
+}
+
+/**
+ * 動的に生成された画像要素にイベントリスナーを設定
+ */
+function setupDynamicImageEventListeners() {
+  // キャラクター画像の onerror イベント
+  document.querySelectorAll('#characterList .imgframe img').forEach(img => {
+    img.addEventListener('error', function() {
+      this.src = 'img/placeholder.png';
+    }, { passive: true });
+  });
+  
+  // 武器画像の onerror イベント
+  document.querySelectorAll('#characterList .weapon-image').forEach(img => {
+    img.addEventListener('error', function() {
+      this.style.display = 'none';
+      if (this.nextElementSibling) {
+        this.nextElementSibling.style.display = 'block';
+      }
+    }, { passive: true });
+  });
 }
 
 /**
@@ -1447,6 +1601,17 @@ function toggleFilterOption(type, value, element) {
     return;
   }
   
+  // ユニーク武器フィルターの特別処理
+  if (type === 'uniqueWeapon') {
+    const index = activeFilters.uniqueWeapon.indexOf('uniqueWeapon');
+    if (index === -1) {
+      activeFilters.uniqueWeapon.push('uniqueWeapon');
+    } else {
+      activeFilters.uniqueWeapon.splice(index, 1);
+    }
+    return;
+  }
+  
   // フィルターの表示値(日本語)を正規の英語名に変換してactiveFiltersに格納
   const canonicalValue = type === 'world' ? value : (() => {
     const valueStr = String(value || '');
@@ -1465,7 +1630,15 @@ function toggleFilterOption(type, value, element) {
  */
 function toggleFilterPopup() {
   const popup = document.getElementById('filterPopup');
-  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+  const isVisible = popup.style.display === 'block';
+  
+  if (isVisible) {
+    popup.style.display = 'none';
+    document.body.classList.remove('modal-open'); // 背景スクロール防止解除
+  } else {
+    popup.style.display = 'block';
+    document.body.classList.add('modal-open'); // 背景スクロール防止
+  }
 }
 
 /**
@@ -1489,7 +1662,8 @@ function clearFilters() {
     world: [],
     favorites: [],
     memo: [],
-    customTags: []
+    customTags: [],
+    uniqueWeapon: []
   };
   
   // お気に入りフィルターもクリア
@@ -1497,6 +1671,9 @@ function clearFilters() {
   
   // メモ済みフィルターもクリア
   memoOnly = false;
+  
+  // ユニーク武器フィルターもクリア
+  uniqueWeaponOnly = false;
   
   // 選択状態をクリア
   document.querySelectorAll('.filter-option').forEach(option => {
@@ -1644,6 +1821,9 @@ window.addEventListener('DOMContentLoaded', () => {
   } else {
     applyTheme('light');
   }
+  
+  // 初期表示の画像にもイベントリスナーを設定
+  setupDynamicImageEventListeners();
 });
 
 /**
@@ -1713,7 +1893,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
     const isFavorite = favorites.includes(charId);
     const titleRowHtml = `
       <div class="character-title-row">
-        <h2 style="margin:0;">${displayName}</h2>
+        <h1 style="margin:0;">${displayName}</h1>
         <div class="title-buttons">
           <button id="detailFavoriteBtn" onclick="toggleFavorite(${charId})" 
                   class="buttonCopyIcon ${isFavorite ? 'favorited' : ''}" 
@@ -1732,50 +1912,150 @@ function showCharacterDetails(charId, imgIndex = 0) {
       </div>
     `;
 
-    detailsContainer.innerHTML = `
-      <div class="character-detail-content">
-        <img src="img/${img}" alt="${name}の画像" onerror="this.src='img/placeholder.png';" class="detail-image">
-        ${thumbnailsHtml}
-        ${titleRowHtml}
-        <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race || 'N/A')}</p>
-        <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle || 'N/A')}</p>
-        <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute || 'N/A')}</p>
-        <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
-        ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
-        <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
-        <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group || 'N/A')}</p>
-        <div class="memo-section">
-          <p>
-            <strong>${getTranslatedLabel('memo')}:</strong>
-            <button onclick="showNoteEditor(${charId})" class="memo-edit-btn" title="メモを編集">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-          </p>
-          <div id="noteDisplay" class="note-display"></div>
+    // タブのHTML構築
+    const hasWeapons = character.weapon && Array.isArray(character.weapon) && character.weapon.length > 0;
+    const tabsHtml = `
+      <div class="character-tabs">
+        <div class="tab-nav">
+          <button class="tab-nav-item active" onclick="switchTab('basic', this)">基本情報</button>
+          ${hasWeapons ? '<button class="tab-nav-item" onclick="switchTab(\'weapon\', this)">武器情報</button>' : ''}
         </div>
-        <div class="character-tags">
-          <h4>カスタムタグ</h4>
-          <div id="characterTagsDisplay">
-            <!-- タグがここに表示されます -->
-          </div>
-          <div class="character-tag-manage">
-            <button onclick="showTagSelectionPopup(${charId})" class="add-tag-btn">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              タグを追加
-            </button>
-          </div>
+        <div id="basic-tab" class="tab-content active">
+          <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
+          <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
+          <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race || 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle || 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute || 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
+          ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
+          <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
+          <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
+          <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group || 'N/A')}</p>
         </div>
+        ${hasWeapons ? `
+        <div id="weapon-tab" class="tab-content">
+          ${generateWeaponContent(character.weapon)}
+        </div>
+        ` : ''}
       </div>
     `;
+
+    // PC版とモバイル版でレイアウトを分岐
+    const isPC = window.innerWidth >= 1024;
+    
+    if (isPC) {
+      // PC版レイアウト
+      detailsContainer.innerHTML = `
+        <span class="close" onclick="closeDetailsPopup()" title="閉じる">&times;</span>
+        <div class="character-detail-content">
+          <div class="detail-left-section">
+            <img src="img/${img}" alt="${name}の画像" onerror="this.src='img/placeholder.png';" class="detail-image">
+            ${thumbnailsHtml}
+          </div>
+          <div class="detail-right-top">
+            ${titleRowHtml}
+            ${hasWeapons ? `
+            <div class="character-tabs">
+              <div class="tab-nav">
+                <button class="tab-nav-item active" onclick="switchTab('basic', this)">基本情報</button>
+                <button class="tab-nav-item" onclick="switchTab('weapon', this)">武器情報</button>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+          <div class="detail-right-bottom">
+            <div id="basic-tab" class="tab-content active">
+              <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
+              <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
+              <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race || 'N/A')}</p>
+              <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle || 'N/A')}</p>
+              <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute || 'N/A')}</p>
+              <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
+              ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
+              <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
+              <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
+              <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group || 'N/A')}</p>
+            </div>
+            ${hasWeapons ? `
+            <div id="weapon-tab" class="tab-content">
+              ${generateWeaponContent(character.weapon)}
+            </div>
+            ` : ''}
+            <div class="memo-section">
+              <p>
+                <strong>${getTranslatedLabel('memo')}:</strong>
+                <button onclick="showNoteEditor(${charId})" class="memo-edit-btn" title="メモを編集">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </p>
+              <div id="noteDisplay" class="note-display"></div>
+            </div>
+            <div class="character-tags">
+              <h4>カスタムタグ</h4>
+              <div id="characterTagsDisplay">
+                <!-- タグがここに表示されます -->
+              </div>
+              <div class="character-tag-manage">
+                <button onclick="showTagSelectionPopup(${charId})" class="add-tag-btn">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  タグを追加
+                </button>
+              </div>
+            </div>
+            <div id="relatedCharactersSection" class="related-characters-section">
+              <h3>関連キャラクター</h3>
+              <div id="relatedCharacters" class="card-container">
+                <!-- 関連キャラクターのカードがここに表示されます -->
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // モバイル版レイアウト（従来通り）
+      detailsContainer.innerHTML = `
+        <span class="close" onclick="closeDetailsPopup()" title="閉じる">&times;</span>
+        <div class="character-detail-content">
+          <img src="img/${img}" alt="${name}の画像" onerror="this.src='img/placeholder.png';" class="detail-image">
+          ${thumbnailsHtml}
+          ${titleRowHtml}
+          ${tabsHtml}
+          <div class="memo-section">
+            <p>
+              <strong>${getTranslatedLabel('memo')}:</strong>
+              <button onclick="showNoteEditor(${charId})" class="memo-edit-btn" title="メモを編集">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+            </p>
+            <div id="noteDisplay" class="note-display"></div>
+          </div>
+          <div class="character-tags">
+            <h4>カスタムタグ</h4>
+            <div id="characterTagsDisplay">
+              <!-- タグがここに表示されます -->
+            </div>
+            <div class="character-tag-manage">
+              <button onclick="showTagSelectionPopup(${charId})" class="add-tag-btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                タグを追加
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
     
     // データセット属性を設定
     detailsContainer.dataset.charId = charId;
@@ -1790,6 +2070,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
     renderRelatedCharacters(character.group, character.id, false); // ←showAll=falseで初回5件
     renderRelationCharacters(character.id);
     detailsPopup.style.display = 'block';
+    document.body.classList.add('modal-open'); // 背景スクロール防止
     updateHamburgerMenuVisibility();
   }
 }
@@ -1799,6 +2080,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
  */
 function closeDetailsPopup() {
   document.getElementById('detailsPopup').style.display = 'none';
+  document.body.classList.remove('modal-open'); // 背景スクロール防止解除
   updateHamburgerMenuVisibility(); // ▼詳細閉じたらメニュー再表示
 }
 
@@ -1961,7 +2243,7 @@ function toHiragana(str) {
 }
 
 /**
- * 名前予測候補を表示する
+ * 統合予測候補を表示する（名前・武器・タグ）
  */
 let suggestionActiveIndex = -1;
 function showNameSuggestions() {
@@ -1980,6 +2262,8 @@ function showNameSuggestions() {
 
   // 候補リスト作成
   let candidates = [];
+  
+  // 1. キャラクター名候補
   characters.forEach(c => {
     // name, name_en, name_Kana対応
     const nameArr = Array.isArray(c.name) ? c.name : [c.name];
@@ -1997,21 +2281,128 @@ function showNameSuggestions() {
     if (match) {
       // 表示用候補（日本語名＋英語名）
       candidates.push({
+        type: 'character',
         id: c.id,
-        name: nameArr[0] || '',
-        name_en: nameEnArr[0] || '',
-        name_kana: nameKana || ''
+        display: nameArr[0] || '',
+        searchValue: nameArr[0] || '',
+        subtitle: `${nameEnArr[0] ? ' / ' + nameEnArr[0] : ''}${nameKana ? ' / ' + nameKana : ''}`,
+        matchText: keyword,
+        fullText: nameArr[0] || ''
       });
     }
   });
+  
+  // 2. 武器候補（設定が有効な場合）
+  if (weaponSearchEnabled) {
+    characters.forEach(c => {
+      if (c.weapon && Array.isArray(c.weapon)) {
+        c.weapon.forEach(weaponObj => {
+          if (weaponObj && weaponObj.name) {
+            const weaponNames = Array.isArray(weaponObj.name) ? weaponObj.name : [weaponObj.name];
+            // 武器名の各要素（日本語名、英語名、ひらがな）をチェック
+            const weaponNameJa = weaponNames[0] || '';       // 日本語名
+            const weaponNameEn = weaponNames[1] || '';       // 英語名
+            const weaponNameHira = weaponNames[2] || '';     // ひらがな
+            
+            let weaponMatch = false;
+            let matchedName = '';
+            
+            // 日本語名での一致
+            if ((weaponNameJa.toLowerCase().includes(keyword) || 
+                 toHiragana(weaponNameJa).includes(keywordHira))) {
+              weaponMatch = true;
+              matchedName = weaponNameJa;
+            }
+            // 英語名での一致
+            else if ((weaponNameEn.toLowerCase().includes(keyword) || 
+                      toHiragana(weaponNameEn).includes(keywordHira))) {
+              weaponMatch = true;
+              matchedName = weaponNameJa; // 表示は日本語名
+            }
+            // ひらがな名での一致
+            else if (weaponNameHira && (weaponNameHira.includes(keywordHira) || 
+                                       weaponNameHira.includes(keyword))) {
+              weaponMatch = true;
+              matchedName = weaponNameJa; // 表示は日本語名
+            }
+            
+            if (weaponMatch) {
+              const charNames = Array.isArray(c.name) ? c.name : [c.name];
+              candidates.push({
+                type: 'weapon',
+                id: `weapon_${c.id}_${matchedName}`,
+                display: `武器：${matchedName}`,
+                searchValue: matchedName,
+                subtitle: ` (所有者: ${charNames[0] || ''})`,
+                matchText: keyword,
+                fullText: matchedName
+              });
+            }
+          }
+        });
+      }
+    });
+  }
+  
+  // 3. カスタムタグ候補（設定が有効な場合）
+  if (customTagSearchEnabled && customTags) {
+    Object.values(customTags).forEach(tag => {
+      if (tag && tag.name && 
+          ((tag.name || '').toLowerCase().includes(keyword) || 
+           toHiragana(tag.name || '').includes(keywordHira))) {
+        candidates.push({
+          type: 'tag',
+          id: `tag_${tag.id}`,
+          display: `カスタムタグ：${tag.name}`,
+          searchValue: tag.name,
+          subtitle: '',
+          matchText: keyword,
+          fullText: tag.name
+        });
+      }
+    });
+  }
 
-  // 重複除去
-  candidates = candidates.filter((v, i, arr) =>
-    arr.findIndex(x => x.id === v.id) === i
-  );
+  /**
+   * マッチした部分を強調表示する（ひらがな対応）
+   */
+  function highlightMatch(text, searchTerm) {
+    if (!searchTerm || !text) return text;
+    
+    // 通常のマッチング（大文字小文字無視）
+    const regex1 = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    let result = text.replace(regex1, '<span style="background-color: #ffeb3b; color: #000; font-weight: bold;">$1</span>');
+    
+    // ひらがな変換でのマッチング
+    const searchHira = toHiragana(searchTerm);
+    if (searchHira !== searchTerm) {
+      // 元のテキストをひらがな化してマッチ位置を特定
+      const textHira = toHiragana(text);
+      const matchIndex = textHira.indexOf(searchHira);
+      if (matchIndex !== -1 && !result.includes('<span')) {
+        // ひらがな変換でマッチした場合、元の文字列の対応部分をハイライト
+        const matchLength = searchHira.length;
+        const before = text.substring(0, matchIndex);
+        const matched = text.substring(matchIndex, matchIndex + matchLength);
+        const after = text.substring(matchIndex + matchLength);
+        result = before + `<span style="background-color: #ffeb3b; color: #000; font-weight: bold;">${matched}</span>` + after;
+      }
+    }
+    
+    return result;
+  }
 
-  // 最大10件まで
-  candidates = candidates.slice(0, 10);
+  // 重複除去（同じ検索値を持つものを除去）
+  const seen = new Set();
+  candidates = candidates.filter(c => {
+    const key = `${c.type}_${c.searchValue}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // 最大15件まで（種類別に制限）
+  candidates = candidates.slice(0, 15);
 
   if (candidates.length === 0) {
     suggestionsDiv.style.display = 'none';
@@ -2021,25 +2412,46 @@ function showNameSuggestions() {
   }
 
   // 候補リスト描画
-  suggestionsDiv.innerHTML = candidates.map((c, idx) =>
-    `<div class="suggestion-item${idx === suggestionActiveIndex ? ' active' : ''}" 
-      onclick="selectNameSuggestion(${c.id})">${c.name} <span style="color:#888;font-size:0.95em;">${c.name_en ? ' / ' + c.name_en : ''}${c.name_kana ? ' / ' + c.name_kana : ''}</span></div>`
-  ).join('');
+  suggestionsDiv.innerHTML = candidates.map((c, idx) => {
+    // 表示テキストを強調表示処理（設定が有効な場合のみ）
+    let displayText = c.display;
+    if (highlightEnabled && c.matchText && c.fullText) {
+      // 武器やタグの場合、プレフィックス部分と名前部分を分ける
+      if (c.type === 'weapon') {
+        displayText = `武器：${highlightMatch(c.fullText, c.matchText)}`;
+      } else if (c.type === 'tag') {
+        displayText = `カスタムタグ：${highlightMatch(c.fullText, c.matchText)}`;
+      } else {
+        displayText = highlightMatch(c.fullText, c.matchText);
+      }
+    }
+    
+    return `<div class="suggestion-item${idx === suggestionActiveIndex ? ' active' : ''}" 
+      onclick="selectSuggestion('${c.type}', '${c.searchValue.replace(/'/g, "\\'")}', ${c.type === 'character' ? c.id : 'null'})">${displayText}<span style="color:#888;font-size:0.9em;">${c.subtitle}</span></div>`;
+  }).join('');
   suggestionsDiv.style.display = 'block';
 }
 
 /**
- * 予測候補クリック時の処理
+ * 統合予測候補クリック時の処理
+ */
+function selectSuggestion(type, searchValue, charId = null) {
+  const searchInput = document.getElementById('searchName');
+  searchInput.value = searchValue;
+  document.getElementById('nameSuggestions').style.display = 'none';
+  suggestionActiveIndex = -1;
+  filterCharacters();
+}
+
+/**
+ * 旧関数（互換性のため残す）
  */
 function selectNameSuggestion(charId) {
   const char = characters.find(c => c.id === charId);
   if (!char) return;
   // 入力欄に日本語名をセット
   const nameArr = Array.isArray(char.name) ? char.name : [char.name];
-  document.getElementById('searchName').value = nameArr[0] || '';
-  document.getElementById('nameSuggestions').style.display = 'none';
-  suggestionActiveIndex = -1;
-  filterCharacters();
+  selectSuggestion('character', nameArr[0] || '', charId);
 }
 
 /**
@@ -2048,21 +2460,30 @@ function selectNameSuggestion(charId) {
 function handleSuggestionKey(e) {
   const suggestionsDiv = document.getElementById('nameSuggestions');
   const items = suggestionsDiv.querySelectorAll('.suggestion-item');
-  if (!items.length) return;
-
-  if (e.key === 'ArrowDown') {
+  
+  if (e.key === 'ArrowDown' && items.length > 0) {
     e.preventDefault();
     suggestionActiveIndex = (suggestionActiveIndex + 1) % items.length;
     updateSuggestionActive();
-  } else if (e.key === 'ArrowUp') {
+  } else if (e.key === 'ArrowUp' && items.length > 0) {
     e.preventDefault();
     suggestionActiveIndex = (suggestionActiveIndex - 1 + items.length) % items.length;
     updateSuggestionActive();
   } else if (e.key === 'Enter') {
     e.preventDefault();
     if (suggestionActiveIndex >= 0 && suggestionActiveIndex < items.length) {
+      // 選択された候補をクリック
       items[suggestionActiveIndex].click();
+    } else {
+      // 候補が選択されていない場合、直接検索実行
+      document.getElementById('nameSuggestions').style.display = 'none';
+      suggestionActiveIndex = -1;
+      filterCharacters();
     }
+  } else if (e.key === 'Escape') {
+    // ESCキーで候補を閉じる
+    document.getElementById('nameSuggestions').style.display = 'none';
+    suggestionActiveIndex = -1;
   }
 }
 
@@ -2082,9 +2503,12 @@ function updateSuggestionActive() {
 const searchInput = document.getElementById('searchName');
 const clearBtn = document.getElementById('clearSearchBtn');
 if (searchInput && clearBtn) {
+  // inputイベント: クリアボタン表示制御と予測候補表示
   searchInput.addEventListener('input', function() {
     clearBtn.style.display = this.value ? 'flex' : 'none';
-  });
+    showNameSuggestions(); // 予測候補表示
+  }, { passive: true });
+  
   // 初期化時も
   clearBtn.style.display = searchInput.value ? 'flex' : 'none';
 
@@ -2093,7 +2517,10 @@ if (searchInput && clearBtn) {
     if (this.value && this.value.trim()) {
       showNameSuggestions();
     }
-  });
+  }, { passive: true });
+  
+  // キーボード操作のイベントリスナーを追加 (preventDefault使用のためpassive不可)
+  searchInput.addEventListener('keydown', handleSuggestionKey);
 }
 
 /**
@@ -2120,12 +2547,12 @@ document.addEventListener('click', function(e) {
     suggestionsDiv.style.display = 'none';
     suggestionActiveIndex = -1;
   }
-});
+}, { passive: true });
 
 // ウィンドウリサイズ時にカードを再描画
 window.addEventListener('resize', () => {
   filterCharacters();
-});
+}, { passive: true });
 
 // 画像の右クリック・長押し禁止
 function preventImageContextMenuAndDrag() {
@@ -2150,6 +2577,8 @@ window.closeDetailsPopup = closeDetailsPopup;
 window.toggleLanguage = toggleLanguage; // 新しい言語切り替え関数を公開
 window.toggleHamburgerMenu = toggleHamburgerMenu;
 window.toggleTheme = toggleTheme;
+window.selectSuggestion = selectSuggestion; // 統合予測候補選択関数
+window.selectNameSuggestion = selectNameSuggestion; // 互換性のため残す
 
 /**
  * キャラ詳細URLをクリップボードにコピーし、ミニポップアップで通知
@@ -2345,7 +2774,7 @@ function showRandomCharacter() {
   const randomIndex = Math.floor(Math.random() * characters.length);
   const randomChar = characters[randomIndex];
   showCharacterDetails(randomChar.id);
-  document.getElementById('detailsPopup').style.display = 'block';
+  // showCharacterDetails内で詳細表示設定済み
   updateHamburgerMenuVisibility();
 }
 
@@ -2677,6 +3106,7 @@ async function showCustomTagsPopup() {
     
     // ポップアップを表示
     document.getElementById('customTagsPopup').style.display = 'block';
+    document.body.classList.add('modal-open'); // 背景スクロール防止
     
     // タグ一覧を更新
     renderCustomTagsList();
@@ -2687,6 +3117,7 @@ async function showCustomTagsPopup() {
     customTags = {};
     characterTags = {};
     document.getElementById('customTagsPopup').style.display = 'block';
+    document.body.classList.add('modal-open'); // 背景スクロール防止
     renderCustomTagsList();
   }
 }
@@ -2696,6 +3127,7 @@ async function showCustomTagsPopup() {
  */
 function closeCustomTagsPopup() {
   document.getElementById('customTagsPopup').style.display = 'none';
+  document.body.classList.remove('modal-open'); // 背景スクロール防止解除
   hideCreateTagForm();
 }
 
@@ -2971,6 +3403,7 @@ async function showTagSelectionPopup(charId) {
     
     // ポップアップを表示
     document.getElementById('tagSelectionPopup').style.display = 'block';
+    document.body.classList.add('modal-open'); // 背景スクロール防止
     
     // タグ選択リストを更新
     renderTagSelectionList(charId);
@@ -2978,6 +3411,7 @@ async function showTagSelectionPopup(charId) {
   } catch (error) {
     console.error('タグ選択ポップアップ表示エラー:', error);
     document.getElementById('tagSelectionPopup').style.display = 'block';
+    document.body.classList.add('modal-open'); // 背景スクロール防止
     renderTagSelectionList(charId);
   }
 }
@@ -2987,6 +3421,7 @@ async function showTagSelectionPopup(charId) {
  */
 function closeTagSelectionPopup() {
   document.getElementById('tagSelectionPopup').style.display = 'none';
+  document.body.classList.remove('modal-open'); // 背景スクロール防止解除
   currentEditingCharacter = null;
 }
 
@@ -3301,6 +3736,12 @@ function showContextMenu(event, charId) {
       closeMenu: true
     },
     {
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      text: 'メモを編集',
+      action: () => showNoteEditor(charId),
+      closeMenu: true
+    },
+    {
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>',
       text: 'データをコピー',
       action: () => copyCharacterData(character),
@@ -3609,6 +4050,188 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // 動的に追加される画像に対してもイベントを設定
+
+/**
+ * 武器情報のHTMLコンテンツを生成する
+ * @param {Array} weapons - 武器の配列
+ * @returns {string} 武器情報のHTML
+ */
+function generateWeaponContent(weapons) {
+  if (!weapons || !Array.isArray(weapons) || weapons.length === 0) {
+    return '<div class="no-weapon">このキャラクターには武器情報がありません</div>';
+  }
+
+  return weapons.map(weapon => {
+    const name = Array.isArray(weapon.name) ? weapon.name[0] : weapon.name;
+    const nameEn = Array.isArray(weapon.name) && weapon.name[1] ? weapon.name[1] : '';
+    const displayName = currentDisplayLanguage === 'en' && nameEn ? nameEn : name;
+    
+    return `
+      <div class="weapon-info">
+        <div class="weapon-name">${displayName || 'N/A'}</div>
+        <div class="weapon-description">${weapon.description || 'N/A'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * タブを切り替える
+ * @param {string} tabName - 表示するタブ名（'basic' または 'weapon'）
+ * @param {HTMLElement} clickedTab - クリックされたタブボタン
+ */
+function switchTab(tabName, clickedTab) {
+  // すべてのタブコンテンツを非表示にする
+  const tabContents = document.querySelectorAll('.tab-content');
+  tabContents.forEach(content => {
+    content.classList.remove('active');
+  });
+
+  // すべてのタブナビゲーションからactiveクラスを削除
+  const tabNavItems = document.querySelectorAll('.tab-nav-item');
+  tabNavItems.forEach(nav => {
+    nav.classList.remove('active');
+  });
+
+  // 指定されたタブコンテンツを表示
+  const targetTab = document.getElementById(`${tabName}-tab`);
+  if (targetTab) {
+    targetTab.classList.add('active');
+  }
+
+  // クリックされたタブナビゲーションにactiveクラスを追加
+  if (clickedTab) {
+    clickedTab.classList.add('active');
+  }
+
+  // 画像の切り替え処理
+  switchCharacterImage(tabName);
+  
+  // 名前の切り替え処理
+  switchCharacterName(tabName);
+  
+  // サムネイル（別スタイル）ボタンの表示/非表示
+  const thumbnailList = document.querySelector('.thumbnail-list');
+  if (thumbnailList) {
+    if (tabName === 'weapon') {
+      thumbnailList.style.display = 'none';  // 武器詳細時は非表示
+    } else {
+      thumbnailList.style.display = '';  // 基本情報時は表示
+    }
+  }
+}
+
+/**
+ * タブに応じて表示画像を切り替える
+ * @param {string} tabName - 表示するタブ名（'basic' または 'weapon'）
+ */
+function switchCharacterImage(tabName) {
+  const detailsContainer = document.getElementById('characterDetails');
+  const charId = parseInt(detailsContainer.dataset.charId);
+  const imgIndex = parseInt(detailsContainer.dataset.imgIndex) || 0;
+  const character = characters.find(c => c.id === charId);
+  
+  console.log('switchCharacterImage called:', { tabName, charId, character: character?.name });
+  
+  if (!character) return;
+
+  const detailImage = document.querySelector('.detail-image');
+  if (!detailImage) return;
+
+  if (tabName === 'weapon' && character.weapon && character.weapon.length > 0) {
+    // 武器タブの場合：最初の武器の画像を表示
+    const firstWeapon = character.weapon[0];
+    console.log('First weapon:', firstWeapon);
+    if (firstWeapon.img) {
+      const weaponImagePath = `./img/${firstWeapon.img}`;
+      console.log('Setting weapon image path:', weaponImagePath);
+      
+      // 画像の存在確認
+      const testImage = new Image();
+      testImage.onload = function() {
+        console.log('武器画像の読み込み成功:', weaponImagePath);
+        detailImage.src = weaponImagePath;
+        const weaponName = Array.isArray(firstWeapon.name) ? firstWeapon.name[0] : firstWeapon.name;
+        detailImage.alt = `${weaponName}の画像`;
+        // detailImage.classList.add('weapon-display-image');
+      };
+      testImage.onerror = function() {
+        console.error('武器画像が見つかりません:', weaponImagePath);
+        // 武器画像が見つからない場合はキャラクター画像を維持
+        const imgArr = Array.isArray(character.img) ? character.img : [character.img];
+        const img = imgArr[imgIndex] || imgArr[0];
+        detailImage.src = `img/${img}`;
+        // detailImage.classList.remove('weapon-display-image');
+      };
+      testImage.src = weaponImagePath;
+    }
+  } else {
+    // 基本情報タブの場合：キャラクター画像を表示
+    const imgArr = Array.isArray(character.img) ? character.img : [character.img];
+    const img = imgArr[imgIndex] || imgArr[0];
+    const nameArr = Array.isArray(character.name) ? character.name : [character.name];
+    const name = nameArr[imgIndex] || nameArr[0];
+    
+    detailImage.src = `img/${img}`;
+    detailImage.alt = `${name}の画像`;
+    // detailImage.classList.remove('weapon-display-image');
+    detailImage.onerror = function() {
+      this.src = 'img/placeholder.png';
+    };
+  }
+}
+
+/**
+ * タブに応じて表示名を切り替える
+ * @param {string} tabName - 表示するタブ名（'basic' または 'weapon'）
+ */
+function switchCharacterName(tabName) {
+  const detailsContainer = document.getElementById('characterDetails');
+  const charId = parseInt(detailsContainer.dataset.charId);
+  const imgIndex = parseInt(detailsContainer.dataset.imgIndex) || 0;
+  const character = characters.find(c => c.id === charId);
+  
+  if (!character) return;
+
+  const titleElement = document.querySelector('.character-title-row h1');
+  if (!titleElement) return;
+
+  console.log('switchCharacterName called:', { tabName, charId, character: character, weapon: character.weapon });
+
+  if (tabName === 'weapon' && character.weapon && character.weapon.length > 0) {
+    // 武器タブの場合：武器名を表示
+    const firstWeapon = character.weapon[0];
+    console.log('First weapon:', firstWeapon);
+    if (firstWeapon && firstWeapon.name) {
+      const weaponNames = Array.isArray(firstWeapon.name) ? firstWeapon.name : [firstWeapon.name];
+      const weaponName = weaponNames[0] || 'Unknown Weapon';  // 日本語名
+      const weaponNameEn = weaponNames[1] || '';  // 英語名
+      const displayWeaponName = currentDisplayLanguage === 'en' && weaponNameEn ? weaponNameEn : weaponName;
+      console.log('Setting weapon name:', displayWeaponName);
+      titleElement.textContent = displayWeaponName;
+      titleElement.classList.add('weapon-title');
+    } else {
+      console.log('No weapon name found, setting Unknown Weapon');
+      titleElement.textContent = 'Unknown Weapon';
+      titleElement.classList.add('weapon-title');
+    }
+  } else {
+    // 基本情報タブの場合：キャラクター名を表示
+    const nameArr = Array.isArray(character.name) ? character.name : [character.name];
+    const nameEnArr = Array.isArray(character.name_en) ? character.name_en : [character.name_en];
+    const name = nameArr[imgIndex] || nameArr[0];
+    const nameEn = nameEnArr[imgIndex] || nameEnArr[0];
+    const displayName = currentDisplayLanguage === 'en' && nameEn ? nameEn : name;
+    titleElement.textContent = displayName;
+    titleElement.classList.remove('weapon-title');
+  }
+}
+
+// グローバル関数として公開
+window.generateWeaponContent = generateWeaponContent;
+window.switchTab = switchTab;
+window.switchCharacterImage = switchCharacterImage;
+window.switchCharacterName = switchCharacterName;
 const observer = new MutationObserver(function(mutations) {
   mutations.forEach(function(mutation) {
     mutation.addedNodes.forEach(function(node) {
@@ -3636,3 +4259,428 @@ observer.observe(document.body, {
   childList: true,
   subtree: true
 });
+
+/**
+ * 武器アイコン表示モードを切り替える
+ */
+function toggleWeaponIconDisplay() {
+  // モードを循環切り替え
+  if (weaponIconDisplayMode === 'filterOnly') {
+    weaponIconDisplayMode = 'always';
+  } else if (weaponIconDisplayMode === 'always') {
+    weaponIconDisplayMode = 'never';
+  } else {
+    weaponIconDisplayMode = 'filterOnly';
+  }
+  
+  // 表示テキストを更新
+  updateWeaponIconStatusText();
+  
+  // カードを再レンダリング
+  filterCharacters();
+  
+  // 設定をローカルストレージに保存
+  localStorage.setItem('weaponIconDisplayMode', weaponIconDisplayMode);
+}
+
+/**
+ * 武器アイコン状態テキストを更新
+ */
+function updateWeaponIconStatusText() {
+  const statusElement = document.getElementById('weaponIconStatus');
+  if (statusElement) {
+    let statusText = '';
+    switch (weaponIconDisplayMode) {
+      case 'filterOnly':
+        statusText = 'フィルター時のみ';
+        break;
+      case 'always':
+        statusText = '常に表示';
+        break;
+      case 'never':
+        statusText = '非表示';
+        break;
+    }
+    statusElement.textContent = statusText;
+  }
+}
+
+// ページ読み込み時に設定を復元
+document.addEventListener('DOMContentLoaded', function() {
+  const savedMode = localStorage.getItem('weaponIconDisplayMode');
+  if (savedMode && ['filterOnly', 'always', 'never'].includes(savedMode)) {
+    weaponIconDisplayMode = savedMode;
+  }
+  updateWeaponIconStatusText();
+  
+  // 検索設定を復元
+  const savedWeaponSearch = localStorage.getItem('weaponSearchEnabled');
+  if (savedWeaponSearch !== null) {
+    weaponSearchEnabled = savedWeaponSearch === 'true';
+  }
+  
+  const savedCustomTagSearch = localStorage.getItem('customTagSearchEnabled');
+  if (savedCustomTagSearch !== null) {
+    customTagSearchEnabled = savedCustomTagSearch === 'true';
+  }
+  
+  const savedHighlight = localStorage.getItem('highlightEnabled');
+  if (savedHighlight !== null) {
+    highlightEnabled = savedHighlight === 'true';
+  }
+  
+  updateWeaponSearchStatusText();
+  updateCustomTagSearchStatusText();
+  updateHighlightStatusText();
+});
+
+// グローバル関数として公開
+window.toggleWeaponIconDisplay = toggleWeaponIconDisplay;
+
+/**
+ * 武器検索設定の切り替え
+ */
+function toggleWeaponSearch() {
+  weaponSearchEnabled = !weaponSearchEnabled;
+  localStorage.setItem('weaponSearchEnabled', weaponSearchEnabled.toString());
+  updateWeaponSearchStatusText();
+}
+
+/**
+ * カスタムタグ検索設定の切り替え
+ */
+function toggleCustomTagSearch() {
+  customTagSearchEnabled = !customTagSearchEnabled;
+  localStorage.setItem('customTagSearchEnabled', customTagSearchEnabled.toString());
+  updateCustomTagSearchStatusText();
+}
+
+/**
+ * 武器検索設定のステータステキストを更新
+ */
+function updateWeaponSearchStatusText() {
+  const statusElement = document.getElementById('weaponSearchStatus');
+  if (statusElement) {
+    statusElement.textContent = weaponSearchEnabled ? 'オン' : 'オフ';
+  }
+}
+
+/**
+ * カスタムタグ検索設定のステータステキストを更新
+ */
+function updateCustomTagSearchStatusText() {
+  const statusElement = document.getElementById('customTagSearchStatus');
+  if (statusElement) {
+    statusElement.textContent = customTagSearchEnabled ? 'オン' : 'オフ';
+  }
+}
+
+/**
+ * 強調表示設定の切り替え
+ */
+function toggleHighlightMode() {
+  highlightEnabled = !highlightEnabled;
+  localStorage.setItem('highlightEnabled', highlightEnabled.toString());
+  updateHighlightStatusText();
+}
+
+/**
+ * 強調表示設定のステータステキストを更新
+ */
+function updateHighlightStatusText() {
+  const statusElement = document.getElementById('highlightStatus');
+  if (statusElement) {
+    statusElement.textContent = highlightEnabled ? 'オン' : 'オフ';
+  }
+}
+
+// グローバル関数として公開
+window.toggleWeaponSearch = toggleWeaponSearch;
+window.toggleCustomTagSearch = toggleCustomTagSearch;
+window.toggleHighlightMode = toggleHighlightMode;
+
+// ===============================================
+// 編集モード関連の関数
+// ===============================================
+
+/**
+ * 編集モードの切り替え
+ */
+function toggleEditMode() {
+  isEditMode = !isEditMode;
+  const editModeBtn = document.getElementById('editModeBtn');
+  const editToolbar = document.getElementById('editToolbar');
+  const editModeStatus = document.getElementById('editModeStatus');
+  
+  if (isEditMode) {
+    editModeBtn.classList.add('active');
+    editModeStatus.textContent = 'オン';
+    editToolbar.style.display = 'block';
+    selectedCharacters.clear();
+    updateSelectedCount();
+  } else {
+    editModeBtn.classList.remove('active');
+    editModeStatus.textContent = 'オフ';
+    editToolbar.style.display = 'none';
+    selectedCharacters.clear();
+  }
+  
+  // カード表示を更新
+  filterCharacters();
+  
+  // 既存カードのクラスを即座に更新（リレンダリング前の表示改善）
+  const allCards = document.querySelectorAll('.card[data-char-id]');
+  allCards.forEach(card => {
+    if (isEditMode) {
+      card.classList.add('edit-mode');
+      card.classList.remove('selected');
+    } else {
+      card.classList.remove('edit-mode', 'selected');
+    }
+  });
+  
+  // ハンバーガーメニューを閉じる
+  toggleHamburgerMenu();
+}
+
+/**
+ * カードクリック処理（編集モード対応）
+ */
+function handleCardClick(charId, event) {
+  if (isEditMode) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleCharacterSelection(charId);
+  } else {
+    showCharacterDetails(charId);
+  }
+}
+
+/**
+ * キャラクター選択状態の切り替え
+ */
+function toggleCharacterSelection(charId) {
+  if (selectedCharacters.has(charId)) {
+    selectedCharacters.delete(charId);
+  } else {
+    selectedCharacters.add(charId);
+  }
+  
+  updateSelectedCount();
+  updateCardSelectionUI(charId);
+  updateBulkTagButtonState();
+}
+
+/**
+ * 選択数の更新
+ */
+function updateSelectedCount() {
+  const selectedCountEl = document.getElementById('selectedCount');
+  if (selectedCountEl) {
+    selectedCountEl.textContent = selectedCharacters.size;
+  }
+}
+
+/**
+ * カードの選択状態UIを更新
+ */
+function updateCardSelectionUI(charId) {
+  const cardElement = document.querySelector(`[data-char-id="${charId}"]`);
+  if (cardElement) {
+    if (selectedCharacters.has(charId)) {
+      cardElement.classList.add('selected');
+    } else {
+      cardElement.classList.remove('selected');
+    }
+  }
+}
+
+/**
+ * 全選択
+ */
+function selectAllCharacters() {
+  const visibleCards = document.querySelectorAll('.card[data-char-id]');
+  visibleCards.forEach(card => {
+    const charId = parseInt(card.getAttribute('data-char-id'));
+    selectedCharacters.add(charId);
+    card.classList.add('selected');
+  });
+  
+  updateSelectedCount();
+  updateBulkTagButtonState();
+}
+
+/**
+ * 選択解除
+ */
+function clearSelection() {
+  selectedCharacters.clear();
+  
+  const selectedCards = document.querySelectorAll('.card.selected');
+  selectedCards.forEach(card => {
+    card.classList.remove('selected');
+  });
+  
+  updateSelectedCount();
+  updateBulkTagButtonState();
+}
+
+/**
+ * 一括タグ追加ボタンの状態更新
+ */
+function updateBulkTagButtonState() {
+  const bulkTagBtn = document.getElementById('bulkTagBtn');
+  if (bulkTagBtn) {
+    bulkTagBtn.disabled = selectedCharacters.size === 0;
+  }
+}
+
+/**
+ * 一括タグ編集ポップアップを表示
+ */
+async function showBulkTagEditor() {
+  if (selectedCharacters.size === 0) return;
+  
+  try {
+    // カスタムタグをIndexedDBから読み込み
+    if (Object.keys(customTags).length === 0 && characterDB.db) {
+      customTags = await characterDB.getAllCustomTags();
+    }
+    
+    // 選択数を表示
+    const bulkEditSelectedCount = document.getElementById('bulkEditSelectedCount');
+    if (bulkEditSelectedCount) {
+      bulkEditSelectedCount.textContent = selectedCharacters.size;
+    }
+    
+    // ポップアップを表示
+    document.getElementById('bulkTagEditPopup').style.display = 'block';
+    document.body.classList.add('modal-open');
+    
+    // タグ選択リストを更新
+    renderBulkTagSelectionList();
+    
+  } catch (error) {
+    console.error('一括タグ編集ポップアップ表示エラー:', error);
+  }
+}
+
+/**
+ * 一括タグ編集ポップアップを閉じる
+ */
+function closeBulkTagEditor() {
+  document.getElementById('bulkTagEditPopup').style.display = 'none';
+  document.body.classList.remove('modal-open');
+  
+  // 選択状態をリセット
+  const selectedTagElements = document.querySelectorAll('#bulkTagSelectionList .tag-item.selected');
+  selectedTagElements.forEach(el => el.classList.remove('selected'));
+  
+  updateApplyBulkTagsButtonState();
+}
+
+/**
+ * 一括タグ選択リストのレンダリング
+ */
+function renderBulkTagSelectionList() {
+  const container = document.getElementById('bulkTagSelectionList');
+  if (!container) return;
+  
+  // カスタムタグ一覧を表示
+  const tagKeys = Object.keys(customTags).sort();
+  
+  if (tagKeys.length === 0) {
+    container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">カスタムタグがありません</p>';
+    return;
+  }
+  
+  const html = tagKeys.map(tagKey => {
+    const tag = customTags[tagKey];
+    return `
+      <div class="tag-item" data-tag-key="${tagKey}" onclick="toggleBulkTagSelection('${tagKey}')">
+        <span class="tag-color" style="background-color: ${tag.color}"></span>
+        <span class="tag-name">${tag.name}</span>
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+/**
+ * 一括タグ選択の切り替え
+ */
+function toggleBulkTagSelection(tagKey) {
+  const tagElement = document.querySelector(`#bulkTagSelectionList .tag-item[data-tag-key="${tagKey}"]`);
+  if (tagElement) {
+    tagElement.classList.toggle('selected');
+    updateApplyBulkTagsButtonState();
+  }
+}
+
+/**
+ * 一括タグ適用ボタンの状態更新
+ */
+function updateApplyBulkTagsButtonState() {
+  const applyBtn = document.getElementById('applyBulkTagsBtn');
+  const selectedTags = document.querySelectorAll('#bulkTagSelectionList .tag-item.selected');
+  
+  if (applyBtn) {
+    applyBtn.disabled = selectedTags.length === 0;
+  }
+}
+
+/**
+ * 一括タグ適用
+ */
+async function applyBulkTags() {
+  const selectedTagElements = document.querySelectorAll('#bulkTagSelectionList .tag-item.selected');
+  const selectedTagKeys = Array.from(selectedTagElements).map(el => el.getAttribute('data-tag-key'));
+  
+  if (selectedTagKeys.length === 0 || selectedCharacters.size === 0) return;
+  
+  try {
+    // 各キャラクターにタグを追加
+    for (const charId of selectedCharacters) {
+      // 現在のタグを取得
+      const currentTags = characterTags[charId] || [];
+      
+      // 新しいタグを追加（重複を避ける）
+      const updatedTags = [...new Set([...currentTags, ...selectedTagKeys])];
+      
+      // IndexedDBに保存
+      await characterDB.saveCharacterTags(charId, updatedTags);
+    }
+    
+    // キャラクタータグデータを再読み込み
+    characterTags = await characterDB.getAllCharacterTags();
+    
+    // 成功メッセージ
+    showCopyPopup(`${selectedCharacters.size}件のキャラクターに${selectedTagKeys.length}個のタグを追加しました`);
+    
+    // ポップアップを閉じる
+    closeBulkTagEditor();
+    
+    // 編集モードを終了
+    if (isEditMode) {
+      toggleEditMode();
+    }
+    
+    // フィルターを更新してタグの追加を反映
+    filterCharacters();
+    
+  } catch (error) {
+    console.error('一括タグ適用エラー:', error);
+    showCopyPopup('タグの追加に失敗しました');
+  }
+}
+
+// グローバル関数として公開
+window.toggleEditMode = toggleEditMode;
+window.handleCardClick = handleCardClick;
+window.selectAllCharacters = selectAllCharacters;
+window.clearSelection = clearSelection;
+window.showBulkTagEditor = showBulkTagEditor;
+window.closeBulkTagEditor = closeBulkTagEditor;
+window.toggleBulkTagSelection = toggleBulkTagSelection;
+window.applyBulkTags = applyBulkTags;
