@@ -99,10 +99,63 @@ if ($characterId) {
       </button>
       <!-- ▼バツボタンと被らないように下に余白を追加 -->
       <div style="height:38px;"></div>
+      
+      <!-- ▼編集モードボタン -->
+      <button onclick="toggleEditMode()" class="hamburger-edit-btn" id="editModeBtn" title="編集モード切り替え">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="m18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        編集モード: <span id="editModeStatus">オフ</span>
+      </button>
+      
+      <!-- ▼設定セクション -->
+      <div style="margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: #666; font-weight: bold;">設定</div>
+      
       <button onclick="toggleLanguage()" class="hamburger-lang-btn" id="langToggleBtn">言語切替 (現在: 日本語)</button>
       <!-- ▼テーマ切替ボタン（3テーマ対応） -->
       <button onclick="toggleTheme()" class="hamburger-theme-btn" id="themeToggleBtn">テーマ切替 (現在: ライト)</button>
-      <!-- ▼データ管理ボタン -->
+      
+      <button onclick="toggleWeaponIconDisplay()" class="hamburger-lang-btn" id="weaponIconToggleBtn" title="武器アイコン表示切り替え">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6.5 6.5h11L16 8.5v7L14.5 17h-5L8 15.5v-7z"/>
+          <path d="M6.5 6.5L4 4"/>
+          <path d="M17.5 6.5L20 4"/>
+          <path d="M12 8.5V13"/>
+        </svg>
+        武器アイコン: <span id="weaponIconStatus">フィルター時のみ</span>
+      </button>
+      
+      <button onclick="toggleWeaponSearch()" class="hamburger-lang-btn" id="weaponSearchToggleBtn" title="武器名での検索切り替え">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+          <path d="M6.5 6.5h11L16 8.5v7L14.5 17h-5L8 15.5v-7z"/>
+        </svg>
+        武器検索: <span id="weaponSearchStatus">有効</span>
+      </button>
+      
+      <button onclick="toggleCustomTagSearch()" class="hamburger-lang-btn" id="customTagSearchToggleBtn" title="カスタムタグでの検索切り替え">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+          <path d="M21 7L9 19l-5.5-5.5 1.414-1.414L9 16.172 19.586 5.586z"/>
+        </svg>
+        タグ検索: <span id="customTagSearchStatus">有効</span>
+      </button>
+      
+      <button onclick="toggleHighlightMode()" class="hamburger-lang-btn" id="highlightToggleBtn" title="予測変換の強調表示切り替え">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+          <rect x="3" y="7" width="3" height="2" fill="currentColor"/>
+          <rect x="8" y="7" width="8" height="2" fill="currentColor"/>
+        </svg>
+        強調表示: <span id="highlightStatus">有効</span>
+      </button>
+      
+      <!-- ▼データ管理セクション -->
+      <div style="margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: #666; font-weight: bold;">データ管理</div>
       <button onclick="showDataManagerFromMenu()" class="hamburger-lang-btn" id="dataManagerBtn" title="データのエクスポート・インポート">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -121,6 +174,17 @@ if ($characterId) {
         </svg>
         カスタムタグ
       </button>
+      
+      <button onclick="console.log('使い方ガイドボタンがクリックされました'); showUsageGuide();" class="hamburger-lang-btn" id="usageGuideBtn" title="サイトの使い方">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
+        </svg>
+        使い方
+      </button>
+
+      <div style="margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: #666; font-weight: bold;">その他</div>
       <button onclick="window.location.href='cards.html'" class="hamburger-lang-btn" id="cardsViewBtn" title="ピクセルアートスタイル表示">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="9"/>
@@ -134,6 +198,27 @@ if ($characterId) {
   </div>
 
   <h1>キャラ図鑑</h1>
+
+  <!-- ▼編集モードツールバー -->
+  <div id="editToolbar" class="edit-toolbar" style="display: none;">
+    <div class="edit-toolbar-content">
+      <div class="edit-info">
+        <span id="selectedCount">0</span>件選択中
+      </div>
+      <div class="edit-actions">
+        <button onclick="selectAllCharacters()" class="edit-btn edit-btn-select">全選択</button>
+        <button onclick="clearSelection()" class="edit-btn edit-btn-clear">選択解除</button>
+        <button onclick="showBulkTagEditor()" class="edit-btn edit-btn-tag" id="bulkTagBtn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 7L9 19l-5.5-5.5 1.414-1.414L9 16.172 19.586 5.586z"/>
+            <path d="M12 2L8 6v6l4 4 6-6V4z"/>
+            <circle cx="15.5" cy="6.5" r="1.5"/>
+          </svg>
+          一括タグ追加
+        </button>
+      </div>
+    </div>
+  </div>
 
   <div class="search-container">
     <div class="search-input-wrapper">
@@ -214,6 +299,9 @@ if ($characterId) {
           <div id="memoOnlyBtn" onclick="toggleFilterOption('memo', 'memo', this)" class="filter-option">
             メモ済み (<span id="memoCount">0</span>)
           </div>
+          <div id="uniqueWeaponBtn" onclick="toggleFilterOption('uniqueWeapon', 'uniqueWeapon', this)" class="filter-option">
+            ユニーク武器
+          </div>
         </div>
       </div>
       <!-- ▲追加ここまで -->
@@ -225,13 +313,13 @@ if ($characterId) {
 
   <!-- キャラクター詳細表示の要素 (ポップアップ型ではない) -->
   <div id="detailsPopup">
-    <div class="popup-content">
+    <div class="popup-content" data-v-12839f6c>
       <span class="close" onclick="closeDetailsPopup()">&times;</span>
       <div id="characterDetails">
         <!-- キャラクターの詳細がここに表示されます -->
       </div>
-      <hr>
-      <h3>関連キャラクター</h3>
+      <hr data-v-12831233>
+      <h3 data-v-12831233>関連キャラクター</h3>
       <div id="relatedCharacters" class="card-container">
         <!-- 関連キャラクターのカードがここに表示されます -->
       </div>
@@ -288,6 +376,75 @@ if ($characterId) {
   <!-- キャラクターが見つからなかった場合のメッセージ -->
   <div id="noCharactersMessage" class="no-characters-message" style="display: none;">
     対象のキャラが見つかりませんでした
+  </div>
+
+  <!-- 使い方ガイドポップアップ -->
+  <div id="usageGuidePopup" class="popup-overlay" style="display: none;">
+    <div class="popup-content usage-guide-content">
+      <span class="close" onclick="closeUsageGuide()">&times;</span>
+      <h2>🎮 キャラ図鑑の使い方</h2>
+      
+      <div class="usage-section">
+        <h3>📝 基本的な使い方</h3>
+        <ul>
+          <li><strong>検索</strong>: 上部の検索ボックスでキャラクター名、武器名、カスタムタグで検索できます</li>
+          <li><strong>フィルター</strong>: 種族、戦闘スタイル、属性、グループで絞り込み検索ができます</li>
+          <li><strong>キャラクター詳細</strong>: カードをクリックすると詳細情報が表示されます</li>
+          <li><strong>お気に入り</strong>: ❤️ボタンでお気に入りに追加/削除できます</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>🔍 予測変換機能</h3>
+        <ul>
+          <li>検索時に候補が自動表示されます</li>
+          <li><strong>キャラクター名</strong>: 日本語・英語・カナで検索</li>
+          <li><strong>武器名</strong>: 「武器：浄冥の宝珠 (所有者: ミント)」形式で表示</li>
+          <li><strong>カスタムタグ</strong>: 「カスタムタグ：強いキャラ」形式で表示</li>
+          <li>↑↓キーで選択、Enterで決定、Escで閉じる</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>🏷️ カスタムタグ機能</h3>
+        <ul>
+          <li><strong>編集モード</strong>: メニューから編集モードを有効にしてキャラクターを選択</li>
+          <li><strong>一括編集</strong>: 複数キャラクターを選択して一括でタグを追加</li>
+          <li><strong>タグ管理</strong>: メニューの「カスタムタグ」からタグの作成・編集・削除</li>
+          <li><strong>タグ検索</strong>: カスタムタグでも検索・フィルタリング可能</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>⚙️ 設定機能</h3>
+        <ul>
+          <li><strong>武器アイコン表示</strong>: フィルター時のみ/常に表示/非表示を切り替え</li>
+          <li><strong>検索設定</strong>: 武器名検索・カスタムタグ検索のオン/オフ</li>
+          <li><strong>強調表示</strong>: 予測変換でのマッチ部分ハイライトのオン/オフ</li>
+          <li><strong>テーマ</strong>: ライト/ダーク/モダンテーマの切り替え</li>
+          <li><strong>言語</strong>: 日本語/英語の表示切り替え</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>⌨️ キーボードショートカット</h3>
+        <ul>
+          <li><kbd>Ctrl+F</kbd> 検索欄にフォーカス</li>
+          <li><kbd>F</kbd> フィルター開く</li>
+          <li><kbd>Escape</kbd> ポップアップを閉じる</li>
+          <li><kbd>←→</kbd> キャラクター詳細で前後のキャラクターに移動</li>
+        </ul>
+      </div>
+
+      <div class="usage-section">
+        <h3>💾 データ管理</h3>
+        <ul>
+          <li><strong>エクスポート</strong>: お気に入りやカスタムタグをJSONファイルで保存</li>
+          <li><strong>インポート</strong>: 保存したデータを読み込み</li>
+          <li><strong>データ同期</strong>: 複数デバイス間でのデータ共有が可能</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <!-- キーボードショートカット説明 -->

@@ -1824,7 +1824,59 @@ window.addEventListener('DOMContentLoaded', () => {
   
   // 初期表示の画像にもイベントリスナーを設定
   setupDynamicImageEventListeners();
+  
+  // ハンバーガーメニューのタッチスクロール制御を初期化
+  setupHamburgerTouchControl();
 });
+
+// ハンバーガーメニューのタッチスクロール制御
+function setupHamburgerTouchControl() {
+  const drawer = document.getElementById('hamburgerDrawer');
+  if (!drawer) return;
+
+  // タッチイベントで背景スクロールを防ぐ
+  drawer.addEventListener('touchstart', function(e) {
+    // ドロワーが開いている時のみ制御
+    if (drawer.classList.contains('open')) {
+      // タッチ開始位置を記録
+      this.startY = e.touches[0].clientY;
+      this.startX = e.touches[0].clientX;
+    }
+  }, { passive: false });
+
+  drawer.addEventListener('touchmove', function(e) {
+    // ドロワーが開いている時のみ制御
+    if (!drawer.classList.contains('open')) return;
+
+    const currentY = e.touches[0].clientY;
+    const currentX = e.touches[0].clientX;
+    const deltaY = currentY - this.startY;
+    const deltaX = currentX - this.startX;
+
+    // 横スワイプの場合は背景スクロールを防ぐ
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      e.preventDefault();
+      return;
+    }
+
+    // ドロワー内のスクロール位置を確認
+    const scrollTop = drawer.scrollTop;
+    const scrollHeight = drawer.scrollHeight;
+    const clientHeight = drawer.clientHeight;
+
+    // 上端での上スワイプまたは下端での下スワイプの場合は背景スクロールを防ぐ
+    if ((scrollTop === 0 && deltaY > 0) || 
+        (scrollTop + clientHeight >= scrollHeight && deltaY < 0)) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  drawer.addEventListener('touchend', function() {
+    // タッチ終了時にスタート位置をリセット
+    this.startY = null;
+    this.startX = null;
+  }, { passive: true });
+}
 
 /**
  * キャラクターの詳細を表示する
@@ -2067,8 +2119,12 @@ function showCharacterDetails(charId, imgIndex = 0) {
     // カスタムタグ表示を更新
     updateCharacterTagDisplay(charId);
     
-    renderRelatedCharacters(character.group, character.id, false); // ←showAll=falseで初回5件
-    renderRelationCharacters(character.id);
+    // DOM更新完了後に関連キャラクターを表示
+    setTimeout(() => {
+      renderRelatedCharacters(character.group, character.id, false); // ←showAll=falseで初回5件
+      renderRelationCharacters(character.id);
+    }, 0);
+    
     detailsPopup.style.display = 'block';
     document.body.classList.add('modal-open'); // 背景スクロール防止
     updateHamburgerMenuVisibility();
@@ -2090,7 +2146,62 @@ function closeDetailsPopup() {
  * @param {number} currentId - 現在表示中のキャラクターのID
  */
 function renderRelatedCharacters(groups, currentId, showAll = false) {
-  const relatedContainer = document.getElementById('relatedCharacters');
+  console.log('renderRelatedCharacters 呼び出し:', { groups, currentId, showAll });
+  console.log('画面幅:', window.innerWidth);
+  console.log('PC版レイアウト:', window.innerWidth > 768);
+  
+  let relatedContainer = document.getElementById('relatedCharacters');
+  console.log('relatedContainer (ID検索):', relatedContainer);
+  
+  if (!relatedContainer) {
+    console.error('relatedCharacters 要素が見つかりません - 代替検索を実行');
+    
+    // 代替1: relatedCharactersSection内を探してみる
+    const section = document.getElementById('relatedCharactersSection');
+    console.log('relatedCharactersSection:', section);
+    if (section) {
+      const altContainer = section.querySelector('.card-container');
+      console.log('relatedCharactersSection内の.card-container:', altContainer);
+      if (altContainer) {
+        altContainer.id = 'relatedCharacters'; // IDを設定
+        console.log('relatedCharactersSection内の要素にIDを設定しました');
+        relatedContainer = altContainer;
+      }
+    }
+    
+    // 代替2: detail-right-bottom内を探してみる
+    if (!relatedContainer) {
+      const rightBottom = document.querySelector('.detail-right-bottom');
+      console.log('detail-right-bottom:', rightBottom);
+      if (rightBottom) {
+        const altContainer2 = rightBottom.querySelector('#relatedCharacters, .card-container:last-child');
+        console.log('detail-right-bottom内の関連要素:', altContainer2);
+        if (altContainer2 && !altContainer2.id) {
+          altContainer2.id = 'relatedCharacters';
+          console.log('detail-right-bottom内の要素にIDを設定しました');
+          relatedContainer = altContainer2;
+        }
+      }
+    }
+    
+    // 代替3: popup-content内の静的な要素を探す
+    if (!relatedContainer) {
+      const popupContent = document.querySelector('.popup-content');
+      if (popupContent) {
+        const staticContainer = popupContent.querySelector('#relatedCharacters');
+        console.log('静的な#relatedCharacters:', staticContainer);
+        if (staticContainer) {
+          relatedContainer = staticContainer;
+        }
+      }
+    }
+    
+    if (!relatedContainer) {
+      console.error('全ての代替検索でも relatedCharacters 要素が見つかりませんでした');
+      return;
+    }
+  }
+  
   // 現在のキャラクターと同じグループに属するキャラクターをフィルタリング
   let related = characters.filter(c => 
     c.id !== currentId &&
@@ -2119,7 +2230,9 @@ function renderRelatedCharacters(groups, currentId, showAll = false) {
   }
 
   if (related.length > 0) {
+    console.log(`関連キャラクター ${related.length} 件を表示します:`, related.map(c => c.name));
     relatedContainer.innerHTML = related.map(renderCharacter).join('');
+    console.log('関連キャラクターの表示が完了しました');
     if (showMore) {
       // 「更に表示」ボタン追加
       const btn = document.createElement('button');
@@ -2133,6 +2246,7 @@ function renderRelatedCharacters(groups, currentId, showAll = false) {
       relatedContainer.appendChild(btn);
     }
   } else {
+    console.log('関連キャラクターが見つかりませんでした。グループ:', groups);
     relatedContainer.innerHTML = '<p>関連キャラクターは見つかりませんでした。</p>';
   }
 }
@@ -2189,11 +2303,15 @@ function toggleHamburgerMenu() {
   if (drawer) {
     const isOpen = drawer.classList.toggle('open');
     if (isOpen) {
+      // 背景スクロール防止を追加
+      document.body.classList.add('hamburger-open');
       // 背景クリックで閉じる
       setTimeout(() => {
         document.addEventListener('click', closeHamburgerOnOutside, { capture: true });
       }, 0);
     } else {
+      // 背景スクロール防止を解除
+      document.body.classList.remove('hamburger-open');
       document.removeEventListener('click', closeHamburgerOnOutside, true);
     }
   }
@@ -2203,6 +2321,8 @@ function closeHamburgerOnOutside(e) {
   const btn = document.getElementById('hamburgerBtn');
   if (!drawer.contains(e.target) && (!btn || !btn.contains(e.target))) {
     drawer.classList.remove('open');
+    // 背景スクロール防止を解除
+    document.body.classList.remove('hamburger-open');
     document.removeEventListener('click', closeHamburgerOnOutside, true);
   }
 }

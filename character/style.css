@@ -581,7 +581,7 @@ button,
     font-size: 15px;
   }
   .card-container {
-    gap: 10px;
+    gap: 9px;
     margin-top: 10px;
   }
   .card {
@@ -597,7 +597,7 @@ button,
     padding: 0 4px;
   }
   #detailsPopup .popup-content {
-    width: 98vw;
+    width: auto;
     max-width: 99vw;
     padding: 10px;
     min-height: unset;
@@ -621,7 +621,7 @@ button,
     font-size: 1em;
   }
   .popup-content {
-    width: 98vw;
+    width: auto;
     max-width: 99vw;
     padding: 10px;
   }
@@ -780,12 +780,21 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   transition: transform 0.28s cubic-bezier(.4,0,.2,1);
   /* スクロール対応 */
   overflow-y: auto;
+  /* タッチスクロール制御を追加 */
+  touch-action: pan-y; /* 縦方向のスクロールのみ許可 */
+  overscroll-behavior: contain; /* オーバースクロール時の背景スクロールを防ぐ */
 }
 .hamburger-drawer.open {
   transform: translateX(0);
 }
 .hamburger-drawer:not(.open) {
   pointer-events: none;
+}
+
+/* ハンバーガーメニュー開時の背景スクロール防止 */
+body.hamburger-open {
+  overflow: hidden;
+  touch-action: none; /* タッチスクロールを完全に無効化 */
 }
 .hamburger-lang-btn {
   width: 100%;
@@ -917,11 +926,6 @@ body.theme-dark .close:hover {
   background: rgba(58, 134, 255, 0.1);
   color: #4a88a2;
 }
-body.theme-dark .search-clear-btn svg,
-body.theme-dark .buttonCopyIcon svg,
-body.theme-dark .hamburger-close-btn svg {
-  /* 既存の色でOK */
-}
 body.theme-dark .name-suggestions {
   background: #1a2540;
   color: #e9eaf6;
@@ -946,9 +950,6 @@ body.theme-dark .mini-popup {
   background: #22305c;
   color: #e9eaf6;
   border: 1.5px solid #3a86ff;
-}
-body.theme-dark .hamburger-menu {
-  /* 既存のまま */
 }
 body.theme-dark .hamburger-drawer {
   background: #1a2540;
@@ -1065,7 +1066,6 @@ body.theme-modern .card {
   background: rgba(255,255,255,0.98);
   color: #156acc;
   box-shadow: 0 4px 10px rgba(21,106,204,0.10);
-  border: 1.5px solid #b2eaff;
 }
 body.theme-modern .card h2 {
   color: #156acc;
@@ -2826,7 +2826,6 @@ body.theme-modern .character-title-row h2.weapon-title {
 
   #relatedCharacters>.card {
     width: 150px;
-    height: 220px;
   }
 
   #relatedCharacters>.card .imgframe {
