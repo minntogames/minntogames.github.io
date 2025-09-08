@@ -1273,12 +1273,12 @@
         "personality": "おやばか",
         "group": ["Nibiru"],
         "img": "45.webp",
-        "imgsize": "290%",
+        "imgsize": "390%",
         "imgThumbsize": "",
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-430px -30px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-240px -10px"
     },
     {
         "id": 46,
@@ -1289,6 +1289,13 @@
         "world": "1",
         "race": ["人間", "鬼"],
         "fightingStyle": "Scythe",
+        "weapon": [
+            {
+                "name": ["ディアスラッシャー", "Diaslasher","でぃあすらっしゃー"],
+                "description": "万物を切り裂き空間さえにも亀裂",
+                "img": "weapons/1.webp"
+            }
+        ],
         "attribute": [["Fire", "Darkness"]],
         "height": null,
         "age": "",
@@ -1302,10 +1309,10 @@
         "img": "46.webp",
         "imgsize": "290%",
         "imgThumbsize": "",
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-180px -100px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-150px -70px"
     },
     {
         "id": 47,
