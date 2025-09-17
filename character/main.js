@@ -1096,7 +1096,7 @@ function renderCharacter(char) {
         </svg>
       </button>
       ${showWeaponIcon ? `
-      <div class="weapon-icon">
+      <div class="weapon-icon" onclick="event.stopPropagation(); showCharacterDetailsAndWeapon(${char.id})" title="武器情報を表示">
         ${weaponImg ? `
         <img src="img/${weaponImg}" alt="武器" class="weapon-image">
         <svg class="weapon-fallback" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a88a2" stroke-width="2" style="display: none;">
@@ -1986,7 +1986,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
         </div>
         ${hasWeapons ? `
         <div id="weapon-tab" class="tab-content">
-          ${generateWeaponContent(character.weapon)}
+          ${generateWeaponContent(character.weapon, character.id)}
         </div>
         ` : ''}
       </div>
@@ -2030,7 +2030,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
             </div>
             ${hasWeapons ? `
             <div id="weapon-tab" class="tab-content">
-              ${generateWeaponContent(character.weapon)}
+              ${generateWeaponContent(character.weapon, character.id)}
             </div>
             ` : ''}
             <div class="memo-section">
@@ -2129,6 +2129,25 @@ function showCharacterDetails(charId, imgIndex = 0) {
     document.body.classList.add('modal-open'); // 背景スクロール防止
     updateHamburgerMenuVisibility();
   }
+}
+
+/**
+ * キャラクターの詳細を表示し、武器タブに切り替える
+ * @param {number} charId - 表示するキャラクターのID
+ */
+function showCharacterDetailsAndWeapon(charId) {
+  // まず詳細画面を表示
+  showCharacterDetails(charId, 0);
+  
+  // DOMが更新された後に武器タブに切り替えとURL更新
+  setTimeout(() => {
+    const weaponTabButton = document.querySelector('.tab-nav-item[onclick*="weapon"]');
+    if (weaponTabButton) {
+      switchTab('weapon', weaponTabButton);
+      // 武器詳細URLに更新
+      updateWeaponUrl(charId, 0);
+    }
+  }, 100);
 }
 
 /**
@@ -2693,6 +2712,7 @@ window.toggleFilterPopup = toggleFilterPopup;
 window.applyFilters = applyFilters;
 window.clearFilters = clearFilters;
 window.showCharacterDetails = showCharacterDetails;
+window.showCharacterDetailsAndWeapon = showCharacterDetailsAndWeapon;
 window.closeDetailsPopup = closeDetailsPopup;
 window.toggleLanguage = toggleLanguage; // 新しい言語切り替え関数を公開
 window.toggleHamburgerMenu = toggleHamburgerMenu;
@@ -4179,27 +4199,58 @@ document.addEventListener('DOMContentLoaded', function() {
 // 動的に追加される画像に対してもイベントを設定
 
 /**
+ * 武器詳細のURLを生成する
+ * @param {number} characterId - キャラクターID
+ * @param {number} weaponIndex - 武器のインデックス（0から開始）
+ * @returns {string} 武器詳細のURL
+ */
+function generateWeaponDetailUrl(characterId, weaponIndex = 0) {
+  const baseUrl = window.location.origin + window.location.pathname;
+  return `${baseUrl}?id=${characterId}&weapon=${weaponIndex}&tab=weapon`;
+}
+
+/**
  * 武器情報のHTMLコンテンツを生成する
  * @param {Array} weapons - 武器の配列
+ * @param {number} characterId - キャラクターID（URL生成用）
  * @returns {string} 武器情報のHTML
  */
-function generateWeaponContent(weapons) {
+function generateWeaponContent(weapons, characterId = null) {
   if (!weapons || !Array.isArray(weapons) || weapons.length === 0) {
     return '<div class="no-weapon">このキャラクターには武器情報がありません</div>';
   }
 
-  return weapons.map(weapon => {
+  return weapons.map((weapon, weaponIndex) => {
     const name = Array.isArray(weapon.name) ? weapon.name[0] : weapon.name;
     const nameEn = Array.isArray(weapon.name) && weapon.name[1] ? weapon.name[1] : '';
     const displayName = currentDisplayLanguage === 'en' && nameEn ? nameEn : name;
     
+    // 武器詳細へのリンクURLを生成
+    const weaponDetailUrl = characterId ? generateWeaponDetailUrl(characterId, weaponIndex) : null;
+    
     return `
       <div class="weapon-info">
-        <div class="weapon-name">${displayName || 'N/A'}</div>
+        <div class="weapon-name">
+          ${weaponDetailUrl ? 
+            `<a href="${weaponDetailUrl}" class="weapon-link" onclick="updateWeaponUrl(${characterId}, ${weaponIndex}); return false;">${displayName || 'N/A'}</a>` :
+            `${displayName || 'N/A'}`
+          }
+        </div>
         <div class="weapon-description">${weapon.description || 'N/A'}</div>
       </div>
     `;
   }).join('');
+}
+
+/**
+ * 武器詳細URLを更新する
+ * @param {number} characterId - キャラクターID
+ * @param {number} weaponIndex - 武器インデックス
+ */
+function updateWeaponUrl(characterId, weaponIndex = 0) {
+  const newUrl = generateWeaponDetailUrl(characterId, weaponIndex);
+  // ブラウザの履歴にURLを追加（ページリロードしない）
+  window.history.pushState({characterId, weaponIndex, tab: 'weapon'}, '', newUrl);
 }
 
 /**
@@ -4236,6 +4287,23 @@ function switchTab(tabName, clickedTab) {
   
   // 名前の切り替え処理
   switchCharacterName(tabName);
+  
+  // URL更新処理
+  const detailsContainer = document.getElementById('characterDetails');
+  if (detailsContainer) {
+    const charId = parseInt(detailsContainer.dataset.charId);
+    const imgIndex = parseInt(detailsContainer.dataset.imgIndex) || 0;
+    
+    if (charId && tabName === 'weapon') {
+      // 武器タブの場合、武器詳細URLに更新
+      updateWeaponUrl(charId, 0);
+    } else if (charId) {
+      // 基本情報タブの場合、通常のキャラクター詳細URLに更新
+      const baseUrl = window.location.origin + window.location.pathname;
+      const newUrl = imgIndex > 0 ? `${baseUrl}?id=${charId}&img=${imgIndex}` : `${baseUrl}?id=${charId}`;
+      window.history.pushState({characterId: charId, imgIndex, tab: 'basic'}, '', newUrl);
+    }
+  }
   
   // サムネイル（別スタイル）ボタンの表示/非表示
   const thumbnailList = document.querySelector('.thumbnail-list');
@@ -4356,6 +4424,8 @@ function switchCharacterName(tabName) {
 
 // グローバル関数として公開
 window.generateWeaponContent = generateWeaponContent;
+window.generateWeaponDetailUrl = generateWeaponDetailUrl;
+window.updateWeaponUrl = updateWeaponUrl;
 window.switchTab = switchTab;
 window.switchCharacterImage = switchCharacterImage;
 window.switchCharacterName = switchCharacterName;

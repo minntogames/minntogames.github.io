@@ -1,7 +1,8 @@
 <?php
-// URLパラメータからIDとimgインデックスを取得
+// URLパラメータからIDとimgインデックス、武器インデックスを取得
 $characterId = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $imgIndex = isset($_GET['img']) ? (int)$_GET['img'] : 0;
+$weaponIndex = isset($_GET['weapon']) ? (int)$_GET['weapon'] : null;
 $characterData = null;
 $ogTitle = 'キャラ図鑑';
 $ogDescription = 'キャラクター図鑑です';
@@ -28,22 +29,45 @@ if ($characterId) {
         // 名前の処理（imgIndexに対応）
         $nameArray = is_array($characterData['name']) ? $characterData['name'] : [$characterData['name']];
         $characterName = isset($nameArray[$imgIndex]) ? $nameArray[$imgIndex] : $nameArray[0];
-        $ogTitle = htmlspecialchars($characterName) . ' - キャラ図鑑';
         
-        // 説明の処理（imgIndexに対応）
-        $description = '';
-        if (isset($characterData['description'])) {
-            $descArray = is_array($characterData['description']) ? $characterData['description'] : [$characterData['description']];
-            $targetDesc = isset($descArray[$imgIndex]) ? $descArray[$imgIndex] : $descArray[0];
-            if ($targetDesc) {
-                $description = strip_tags($targetDesc);
-                // 長すぎる場合は切り詰める
-                if (strlen($description) > 160) {
-                    $description = mb_substr($description, 0, 157) . '...';
+        // 武器情報の処理
+        if ($weaponIndex !== null && isset($characterData['weapon']) && is_array($characterData['weapon'])) {
+            $weaponData = isset($characterData['weapon'][$weaponIndex]) ? $characterData['weapon'][$weaponIndex] : null;
+            if ($weaponData) {
+                $weaponName = is_array($weaponData['name']) ? $weaponData['name'][0] : $weaponData['name'];
+                $ogTitle = htmlspecialchars($weaponName . ' - ' . $characterName . 'の武器 - キャラ図鑑');
+                $weaponDescription = isset($weaponData['description']) ? $weaponData['description'] : '';
+                if ($weaponDescription) {
+                    $weaponDescription = strip_tags($weaponDescription);
+                    // 長すぎる場合は切り詰める
+                    if (strlen($weaponDescription) > 120) {
+                        $weaponDescription = mb_substr($weaponDescription, 0, 117) . '...';
+                    }
+                    $ogDescription = htmlspecialchars($characterName . 'の武器「' . $weaponName . '」- ' . $weaponDescription);
+                } else {
+                    $ogDescription = htmlspecialchars($characterName . 'の武器「' . $weaponName . '」の詳細情報');
+                }
+            } else {
+                $ogTitle = htmlspecialchars($characterName . 'の武器 - キャラ図鑑');
+                $ogDescription = htmlspecialchars($characterName . 'の武器情報');
+            }
+        } else {
+            $ogTitle = htmlspecialchars($characterName) . ' - キャラ図鑑';
+            // 説明の処理（imgIndexに対応）
+            $description = '';
+            if (isset($characterData['description'])) {
+                $descArray = is_array($characterData['description']) ? $characterData['description'] : [$characterData['description']];
+                $targetDesc = isset($descArray[$imgIndex]) ? $descArray[$imgIndex] : $descArray[0];
+                if ($targetDesc) {
+                    $description = strip_tags($targetDesc);
+                    // 長すぎる場合は切り詰める
+                    if (strlen($description) > 160) {
+                        $description = mb_substr($description, 0, 157) . '...';
+                    }
                 }
             }
+            $ogDescription = htmlspecialchars($description ? $description : $characterName . 'のキャラクター情報');
         }
-        $ogDescription = htmlspecialchars($description ? $description : $characterName . 'のキャラクター情報');
         
         // 画像URLの設定（imgIndexに対応）
         if (isset($characterData['img']) && !empty($characterData['img'])) {
@@ -60,7 +84,7 @@ if ($characterId) {
   <meta charset="UTF-8" />
   <title><?php echo $ogTitle; ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <link rel="icon" href="favicon.ico" />
   <!-- OGP メタタグ -->
   <meta property="og:title" content="<?php echo $ogTitle; ?>" />
   <meta property="og:description" content="<?php echo $ogDescription; ?>" />

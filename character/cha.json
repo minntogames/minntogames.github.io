@@ -23,40 +23,28 @@
             }
         },
         "relation": [
-            [
-                2,
-                13,
-                32,
-                33,
-                34,
-                35,
-                36
-            ],
+            [2, 13, 32, 33, 34, 35, 36],
             [19, 20],
             [16, 17, 18],
             [7, 40],
             [41, 42],
-            [
-                45,
-                46,
-                47,
-                48
-            ],
+            [45, 46, 47, 48],
             [49, 50]
         ]
     },
     {
         "id": 1,
-        "name": ["Xドクター", "W.D.ドクター"],
-        "name_en": ["X Doctor", "W.D.Doctor"],
+        "name": ["Xドクター", "W.D.ドクター", "W.D.RED.ドクター"],
+        "name_en": ["X Doctor", "W.D.Doctor", "W.D.RED.Doctor"],
         "name_Kana": "くろすどくたー",
         "description": [
             "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている。", 
-            "自身の悪が抑えきれず悪が放出されてしまった姿。彼が言っていることは理解不能(言語的に)で近くにあるものを破壊し尽くす。体のどこからでも鎖が出てくる。"
+            "自身の悪が抑えきれず悪が放出されてしまった姿。彼が言っていることは理解不能(言語的に)で近くにあるものを破壊し尽くす。体のどこからでも鎖が出てくる。",
+            "自身の悪を強引に押し込め力に変えた姿。魔法の双剣で対象を切り裂く。"
         ],
         "world": "1",
-        "race": [["棒人間"], [""]],
-        "fightingStyle": [["Sword", "Magic"], ["Magic"]],
+        "race": ["棒人間"],
+        "fightingStyle": [["Sword", "Magic"], ["Magic"], ["Sword", "Magic"]],
         "weapon": [
             {
                 "name": ["浄冥の宝珠", "Magic Ball of Creation Destruction","じょうめいのほうじゅ"],
@@ -64,7 +52,7 @@
                 "img": "weapons/1.webp"
             }
         ],
-        "attribute": [["Electricity"], ["Darkness"]],
+        "attribute": [["Electricity"], ["Darkness"], ["Darkness", "Fire"]],
         "height": 190,
         "age": "不明",
         "birthday": {
@@ -74,7 +62,7 @@
         },
         "personality": "意地悪",
         "group": ["Main Group"],
-        "img": ["1-0.webp", "1-1.webp"],
+        "img": ["1-0.webp", "1-1.webp", "1-2.webp"],
         "imgsize": "300%",
         "imgThumbsize": ["150%", "200%"],
         "imageZoomPosition": "-190px -150px",
@@ -1282,21 +1270,24 @@
     },
     {
         "id": 46,
-        "name": "パール・エフェルト",
+        "name": ["パール・エフェルト", "混沌の女王"],
         "name_en": "Pearl Effert",
         "name_Kana": "ぱーるえふぇると",
-        "description": "パール家の長女でニビルの統括。住みやすい星を見つけては侵略している。",
+        "description": [
+            "パール家の長女でニビルの統括。住みやすい星を見つけては侵略している。",
+            "彼女が真の力を解放した姿。一度でもこの状態になってしまうと止められる者はいない"
+        ],
         "world": "1",
         "race": ["人間", "鬼"],
         "fightingStyle": "Scythe",
         "weapon": [
             {
                 "name": ["ディアスラッシャー", "Diaslasher","でぃあすらっしゃー"],
-                "description": "万物を切り裂き空間さえにも亀裂を入れてしまう鎌。<br>使用者の力を吸収しそれが鎌に宿る。<br>力を吸収している時常に鎌からオーラが出てくるがあれはただの不要になった力である、例えるなら燃料燃やして出たゴミである",
+                "description": "使用者によっては万物を切り裂き空間さえにも亀裂を入れてしまうと言われている鎌。<br>使用者の力を吸収しそれが鎌に宿る。<br>力を吸収している時常に鎌からオーラが出てくるがあれはただの不要になった力である、例えるなら燃料燃やして出たゴミである",
                 "img": "weapons/46.webp"
             }
         ],
-        "attribute": [["Fire", "Darkness"]],
+        "attribute": ["Fire", "Darkness"],
         "height": null,
         "age": "",
         "birthday": {
@@ -1306,7 +1297,7 @@
         },
         "personality": "やさしい",
         "group": ["Nibiru"],
-        "img": "46.webp",
+        "img": ["46-0.webp","46-1.webp"],
         "imgsize": "290%",
         "imgThumbsize": "",
         "imageZoomPosition": "-180px -100px",
@@ -1334,12 +1325,12 @@
         "personality": "怠惰",
         "group": ["Nibiru"],
         "img": "47.webp",
-        "imgsize": "290%",
+        "imgsize": "330%",
         "imgThumbsize": "",
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-220px -180px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "380%",
+        "imageZoomPosition_mobile": "-165px -120px"
     },
     {
         "id": 48,
@@ -1352,7 +1343,7 @@
         "fightingStyle": "Magic",
         "attribute": "Holy",
         "height": null,
-        "age": "永遠の20代",
+        "age": "永遠の20歳",
         "birthday": {
             "year": null,
             "month": null,
@@ -1361,12 +1352,12 @@
         "personality": "やさしい",
         "group": ["Nibiru"],
         "img": "48.webp",
-        "imgsize": "290%",
+        "imgsize": "500%",
         "imgThumbsize": "",
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-50px -650px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "500%",
+        "imageZoomPosition_mobile": "-40px -390px"
     },
     {
         "id": 49,
@@ -1388,12 +1379,12 @@
         "personality": "根暗",
         "group": ["Other"],
         "img": "49.webp",
-        "imgsize": "290%",
+        "imgsize": "390%",
         "imgThumbsize": "",
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-280px -220px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-150px -120px"
     },
     {
         "id": 50,
@@ -1415,12 +1406,12 @@
         "personality": "陽気",
         "group": ["Other"],
         "img": "50.webp",
-        "imgsize": "290%",
+        "imgsize": "390%",
         "imgThumbsize": "",
-        "imageZoomPosition": "-180px -160px",
+        "imageZoomPosition": "-310px -290px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "250%",
-        "imageZoomPosition_mobile": "-90px -80px"
+        "imgsize_mobile": "350%",
+        "imageZoomPosition_mobile": "-170px -150px"
     },
     {
         "id": 51,

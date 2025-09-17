@@ -581,7 +581,7 @@ button,
     font-size: 15px;
   }
   .card-container {
-    gap: 9px;
+    gap: 8px;
     margin-top: 10px;
   }
   .card {
@@ -1318,6 +1318,7 @@ body.theme-modern .copy-popup {
   justify-content: center;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
 }
 
 .weapon-icon:hover {
@@ -2684,6 +2685,18 @@ body.theme-modern .context-menu-item:hover {
   margin-bottom: 10px;
 }
 
+.weapon-link {
+  color: #4a88a2;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.weapon-link:hover {
+  color: #2d5a6e;
+  text-decoration: underline;
+}
+
 .weapon-description {
   font-size: 14px;
   color: #666;
@@ -2747,6 +2760,15 @@ body.theme-dark .weapon-name {
   color: #e0e0e0;
 }
 
+body.theme-dark .weapon-link {
+  color: #81c784;
+}
+
+body.theme-dark .weapon-link:hover {
+  color: #a5d6a7;
+  text-decoration: underline;
+}
+
 body.theme-dark .weapon-description {
   color: #ccc;
 }
@@ -2787,6 +2809,15 @@ body.theme-modern .weapon-info {
 
 body.theme-modern .weapon-name {
   color: #00ff88;
+}
+
+body.theme-modern .weapon-link {
+  color: #00ff88;
+}
+
+body.theme-modern .weapon-link:hover {
+  color: #33ff99;
+  text-decoration: underline;
 }
 
 body.theme-modern .weapon-description {
