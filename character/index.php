@@ -141,30 +141,48 @@ if ($characterId) {
       <button onclick="toggleTheme()" class="hamburger-theme-btn" id="themeToggleBtn">テーマ切替 (現在: ライト)</button>
       
       <button onclick="toggleWeaponIconDisplay()" class="hamburger-lang-btn" id="weaponIconToggleBtn" title="武器アイコン表示切り替え">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6.5 6.5h11L16 8.5v7L14.5 17h-5L8 15.5v-7z"/>
-          <path d="M6.5 6.5L4 4"/>
-          <path d="M17.5 6.5L20 4"/>
-          <path d="M12 8.5V13"/>
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="14.04107" height="13.96386" viewBox="0,0,14.04107,13.96386">
+            <g transform="translate(-232.88883,-173.01807)">
+                <g data-paper-data="{&quot;isPaintingLayer&quot;:true}" fill="none" fill-rule="nonzero" stroke="#ffffff" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" style="mix-blend-mode: normal">
+                    <path d="M233.69936,179.05225l7.13299,7.42968"/>
+                    <path d="M236.05059,181.32248l5.80685,-7.80441h4.45086l0.11513,4.62801l-7.91758,5.63486"/>
+                    <path d="M237.38526,182.42213l5.55356,-5.50703"/>
+                    <path d="M237.61296,183.239l-3.14179,2.98028l-0.89461,-0.95782l3.02922,-3.17202"/>
+                </g>
+            </g>
         </svg>
         武器アイコン: <span id="weaponIconStatus">フィルター時のみ</span>
       </button>
       
       <button onclick="toggleWeaponSearch()" class="hamburger-lang-btn" id="weaponSearchToggleBtn" title="武器名での検索切り替え">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
-          <path d="M6.5 6.5h11L16 8.5v7L14.5 17h-5L8 15.5v-7z"/>
-        </svg>
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="15.60193" height="15.66555" viewBox="0,0,15.60193,15.66555">
+          <g transform="translate(-232.31609,-172.20013)">
+              <g data-paper-data="{&quot;isPaintingLayer&quot;:true}" fill="none" fill-rule="nonzero" stroke="#ffffff" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" style="mix-blend-mode: normal">
+                  <path d="M235.26308,178.78413l4.49109,4.6779" stroke-width="0.5" stroke-linecap="round"/>
+                  <path d="M236.74347,180.21352l3.65613,-4.91384h2.80237l0.0725,2.91391l-4.98509,3.54784" stroke-width="0.5" stroke-linecap="round"/>
+                  <path d="M237.5838,180.90589l3.49665,-3.46736" stroke-width="0.5" stroke-linecap="round"/>
+                  <path d="M237.72717,181.4202l-1.97814,1.87645l-0.56327,-0.60307l1.90726,-1.99718" stroke-width="0.5" stroke-linecap="round"/>
+                  <path d="M245.77346,179.15559c0,-3.56526 -2.9006,-6.45546 -6.47868,-6.45546c-3.57808,0 -6.47869,2.8902 -6.47869,6.45546c0,3.56526 2.90061,6.45546 6.47869,6.45546c3.57808,0 6.47868,-2.89021 6.47868,-6.45546z" stroke-width="1" stroke-linecap="butt"/>
+                  <path d="M243.85807,183.73593l3.55996,3.62975" stroke-width="1" stroke-linecap="round"/>
+              </g>
+          </g>
+      </svg>
         武器検索: <span id="weaponSearchStatus">有効</span>
       </button>
       
       <button onclick="toggleCustomTagSearch()" class="hamburger-lang-btn" id="customTagSearchToggleBtn" title="カスタムタグでの検索切り替え">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
-          <path d="M21 7L9 19l-5.5-5.5 1.414-1.414L9 16.172 19.586 5.586z"/>
-        </svg>
+      <svg version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="width: 16px; height: 16px; opacity: 1;" xml:space="preserve">
+        <style type="text/css">
+          .st0{fill:#4B4B4B;}
+        </style>
+        <g>
+          <path class="st0" d="M500.746,268.14L245.047,12.461L0,0.005l12.455,245.047l266.952,266.942L512,279.393L500.746,268.14z
+            M43.625,231.209L33.574,33.599l197.629,10.041l235.772,235.752L279.408,466.97L43.625,231.209z" style="fill: rgba(255, 255, 255, 1);"></path>
+          <path class="st0" d="M103.084,103.079c-14.507,14.518-14.507,38.019,0,52.526c14.506,14.507,38.008,14.507,52.516,0
+            c14.507-14.507,14.507-38.008,0-52.526C141.093,88.572,117.591,88.572,103.084,103.079z" style="fill: rgba(255, 255, 255, 1);"></path>
+        </g>
+      </svg>
+
         タグ検索: <span id="customTagSearchStatus">有効</span>
       </button>
       
@@ -191,10 +209,16 @@ if ($characterId) {
         データ管理
       </button>
       <button onclick="showCustomTagsFromMenu()" class="hamburger-lang-btn" id="customTagsBtn" title="カスタムタグ管理">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 7L9 19l-5.5-5.5 1.414-1.414L9 16.172 19.586 5.586z"/>
-          <path d="M12 2L8 6v6l4 4 6-6V4z"/>
-          <circle cx="15.5" cy="6.5" r="1.5"/>
+        <svg version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="width: 16px; height: 16px; opacity: 1;" xml:space="preserve">
+          <style type="text/css">
+            .st0{fill:#4B4B4B;}
+          </style>
+          <g>
+            <path class="st0" d="M500.746,268.14L245.047,12.461L0,0.005l12.455,245.047l266.952,266.942L512,279.393L500.746,268.14z
+              M43.625,231.209L33.574,33.599l197.629,10.041l235.772,235.752L279.408,466.97L43.625,231.209z" style="fill: rgba(255, 255, 255, 1);"></path>
+            <path class="st0" d="M103.084,103.079c-14.507,14.518-14.507,38.019,0,52.526c14.506,14.507,38.008,14.507,52.516,0
+              c14.507-14.507,14.507-38.008,0-52.526C141.093,88.572,117.591,88.572,103.084,103.079z" style="fill: rgba(255, 255, 255, 1);"></path>
+          </g>
         </svg>
         カスタムタグ
       </button>
@@ -391,6 +415,51 @@ if ($characterId) {
       <h3>タグを選択</h3>
       <div id="tagSelectionList" class="tag-selection-list">
         <!-- 選択可能なタグがここに表示されます -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 一括タグ編集ポップアップ -->
+  <div id="bulkTagEditPopup" class="popup" style="display: none;">
+    <div class="popup-content">
+      <span class="close" onclick="closeBulkTagEditor()">&times;</span>
+      <h3>一括タグ編集</h3>
+      <p><span id="bulkEditSelectedCount">0</span>件のキャラクターにタグを追加します</p>
+      
+      <!-- タグ選択リスト -->
+      <div id="bulkTagSelectionList" class="bulk-tag-selection-list">
+        <!-- 選択可能なタグがここに表示されます -->
+      </div>
+      
+      <!-- 新規タグ作成（一括編集用） -->
+      <div class="bulk-tag-create-section">
+        <button onclick="toggleBulkTagCreateForm()" class="tag-create-btn" id="bulkTagCreateToggle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          新しいタグを作成
+        </button>
+        
+        <div id="bulkTagCreateForm" class="tag-create-form" style="display: none;">
+          <div class="tag-input-group">
+            <input type="text" id="bulkNewTagName" placeholder="タグ名を入力" maxlength="20">
+            <input type="color" id="bulkNewTagColor" value="#3b82f6" title="タグの色を選択">
+            <button onclick="createBulkTag()" class="tag-save-btn">作成して選択</button>
+            <button onclick="toggleBulkTagCreateForm()" class="tag-cancel-btn">キャンセル</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 実行ボタン -->
+      <div class="bulk-tag-actions">
+        <button onclick="applyBulkTags()" class="bulk-apply-btn" id="bulkApplyBtn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 7L9 19l-5.5-5.5 1.414-1.414L9 16.172 19.586 5.586z"/>
+          </svg>
+          タグを追加
+        </button>
+        <button onclick="closeBulkTagEditor()" class="bulk-cancel-btn">キャンセル</button>
       </div>
     </div>
   </div>

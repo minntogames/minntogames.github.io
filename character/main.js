@@ -19,6 +19,7 @@ let selectedCharacters = new Set();
 // カスタムタグ関連の変数
 let customTags = {}; // カスタムタグのデータ {tagId: {name, color, characterIds: []}}
 let characterTags = {}; // キャラクターIDとタグIDの関連付け {characterId: [tagId1, tagId2, ...]}
+let customTagsOrder = []; // カスタムタグの表示順序 [tagId1, tagId2, ...]
 let currentEditingCharacter = null; // タグ編集中のキャラクターID
 
 // 現在の表示言語 (ja: 日本語, en: 英語)
@@ -90,7 +91,7 @@ let highlightEnabled = true;  // 予測変換の強調表示を有効にする�
 class CharacterDB {
   constructor() {
     this.dbName = 'CharacterDatabase';
-    this.dbVersion = 2; // カスタムタグ機能追加のためバージョンアップ
+    this.dbVersion = 3; // カスタムタグ順序機能追加のためバージョンアップ
     this.db = null;
   }
 
@@ -149,6 +150,11 @@ class CharacterDB {
         if (!db.objectStoreNames.contains('characterTags')) {
           const characterTagsStore = db.createObjectStore('characterTags', { keyPath: 'charId' });
           characterTagsStore.createIndex('charId', 'charId', { unique: true });
+        }
+
+        // カスタムタグ順序ストア
+        if (!db.objectStoreNames.contains('customTagsOrder')) {
+          const customTagsOrderStore = db.createObjectStore('customTagsOrder', { keyPath: 'id' });
         }
       };
     });
@@ -550,6 +556,44 @@ class CharacterDB {
   }
 
   /**
+   * カスタムタグの順序を保存
+   */
+  async saveCustomTagsOrder(orderArray) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['customTagsOrder'], 'readwrite');
+      const store = transaction.objectStore('customTagsOrder');
+      
+      const record = {
+        id: 'tagOrder',
+        order: orderArray,
+        updatedAt: new Date().toISOString()
+      };
+      
+      const request = store.put(record);
+      
+      request.onsuccess = () => resolve(record);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * カスタムタグの順序を取得
+   */
+  async getCustomTagsOrder() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['customTagsOrder'], 'readonly');
+      const store = transaction.objectStore('customTagsOrder');
+      const request = store.get('tagOrder');
+      
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.order : []);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
    * キャラクターのタグを保存
    */
   async saveCharacterTags(charId, tagIds) {
@@ -818,11 +862,17 @@ async function initializeApp() {
     // データを読み込み
     await loadDataFromIndexedDB();
     
+    // コンテキストメニューイベントリスナーを設定
+    setupContextMenuEventListeners();
+    
     console.log('アプリケーション初期化完了');
   } catch (error) {
     console.error('アプリケーション初期化エラー:', error);
     // IndexedDBが使用できない場合でも継続
     console.log('IndexedDBなしモードで動作します');
+    
+    // エラー時でもコンテキストメニューイベントリスナーは設定
+    setupContextMenuEventListeners();
   }
 }
 
@@ -839,6 +889,9 @@ async function loadDataFromIndexedDB() {
     
     // カスタムタグデータを読み込み
     await loadCustomTagsFromIndexedDB();
+    
+    // カスタムタグ順序を読み込み
+    customTagsOrder = await characterDB.getCustomTagsOrder();
     
     console.log('IndexedDBからデータを読み込みました');
   } catch (error) {
@@ -1358,20 +1411,36 @@ function filterCharacters() {
     for (let i = 0; i < imgCount; i++) {
       const fightingStyleArr = Array.isArray(c.fightingStyle) && Array.isArray(c.fightingStyle[0]) ? c.fightingStyle : [c.fightingStyle];
       const attributeArr = Array.isArray(c.attribute) && Array.isArray(c.attribute[0]) ? c.attribute : [c.attribute];
-      const raceMatch = activeFilters.race.length === 0 ||
-        (Array.isArray(c.race) && c.race.some(r => {
-          if (!r || typeof r !== 'string') return false; // null, undefined, 非文字列を除外
-          const rStr = String(r).trim(); // 文字列に変換してトリム
-          if (!rStr) return false; // 空文字列を除外
-          
-          // 直接一致をチェック
+      const raceMatch = activeFilters.race.length === 0 || (() => {
+        const raceData = c.race;
+        
+        // 単一の文字列の場合
+        if (typeof raceData === 'string') {
+          if (!raceData || !raceData.trim()) return false;
+          const rStr = raceData.trim();
           const rLower = rStr.toLowerCase();
           if (activeFilters.race.includes(rLower)) return true;
-          
-          // 言語マッピングを使用した一致をチェック
           const canonicalRace = languageMaps.race[rLower] || rLower;
           return activeFilters.race.includes(canonicalRace);
-        }));
+        }
+        
+        // 配列の場合
+        if (Array.isArray(raceData)) {
+          return raceData.some(r => {
+            if (!r || typeof r !== 'string') return false;
+            const rStr = String(r).trim();
+            if (!rStr) return false;
+            
+            const rLower = rStr.toLowerCase();
+            if (activeFilters.race.includes(rLower)) return true;
+            
+            const canonicalRace = languageMaps.race[rLower] || rLower;
+            return activeFilters.race.includes(canonicalRace);
+          });
+        }
+        
+        return false;
+      })();
       const styleMatch = activeFilters.fightingStyle.length === 0 ||
         (Array.isArray(fightingStyleArr[i] || fightingStyleArr[0])
           ? (fightingStyleArr[i] || fightingStyleArr[0]).some(s => {
@@ -1387,7 +1456,21 @@ function filterCharacters() {
               const canonicalStyle = languageMaps.fightingStyle[sLower] || sLower;
               return activeFilters.fightingStyle.includes(canonicalStyle);
             })
-          : false);
+          : (() => {
+              // 単一の戦闘スタイル値の場合
+              const singleStyle = fightingStyleArr[i] || fightingStyleArr[0];
+              if (!singleStyle || typeof singleStyle !== 'string') return false;
+              const sStr = String(singleStyle).trim();
+              if (!sStr) return false;
+              
+              // 直接一致をチェック
+              const sLower = sStr.toLowerCase();
+              if (activeFilters.fightingStyle.includes(sLower)) return true;
+              
+              // 言語マッピングを使用した一致をチェック
+              const canonicalStyle = languageMaps.fightingStyle[sLower] || sLower;
+              return activeFilters.fightingStyle.includes(canonicalStyle);
+            })());
       const attrMatch = activeFilters.attribute.length === 0 ||
         (Array.isArray(attributeArr[i] || attributeArr[0])
           ? (attributeArr[i] || attributeArr[0]).some(a => {
@@ -1403,7 +1486,21 @@ function filterCharacters() {
               const canonicalAttr = languageMaps.attribute[aLower] || aLower;
               return activeFilters.attribute.includes(canonicalAttr);
             })
-          : false);
+          : (() => {
+              // 単一の属性値の場合
+              const singleAttr = attributeArr[i] || attributeArr[0];
+              if (!singleAttr || typeof singleAttr !== 'string') return false;
+              const aStr = String(singleAttr).trim();
+              if (!aStr) return false;
+              
+              // 直接一致をチェック
+              const aLower = aStr.toLowerCase();
+              if (activeFilters.attribute.includes(aLower)) return true;
+              
+              // 言語マッピングを使用した一致をチェック
+              const canonicalAttr = languageMaps.attribute[aLower] || aLower;
+              return activeFilters.attribute.includes(canonicalAttr);
+            })());
       const groupMatch = activeFilters.group.length === 0 ||
         (Array.isArray(c.group) && c.group.some(g => {
           if (!g || typeof g !== 'string') return false; // null, undefined, 非文字列を除外
@@ -1719,7 +1816,7 @@ function getDisplayTerm(type, termInCharacterData, targetLanguage) {
   const lowerCaseTermInCharacterData = actualTerm.toLowerCase();
 
   // 1. キャラクターデータ内の用語を正規の英語（小文字）に変換
-  let canonicalEnTerm = languageMaps[type][lowerCaseTermInCharacterData];
+  let canonicalEnTerm = languageMaps[type] ? languageMaps[type][lowerCaseTermInCharacterData] : undefined;
 
   // マッピングが見つからない場合、日本語から英語への逆引きを試行
   if (!canonicalEnTerm && displayLanguageMaps[type] && displayLanguageMaps[type].enToJa) {
@@ -1735,14 +1832,16 @@ function getDisplayTerm(type, termInCharacterData, targetLanguage) {
 
   // それでも見つからない場合、その用語自体が正規の英語であると仮定
   if (!canonicalEnTerm) {
-    return actualTerm; // 変換せずにそのまま返す
+    canonicalEnTerm = lowerCaseTermInCharacterData; // 小文字にして統一
   }
 
   // 2. 正規の英語用語をターゲット言語の表示名に変換
   if (targetLanguage === 'ja') {
-    return displayLanguageMaps[type].enToJa[canonicalEnTerm] || actualTerm;
+    return displayLanguageMaps[type] && displayLanguageMaps[type].enToJa ? 
+           (displayLanguageMaps[type].enToJa[canonicalEnTerm] || actualTerm) : actualTerm;
   } else if (targetLanguage === 'en') {
-    return displayLanguageMaps[type].enToEn[canonicalEnTerm] || actualTerm;
+    return displayLanguageMaps[type] && displayLanguageMaps[type].enToEn ? 
+           (displayLanguageMaps[type].enToEn[canonicalEnTerm] || actualTerm) : actualTerm;
   }
   return actualTerm; // Fallback
 }
@@ -1901,7 +2000,7 @@ function showCharacterDetails(charId, imgIndex = 0) {
     const fightingStyleArr = Array.isArray(character.fightingStyle && character.fightingStyle[0]) && Array.isArray(character.fightingStyle[0])
       ? character.fightingStyle
       : [character.fightingStyle];
-    const attributeArr = Array.isArray(character.attribute && character.attribute[0]) && Array.isArray(character.attribute[0])
+    const attributeArr = Array.isArray(character.attribute) && Array.isArray(character.attribute[0])
       ? character.attribute
       : [character.attribute];
 
@@ -1975,14 +2074,14 @@ function showCharacterDetails(charId, imgIndex = 0) {
         <div id="basic-tab" class="tab-content active">
           <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
           <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
-          <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race || 'N/A')}</p>
-          <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle || 'N/A')}</p>
-          <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute || 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race ? getDisplayTerm('race', character.race, currentDisplayLanguage) : 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle ? getDisplayTerm('fightingStyle', fightingStyle, currentDisplayLanguage) : 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute ? getDisplayTerm('attribute', attribute, currentDisplayLanguage) : 'N/A')}</p>
           <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
           ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
           <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
           <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
-          <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group || 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group ? getDisplayTerm('group', character.group, currentDisplayLanguage) : 'N/A')}</p>
         </div>
         ${hasWeapons ? `
         <div id="weapon-tab" class="tab-content">
@@ -2019,14 +2118,14 @@ function showCharacterDetails(charId, imgIndex = 0) {
             <div id="basic-tab" class="tab-content active">
               <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
               <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
-              <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race || 'N/A')}</p>
-              <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle || 'N/A')}</p>
-              <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute || 'N/A')}</p>
+              <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race ? getDisplayTerm('race', character.race, currentDisplayLanguage) : 'N/A')}</p>
+              <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle ? getDisplayTerm('fightingStyle', fightingStyle, currentDisplayLanguage) : 'N/A')}</p>
+              <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute ? getDisplayTerm('attribute', attribute, currentDisplayLanguage) : 'N/A')}</p>
               <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
               ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
               <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
               <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
-              <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group || 'N/A')}</p>
+              <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group ? getDisplayTerm('group', character.group, currentDisplayLanguage) : 'N/A')}</p>
             </div>
             ${hasWeapons ? `
             <div id="weapon-tab" class="tab-content">
@@ -2720,6 +2819,19 @@ window.toggleTheme = toggleTheme;
 window.selectSuggestion = selectSuggestion; // 統合予測候補選択関数
 window.selectNameSuggestion = selectNameSuggestion; // 互換性のため残す
 
+// カスタムタグ関連の関数も公開
+window.showTagSelectionPopup = showTagSelectionPopup;
+window.closeTagSelectionPopup = closeTagSelectionPopup;
+window.showCustomTagsFromMenu = showCustomTagsFromMenu;
+
+// メモ・お気に入り関連の関数も公開
+window.toggleFavorite = toggleFavorite;
+window.showNoteEditor = showNoteEditor;
+
+// 使い方ガイド関連の関数も公開
+window.showUsageGuide = showUsageGuide;
+window.closeUsageGuide = closeUsageGuide;
+
 /**
  * キャラ詳細URLをクリップボードにコピーし、ミニポップアップで通知
  */
@@ -3291,13 +3403,30 @@ function renderCustomTagsList() {
   
   container.innerHTML = '';
   
-  Object.entries(customTags).forEach(([tagId, tagData]) => {
+  // タグを順序に従ってソート
+  const sortedTagIds = getSortedCustomTags();
+  
+  sortedTagIds.forEach((tagId, index) => {
+    const tagData = customTags[tagId];
+    if (!tagData) return;
+    
     // このタグが使われているキャラクター数を計算
     const usageCount = Object.values(characterTags).filter(tags => tags.includes(tagId)).length;
     
     const tagElement = document.createElement('div');
     tagElement.className = 'custom-tag-item';
+    tagElement.draggable = true;
+    tagElement.dataset.tagId = tagId;
+    tagElement.dataset.index = index;
+    
     tagElement.innerHTML = `
+      <div class="drag-handle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </div>
       <div class="tag-info">
         <div class="tag-color-indicator" style="background-color: ${tagData.color}"></div>
         <div class="tag-name">${escapeHtml(tagData.name)}</div>
@@ -3309,8 +3438,216 @@ function renderCustomTagsList() {
       </div>
     `;
     
+    // ドラッグ&ドロップイベントを追加
+    addDragAndDropEvents(tagElement);
+    
     container.appendChild(tagElement);
   });
+}
+
+/**
+ * タグの順序を取得（順序配列に従ってソート）
+ */
+function getSortedCustomTags() {
+  const allTagIds = Object.keys(customTags);
+  
+  // 順序配列に含まれるタグを先に配置
+  const orderedTags = customTagsOrder.filter(tagId => customTags[tagId]);
+  
+  // 順序配列にないタグを後に追加
+  const unorderedTags = allTagIds.filter(tagId => !customTagsOrder.includes(tagId));
+  
+  return [...orderedTags, ...unorderedTags];
+}
+
+// グローバル変数でドラッグ状態を管理（パフォーマンス向上）
+let dragState = {
+  draggedElement: null,
+  placeholder: null,
+  container: null,
+  isDragging: false,
+  startY: 0,
+  longPressTimer: null
+};
+
+/**
+ * ドラッグ&ドロップイベントを追加（軽量版）
+ */
+function addDragAndDropEvents(element) {
+  // ドラッグハンドルのみにイベントを追加
+  const dragHandle = element.querySelector('.drag-handle');
+  if (!dragHandle) return;
+  
+  // タッチイベント（モバイル対応）
+  dragHandle.addEventListener('touchstart', handleTouchStart, { passive: false });
+  dragHandle.addEventListener('touchmove', handleTouchMove, { passive: false });
+  dragHandle.addEventListener('touchend', handleTouchEnd, { passive: true });
+  
+  // マウスイベント（デスクトップ対応）
+  element.addEventListener('dragstart', handleDragStart);
+  element.addEventListener('dragend', handleDragEnd);
+}
+
+function handleTouchStart(e) {
+  const element = e.target.closest('.custom-tag-item');
+  dragState.startY = e.touches[0].clientY;
+  
+  // 長押し判定
+  dragState.longPressTimer = setTimeout(() => {
+    dragState.isDragging = true;
+    startDrag(element);
+    // ハプティックフィードバック
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  }, 500);
+}
+
+function handleTouchMove(e) {
+  if (!dragState.isDragging) {
+    // 長押し前の移動で長押しをキャンセル
+    const moveDistance = Math.abs(e.touches[0].clientY - dragState.startY);
+    if (moveDistance > 10) {
+      clearTimeout(dragState.longPressTimer);
+    }
+    return;
+  }
+  
+  e.preventDefault();
+  updateDragPosition(e.touches[0].clientY);
+}
+
+function handleTouchEnd(e) {
+  clearTimeout(dragState.longPressTimer);
+  if (dragState.isDragging) {
+    endDrag();
+  }
+}
+
+function handleDragStart(e) {
+  dragState.startY = e.clientY;
+  startDrag(e.target);
+}
+
+function handleDragEnd() {
+  endDrag();
+}
+
+function startDrag(element) {
+  dragState.draggedElement = element;
+  dragState.container = document.getElementById('customTagsList');
+  
+  // ドラッグ中のスタイル
+  element.classList.add('dragging');
+  
+  // プレースホルダーを作成
+  dragState.placeholder = document.createElement('div');
+  dragState.placeholder.className = 'custom-tag-item placeholder';
+  dragState.placeholder.style.height = element.offsetHeight + 'px';
+  
+  // コンテナにドラッグオーバーイベントを追加（デスクトップのみ）
+  if (!dragState.isDragging) { // タッチではない場合
+    dragState.container.addEventListener('dragover', handleContainerDragOver);
+  }
+}
+
+function handleContainerDragOver(e) {
+  e.preventDefault();
+  updateDragPosition(e.clientY);
+}
+
+function updateDragPosition(currentY) {
+  if (!dragState.draggedElement || !dragState.container) return;
+  
+  const items = [...dragState.container.children].filter(
+    item => !item.classList.contains('placeholder') && item !== dragState.draggedElement
+  );
+  
+  let insertAfter = null;
+  
+  // 最適化：バイナリサーチ的なアプローチではなく、シンプルに上から下へ
+  for (let i = 0; i < items.length; i++) {
+    const rect = items[i].getBoundingClientRect();
+    if (currentY > rect.top + rect.height / 2) {
+      insertAfter = items[i];
+    } else {
+      break;
+    }
+  }
+  
+  // プレースホルダーの位置を更新（DOM操作を最小限に）
+  const currentParent = dragState.placeholder.parentNode;
+  const targetParent = dragState.container;
+  
+  if (insertAfter) {
+    const nextSibling = insertAfter.nextSibling;
+    if (nextSibling !== dragState.placeholder) {
+      targetParent.insertBefore(dragState.placeholder, nextSibling);
+    }
+  } else {
+    const firstChild = targetParent.firstChild;
+    if (firstChild !== dragState.placeholder) {
+      targetParent.insertBefore(dragState.placeholder, firstChild);
+    }
+  }
+}
+
+function endDrag() {
+  if (!dragState.draggedElement || !dragState.placeholder) return;
+  
+  // 新しい位置に要素を移動
+  dragState.placeholder.parentNode.replaceChild(dragState.draggedElement, dragState.placeholder);
+  
+  // ドラッグ中のスタイルを削除
+  dragState.draggedElement.classList.remove('dragging');
+  
+  // イベントリスナーを削除
+  if (dragState.container) {
+    dragState.container.removeEventListener('dragover', handleContainerDragOver);
+  }
+  
+  // 新しい順序を保存（非同期で実行してUIブロックを避ける）
+  requestAnimationFrame(() => {
+    saveNewOrder();
+  });
+  
+  // クリーンアップ
+  dragState.draggedElement = null;
+  dragState.placeholder = null;
+  dragState.container = null;
+  dragState.isDragging = false;
+}
+
+/**
+ * 新しい順序を保存
+ */
+async function saveNewOrder() {
+  try {
+    const container = document.getElementById('customTagsList');
+    if (!container) {
+      console.warn('customTagsList container not found');
+      return;
+    }
+    
+    const tagElements = [...container.children].filter(elem => elem.dataset && elem.dataset.tagId);
+    const newOrder = tagElements.map(elem => elem.dataset.tagId);
+    
+    // 順序に変更があった場合のみ保存
+    if (JSON.stringify(customTagsOrder) !== JSON.stringify(newOrder)) {
+      customTagsOrder = newOrder;
+      
+      // データベースが初期化されているかチェック
+      if (characterDB && characterDB.db) {
+        await characterDB.saveCustomTagsOrder(newOrder);
+        console.log('タグ順序を保存しました:', newOrder);
+      } else {
+        console.warn('データベースが初期化されていません');
+      }
+    }
+  } catch (error) {
+    console.error('タグ順序の保存に失敗しました:', error);
+    // エラーが発生してもUIの動作は続行
+  }
 }
 
 /**
@@ -3383,6 +3720,10 @@ async function createNewTag() {
     // UI更新
     hideCreateTagForm();
     renderCustomTagsList();
+    
+    // 新しいタグを順序配列の最後に追加
+    customTagsOrder.push(tagId);
+    await characterDB.saveCustomTagsOrder(customTagsOrder);
     
     // フィルターオプションも更新（展開されている場合）
     const customTagsContainer = document.getElementById('customTagsFilters');
@@ -3517,6 +3858,13 @@ async function deleteCustomTag(tagId) {
     
     // メモリ上のデータも更新
     delete customTags[tagId];
+    
+    // 順序配列からも削除
+    const orderIndex = customTagsOrder.indexOf(tagId);
+    if (orderIndex > -1) {
+      customTagsOrder.splice(orderIndex, 1);
+      await characterDB.saveCustomTagsOrder(customTagsOrder);
+    }
     
     // UI更新
     renderCustomTagsList();
@@ -3942,19 +4290,18 @@ function showContextMenu(event, charId) {
 /**
  * コンテキストメニューの位置を調整
  * @param {HTMLElement} menu - メニュー要素
- * @param {number} x - X座標
- * @param {number} y - Y座標
+ * @param {number} x - X座標（ビューポート座標）
+ * @param {number} y - Y座標（ビューポート座標）
  */
 function positionContextMenu(menu, x, y) {
   // まず一時的に表示して正確なサイズを取得
   menu.style.visibility = 'hidden';
   menu.style.display = 'block';
+  menu.style.position = 'fixed'; // fixedポジションで確実にビューポート基準にする
   
   const menuRect = menu.getBoundingClientRect();
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
-  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
   
   let left = x;
   let top = y;
@@ -3987,9 +4334,9 @@ function positionContextMenu(menu, x, y) {
   left = Math.max(10, Math.min(left, windowWidth - menuRect.width - 10));
   top = Math.max(10, Math.min(top, windowHeight - menuRect.height - 10));
   
-  // スクロール位置を考慮
-  menu.style.left = (left + scrollX) + 'px';
-  menu.style.top = (top + scrollY) + 'px';
+  // fixedポジションなのでスクロール位置は考慮しない
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
   
   // 表示状態に戻す
   menu.style.visibility = 'visible';
@@ -4008,6 +4355,38 @@ function hideContextMenu() {
       }
     }, 150); // アニメーション時間と同期
   }
+}
+
+/**
+ * コンテキストメニューイベントリスナーを設定
+ */
+function setupContextMenuEventListeners() {
+  // ページスクロール時にコンテキストメニューを閉じる
+  window.addEventListener('scroll', hideContextMenu, { passive: true });
+  
+  // ウィンドウリサイズ時にコンテキストメニューを閉じる
+  window.addEventListener('resize', hideContextMenu, { passive: true });
+  
+  // ページのクリック時にコンテキストメニューを閉じる
+  document.addEventListener('click', function(event) {
+    if (currentContextMenu && !currentContextMenu.contains(event.target)) {
+      hideContextMenu();
+    }
+  }, { passive: true });
+  
+  // タッチイベントでもコンテキストメニューを閉じる（モバイル対応）
+  document.addEventListener('touchstart', function(event) {
+    if (currentContextMenu && !currentContextMenu.contains(event.target)) {
+      hideContextMenu();
+    }
+  }, { passive: true });
+  
+  // ESCキーでコンテキストメニューを閉じる
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && currentContextMenu) {
+      hideContextMenu();
+    }
+  });
 }
 
 /**
@@ -4850,7 +5229,7 @@ function toggleBulkTagSelection(tagKey) {
  * 一括タグ適用ボタンの状態更新
  */
 function updateApplyBulkTagsButtonState() {
-  const applyBtn = document.getElementById('applyBulkTagsBtn');
+  const applyBtn = document.getElementById('bulkApplyBtn');
   const selectedTags = document.querySelectorAll('#bulkTagSelectionList .tag-item.selected');
   
   if (applyBtn) {
@@ -4903,6 +5282,101 @@ async function applyBulkTags() {
   }
 }
 
+/**
+ * 一括編集用のタグ作成フォーム表示切り替え
+ */
+function toggleBulkTagCreateForm() {
+  const form = document.getElementById('bulkTagCreateForm');
+  const toggleBtn = document.getElementById('bulkTagCreateToggle');
+  
+  if (!form || !toggleBtn) return;
+  
+  if (form.style.display === 'none' || !form.style.display) {
+    form.style.display = 'block';
+    toggleBtn.textContent = '作成をキャンセル';
+    
+    // 入力フィールドをクリア
+    const nameInput = document.getElementById('bulkNewTagName');
+    const colorInput = document.getElementById('bulkNewTagColor');
+    if (nameInput) nameInput.value = '';
+    if (colorInput) colorInput.value = '#3b82f6';
+    
+    // 名前入力にフォーカス
+    if (nameInput) nameInput.focus();
+  } else {
+    form.style.display = 'none';
+    toggleBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      新しいタグを作成
+    `;
+  }
+}
+
+/**
+ * 一括編集用の新規タグ作成
+ */
+async function createBulkTag() {
+  const nameInput = document.getElementById('bulkNewTagName');
+  const colorInput = document.getElementById('bulkNewTagColor');
+  
+  if (!nameInput || !colorInput) return;
+  
+  const name = nameInput.value.trim();
+  const color = colorInput.value;
+  
+  if (!name) {
+    alert('タグ名を入力してください');
+    nameInput.focus();
+    return;
+  }
+  
+  // 既存のタグ名と重複チェック
+  const existingTag = Object.values(customTags).find(tag => tag.name.toLowerCase() === name.toLowerCase());
+  if (existingTag) {
+    alert('同じ名前のタグが既に存在します');
+    nameInput.focus();
+    return;
+  }
+  
+  try {
+    // 新しいタグを作成
+    const tagId = 'tag_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const tagData = { name, color };
+    
+    // IndexedDBに保存
+    if (characterDB.db) {
+      await characterDB.saveCustomTag(tagId, tagData);
+    }
+    
+    // メモリ上でも更新
+    customTags[tagId] = tagData;
+    
+    // フォームを閉じる
+    toggleBulkTagCreateForm();
+    
+    // タグ選択リストを更新
+    renderBulkTagSelectionList();
+    
+    // 作成したタグを自動選択
+    setTimeout(() => {
+      const newTagElement = document.querySelector(`#bulkTagSelectionList .tag-item[data-tag-key="${tagId}"]`);
+      if (newTagElement) {
+        newTagElement.classList.add('selected');
+        updateApplyBulkTagsButtonState();
+      }
+    }, 100);
+    
+    showCopyPopup(`タグ「${name}」を作成しました`);
+    
+  } catch (error) {
+    console.error('タグ作成エラー:', error);
+    alert('タグの作成に失敗しました');
+  }
+}
+
 // グローバル関数として公開
 window.toggleEditMode = toggleEditMode;
 window.handleCardClick = handleCardClick;
@@ -4912,3 +5386,17 @@ window.showBulkTagEditor = showBulkTagEditor;
 window.closeBulkTagEditor = closeBulkTagEditor;
 window.toggleBulkTagSelection = toggleBulkTagSelection;
 window.applyBulkTags = applyBulkTags;
+window.toggleBulkTagCreateForm = toggleBulkTagCreateForm;
+window.createBulkTag = createBulkTag;
+
+// カスタムタグ関連の関数をグローバルに公開
+window.showTagSelectionPopup = showTagSelectionPopup;
+window.closeTagSelectionPopup = closeTagSelectionPopup;
+window.showCustomTagsFromMenu = showCustomTagsFromMenu;
+window.closeCustomTagsPopup = closeCustomTagsPopup;
+window.showCreateTagForm = showCreateTagForm;
+window.hideCreateTagForm = hideCreateTagForm;
+window.createNewTag = createNewTag;
+window.toggleTagSelection = toggleTagSelection;
+window.editCustomTag = editCustomTag;
+window.deleteCustomTag = deleteCustomTag;

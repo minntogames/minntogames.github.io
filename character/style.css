@@ -317,7 +317,7 @@ button,
 .popup {
   display: none;
   position: fixed;
-  z-index: 20; /* ←上げる */
+  z-index: 1020; /* 詳細画面より上に表示されるように大幅に上げる */
   left: 0;
   top: 0;
   width: 100%;
@@ -513,7 +513,7 @@ button,
   border: 1px solid #00ffa6;
   border-radius: 0 0 16px 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-  z-index: 10;
+  z-index: 1000; /* 武器アイコンやカード要素より確実に前面に表示 */
   width: 240px;
   max-height: 220px;
   overflow-y: auto;
@@ -997,6 +997,15 @@ body.theme-dark .filter-section h4 {
   color: #e9eaf6;
 }
 
+/* ダークテーマでのハンバーガーメニューボタンテキスト */
+body.theme-dark .hamburger-lang-btn {
+  color: #e9eaf6;
+}
+
+body.theme-dark .hamburger-lang-btn span {
+  color: #bfc8e6;
+}
+
 /* ▼テーマ切替ボタン */
 .hamburger-theme-btn {
   width: 100%;
@@ -1203,6 +1212,15 @@ body.theme-modern .filter-section h4 {
   color: #156acc;
 }
 
+/* モダンテーマでのハンバーガーメニューボタンテキスト */
+body.theme-modern .hamburger-lang-btn {
+  color: #156acc;
+}
+
+body.theme-modern .hamburger-lang-btn span {
+  color: #7ec9e6;
+}
+
 /* キャラ名＋コピーアイコン横並び */
 .character-title-row {
   display: flex;
@@ -1261,7 +1279,7 @@ body.theme-modern .copy-popup {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 5; /* 詳細画面のz-indexより低く設定 */
+  z-index: 4; /* カード内の要素として適切なレイヤーに配置 */
   background: rgba(255, 255, 255, 0.9);
   border: none;
   border-radius: 50%;
@@ -1307,7 +1325,7 @@ body.theme-modern .copy-popup {
   position: absolute;
   top: -5px;
   left: -5px;
-  z-index: 5;
+  z-index: 3; /* カード内の要素として適切なレイヤーに配置 */
   background: rgba(74, 136, 162, 0.9);
   border: none;
   border-radius: 50%;
@@ -1475,6 +1493,20 @@ body.theme-dark .weapon-fallback {
   stroke: #ffffff;
 }
 
+/* ダークテーマでのハンバーガーメニュー内SVGアイコン */
+body.theme-dark .hamburger-lang-btn svg {
+  stroke: #e9eaf6 !important;
+}
+
+body.theme-dark .hamburger-lang-btn svg path {
+  stroke: #e9eaf6 !important;
+  fill: #e9eaf6 !important;
+}
+
+body.theme-dark .hamburger-lang-btn svg .st0 {
+  fill: #e9eaf6 !important;
+}
+
 body.theme-dark .detail-favorite-svg-btn {
   background: rgba(60, 60, 60, 0.9);
   border-color: #555;
@@ -1526,6 +1558,20 @@ body.theme-modern .weapon-icon svg {
 
 body.theme-modern .weapon-fallback {
   stroke: #ffffff;
+}
+
+/* モダンテーマでのハンバーガーメニュー内SVGアイコン */
+body.theme-modern .hamburger-lang-btn svg {
+  stroke: #156acc !important;
+}
+
+body.theme-modern .hamburger-lang-btn svg path {
+  stroke: #156acc !important;
+  fill: #156acc !important;
+}
+
+body.theme-modern .hamburger-lang-btn svg .st0 {
+  fill: #156acc !important;
 }
 
 body.theme-modern .detail-favorite-svg-btn {
@@ -1999,6 +2045,20 @@ body.theme-modern .btn-cancel:hover {
 }
 
 /* ===== カスタムタグ機能のスタイル ===== */
+
+/* ハンバーガーメニュー内のSVGアイコン（デフォルトテーマ） */
+.hamburger-lang-btn svg {
+  stroke: #ffffff !important;
+}
+
+.hamburger-lang-btn svg path {
+  stroke: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.hamburger-lang-btn svg .st0 {
+  fill: #ffffff !important;
+}
 
 /* ハンバーガーメニュー内のカスタムタグボタン */
 .hamburger-tags-btn {
@@ -2531,8 +2591,8 @@ body.theme-modern .data-manager-description {
 
 /* コンテキストメニューのスタイル */
 .context-menu {
-  position: fixed;
-  z-index: 10001;
+  position: fixed; /* 確実にビューポート基準で配置 */
+  z-index: 100001; /* 詳細画面(z-index:100)より確実に上に表示 */
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   min-width: 180px;
@@ -2546,6 +2606,9 @@ body.theme-modern .data-manager-description {
   opacity: 0;
   transform: scale(0.95);
   transition: opacity 0.15s ease, transform 0.15s ease;
+  /* スクロール時の表示位置固定のための設定 */
+  will-change: transform, opacity;
+  pointer-events: auto;
 }
 
 .context-menu.show {
@@ -3469,4 +3532,319 @@ body.theme-modern .usage-section kbd {
   .usage-section h3 {
     font-size: 1.1em;
   }
+}
+
+/* ===============================================
+   一括タグ編集のスタイル
+   =============================================== */
+
+/* 一括タグ選択リスト */
+.bulk-tag-selection-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+  background: #f9f9f9;
+}
+
+.bulk-tag-selection-list .tag-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.bulk-tag-selection-list .tag-item:hover {
+  background: #e8f4fd;
+}
+
+.bulk-tag-selection-list .tag-item.selected {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.bulk-tag-selection-list .tag-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-right: 12px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.bulk-tag-selection-list .tag-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* 一括タグ作成セクション */
+.bulk-tag-create-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+/* 一括実行ボタン */
+.bulk-tag-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.bulk-apply-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.bulk-apply-btn:hover:not(:disabled) {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+.bulk-apply-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bulk-cancel-btn {
+  background: #f0f0f0;
+  color: #666;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bulk-cancel-btn:hover {
+  background: #e0e0e0;
+  color: #444;
+}
+
+/* ダークテーマでの一括タグ編集 */
+body.theme-dark .bulk-tag-selection-list {
+  background: #22305c;
+  border-color: #444;
+}
+
+body.theme-dark .bulk-tag-selection-list .tag-item:hover {
+  background: #2a3f6a;
+}
+
+body.theme-dark .bulk-tag-selection-list .tag-item.selected {
+  background: #1e3a5c;
+  border-color: #3a86ff;
+}
+
+body.theme-dark .bulk-tag-create-section {
+  background: #1a2540;
+  border-color: #444;
+}
+
+body.theme-dark .bulk-apply-btn {
+  background: #3a86ff;
+}
+
+body.theme-dark .bulk-apply-btn:hover:not(:disabled) {
+  background: #2970cc;
+}
+
+body.theme-dark .bulk-cancel-btn {
+  background: #22305c;
+  color: #e9eaf6;
+}
+
+body.theme-dark .bulk-cancel-btn:hover {
+  background: #14213d;
+}
+
+/* モダンテーマでの一括タグ編集 */
+body.theme-modern .bulk-tag-selection-list {
+  background: #e0faff;
+  border-color: #b2eaff;
+}
+
+body.theme-modern .bulk-tag-selection-list .tag-item:hover {
+  background: #b2eaff;
+}
+
+body.theme-modern .bulk-tag-selection-list .tag-item.selected {
+  background: #90d5ff;
+  border-color: #00c3ff;
+}
+
+body.theme-modern .bulk-tag-create-section {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: #b2eaff;
+}
+
+body.theme-modern .bulk-apply-btn {
+  background: #00c3ff;
+}
+
+body.theme-modern .bulk-apply-btn:hover:not(:disabled) {
+  background: #0090cc;
+}
+
+body.theme-modern .bulk-cancel-btn {
+  background: #b2eaff;
+  color: #156acc;
+}
+
+body.theme-modern .bulk-cancel-btn:hover {
+  background: #90d5ff;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .bulk-tag-selection-list {
+    max-height: 200px;
+    padding: 8px;
+  }
+  
+  .bulk-tag-selection-list .tag-item {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+  }
+  
+  .bulk-tag-create-section {
+    padding: 12px;
+  }
+  
+  .bulk-tag-actions {
+    flex-direction: column;
+  }
+  
+  .bulk-apply-btn,
+  .bulk-cancel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ポップアップ z-index 階層設定 */
+#tagSelectionPopup {
+  z-index: 1030;
+}
+
+#customTagsPopup {
+  z-index: 1025;
+}
+
+#bulkTagEditPopup {
+  z-index: 1035;
+}
+
+/* カスタムタグ並び替え機能のスタイル */
+.custom-tag-item {
+  position: relative;
+  user-select: none;
+  transition: transform 0.15s ease;
+  cursor: move;
+  transform: translate3d(0, 0, 0); /* GPUアクセラレーション有効化 */
+  will-change: transform; /* ブラウザに最適化のヒント */
+}
+
+.custom-tag-item[draggable="true"] {
+  cursor: grab;
+}
+
+.custom-tag-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.custom-tag-item.dragging {
+  transform: scale3d(1.02, 1.02, 1) translate3d(0, 0, 0);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  opacity: 0.9;
+  transition: none; /* ドラッグ中はtransitionを無効化 */
+}
+
+.custom-tag-item.placeholder {
+  opacity: 0.3;
+  border: 2px dashed #ccc;
+  background: transparent !important;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 0.1s ease;
+  pointer-events: none; /* プレースホルダーはクリック不可 */
+}
+
+.drag-handle {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  cursor: grab;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+.drag-handle:hover {
+  color: #666;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.custom-tag-item .tag-info {
+  margin-left: 32px; /* ドラッグハンドルのスペースを確保 */
+}
+
+/* タッチデバイス向けの調整 */
+@media (pointer: coarse) {
+  .drag-handle {
+    padding: 8px;
+    left: 4px;
+  }
+  
+  .custom-tag-item .tag-info {
+    margin-left: 36px;
+  }
+  
+  .custom-tag-item {
+    padding: 12px 8px;
+  }
+}
+
+/* ドラッグ中のアニメーション */
+.custom-tag-item {
+  transform-origin: center;
+  backface-visibility: hidden; /* パフォーマンス向上 */
+}
+
+.custom-tags-list {
+  position: relative;
+  contain: layout style; /* レイアウト最適化 */
+}
+
+.custom-tags-list .custom-tag-item:not(.dragging):not(.placeholder) {
+  transition: transform 0.15s ease;
 }

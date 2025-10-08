@@ -50,7 +50,7 @@
         "name_en": ["X Doctor", "W.D.Doctor", "W.D.RED.Doctor"],
         "name_Kana": "くろすどくたー",
         "description": [
-            "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている。", 
+            "超天才の科学者で発明家。さまざまな発明品を作っては仲間を困らせている。<br>ただ本当に天才で高度なものを作るのでやめろとはいえない。<br>彼は群を抜いて戦闘センスが高く適応量力が高い。<br>そしてすごくタフで多分どんなに攻撃を受けても平然としている。四代目の代理。", 
             "自身の悪が抑えきれず悪が放出されてしまった姿。彼が言っていることは理解不能(言語的に)で近くにあるものを破壊し尽くす。体のどこからでも鎖が出てくる。",
             "自身の悪を強引に押し込め力に変えた姿。魔法の双剣で対象を切り裂く。"
         ],
@@ -87,7 +87,7 @@
         "name": ["黒田適当", "黒田適当(暴)"],
         "name_en": ["Kuroda Tekitou", ""],
         "name_Kana": "くろだてきとう",
-        "description": ["黒田家の長男。盲目の武闘家で気で空間を認識している。ドクターとは友達でよく振り回されている。", "闇に呑まれ暴走してしまった状態。自我はほとんど残っていない。"],
+        "description": ["黒田家の長男。盲目の武闘家で気で空間を認識している。ドクターとは友達でよく振り回されている。三代目の代理。", "闇に呑まれ暴走してしまった状態。自我はほとんど残っていない。"],
         "world": "1",
         "race": [["棒人間"], [""]],
         "fightingStyle": [["Martial Arts"], ["Martial Arts", "Magic"]],
@@ -1069,7 +1069,7 @@
         "name": "アンドロイド匠",
         "name_en": "Android Creeper",
         "name_Kana": "あんどろいどたくみ",
-        "description": "フレンドリーな匠。昔メイン組と行動していたがある事件に巻き込まれ体の一部を損失、その後サイボーグ化したがあの事件以来外に出るのが怖くて出られない。",
+        "description": "フレンドリーな匠。昔メイン組と行動していたがある事件に巻き込まれ体の一部を損失、その後サイボーグ化したがあの事件以来外に出るのが怖くて出られない。初代代理。",
         "world": "1",
         "race": "Other",
         "fightingStyle": "Other",
@@ -1326,7 +1326,7 @@
         "world": "1",
         "race": ["人間", "鬼"],
         "fightingStyle": [["Magic", "Fist"]],
-        "attribute": "Darkness",
+        "attribute": ["Darkness"],
         "height": null,
         "age": "",
         "birthday": {
@@ -1445,12 +1445,12 @@
         "personality": "",
         "group": ["メイン組"],
         "img": "51.webp",
-        "imgsize": "",
+        "imgsize": "300%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-100px -100px"
     },
     {
         "id": 52,
@@ -1472,12 +1472,12 @@
         "personality": "",
         "group": ["その他"],
         "img": "52.webp",
-        "imgsize": "",
+         "imgsize": "300%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 53,
@@ -1499,19 +1499,23 @@
         "personality": "",
         "group": ["その他"],
         "img": "53.webp",
-        "imgsize": "",
+        "imgsize": "300%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 54,
-        "name": ["Doctor", "Doctor(人間体)"],
+        "name": ["Doctor(人間体)", "Doctor", "Doctor(ギャラクティックカンパニー)"],
         "name_en": "Doctor",
         "name_Kana": "どくたー",
-        "description": "Xドクターと酷似している見た目をしている人物。<br>言い伝えによると昔この世を治めた人物だったらしいが新たな統治者によりその座から引きずり落されたらしい。<br>その後彼はギャラクティックカンパニーへと就職し現在は経理として仕事をしている。<br>「X」は元々はDoctorの物だったが統治の座から下されてしまった時ドクターへ「X」を託した。<br>王権陸位。",
+        "description": [
+            "Xドクターのような仮面をかぶっている人物。常に金欠でバイトを複数掛け持ちしている。五代目の代理。",
+            "Xドクターと酷似している見た目をしている人物。<br>言い伝えによると昔この世を治めた人物だったらしいが新たな統治者によりその座から引きずり落されたらしい。",
+            "座から降ろされたその後彼はギャラクティックカンパニーへと就職し現在は経理として仕事をしている。<br>「X」は元々はDoctorの物だったが統治の座から下されてしまった時ドクターへ「X」を託した。<br>王権陸位。"
+        ],
         "world": "1",
         "race": ["棒人間", "人間"],
         "fightingStyle": "",
@@ -1525,13 +1529,13 @@
         },
         "personality": "",
         "group": ["ギャラクティックカンパニー"],
-        "img": ["54.webp", ""],
-        "imgsize": "",
+        "img": ["54-0.webp", "54-1.webp", "54-2.webp"],
+        "imgsize": "300%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-190px -100px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -60px"
     },
     {
         "id": 55,
@@ -1542,6 +1546,13 @@
         "world": "1",
         "race": "悪魔",
         "fightingStyle": "剣",
+        "weapon": [
+            {
+                "name": ["魔剣デストロン", "Destron","まけんですとろん"],
+                "description": "私本体が武器だもの。",
+                "img": "weapons/55.webp"
+            }
+        ],
         "attribute": [["闇属性", "火属性", "水属性", "土属性", "風属性"]],
         "height": null,
         "age": "",
@@ -1553,12 +1564,12 @@
         "personality": "",
         "group": ["ギャラクティックカンパニー"],
         "img": "55.webp",
-        "imgsize": "",
+        "imgsize": "300%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-190px -350px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-110px -210px"
     },
     {
         "id": 56,
@@ -1580,19 +1591,19 @@
         "personality": "",
         "group": ["ギャラクティックカンパニー"],
         "img": "56.webp",
-        "imgsize": "",
+        "imgsize": "300%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-190px -150px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -100px"
     },
     {
         "id": 57,
         "name": ["Yoshi", "Yoshi(ダークモード)"],
         "name_en": ["Yoshi", ""],
         "name_Kana": "よし",
-        "description": ["現第一世界統治者件最年少強者保持者。Doctorを座から引きずり落した張本人。描いたものを具現化し戦う幻術者。だが上司には敵わない。王権参位。", "幻獣「ナン」を使役している状態。基礎身体能力の向上や幻術の大幅強化がされている状態。"],
+        "description": ["現第一世界統治者件最年少強者保持者。Doctorを座から引きずり落した張本人。描いたものを具現化し戦う幻術者。だが上司には敵わない。王権参位。六代目の代理。", "幻獣「ナン」を使役している状態。基礎身体能力の向上や幻術の大幅強化がされている状態。"],
         "world": "1",
         "race": "人間",
         "fightingStyle": "魔法",
@@ -1607,12 +1618,12 @@
         "personality": "",
         "group": ["ギャラクティックカンパニー"],
         "img": ["57.webp", ""],
-        "imgsize": "",
+        "imgsize": "350%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-240px -280px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "400%",
+        "imageZoomPosition_mobile": "-180px -210px"
     },
     {
         "id": 58,
@@ -1634,12 +1645,12 @@
         "personality": "冷静沈着",
         "group": ["ギャラクティックカンパニー"],
         "img": "58.webp",
-        "imgsize": "",
+        "imgsize": "300%",
         "imgThumbsize": "",
-        "imageZoomPosition": "",
+        "imageZoomPosition": "-190px -50px",
         "imageThumbPosition": "",
-        "imgsize_mobile": "",
-        "imageZoomPosition_mobile": ""
+        "imgsize_mobile": "300%",
+        "imageZoomPosition_mobile": "-120px -30px"
     },
     {
         "id": 59,
@@ -2187,10 +2198,10 @@
         "name_en": "Gred",
         "name_Kana": "ぐれっど",
         "description": "宇宙海賊団の船長。宇宙のどこかに漂っていて星を見つけると宝を略奪する。腕のフックは触手にもなる",
-        "world": "",
-        "race": "",
-        "fightingStyle": "",
-        "attribute": "",
+        "world": "1",
+        "race": "棒人間",
+        "fightingStyle": "Other",
+        "attribute": "Star",
         "height": null,
         "age": "",
         "birthday": {

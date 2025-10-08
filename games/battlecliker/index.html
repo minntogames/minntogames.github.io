@@ -1,0 +1,26 @@
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>バトルクリッカー</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div class="dps-counter">
+            <div class="dps-title">DPS</div>
+            <div class="dps-value" id="dpsValue">0.0</div>
+            <div class="dps-subtitle">damage/sec</div>
+        </div>
+        <div class="game-container">
+            <img class="enemy" id="enemy" src="src/img/enemy/slime.png" alt="スライム" draggable="false" />
+            <div class="hp-bar-container">
+                <div class="hp-bar-background">
+                    <div class="hp-bar" id="hpBar"></div>
+                </div>
+                <div class="hp-text" id="hpText">100 / 100</div>
+            </div>
+        </div>
+    </body>
+    <script src="enemyMG.js"></script>
+    <script src="script.js"></script>
+</html>
