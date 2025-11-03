@@ -1,4 +1,4 @@
-const uri = "mongodb+srv://cirno:14532821da@atai.zoooafw.mongodb.net/?retryWrites=true&w=majority";
+const uri = "あ";
 const Keyv = require("keyv");
 
 const chadata = require("./chara.json")
