@@ -298,63 +298,77 @@ if ($characterId) {
     <div class="popup-content">
       <span class="close" onclick="toggleFilterPopup()">&times;</span>
       <h3>フィルターオプション</h3>
-            <!-- ▲追加ここまで -->
-      <!-- ▼追加：世界線フィルター -->
-      <div class="filter-section">
-        <h4>世界線</h4>
-        <div id="worldFilters" class="filter-options"></div>
-      </div>
-      <!-- ▲追加ここまで -->
       
-      <div class="filter-section">
-        <h4>種族</h4>
-        <div id="raceFilters" class="filter-options"></div>
+      <!-- タブナビゲーション -->
+      <div class="filter-tab-nav">
+        <button class="filter-tab-btn active" onclick="switchFilterTab('main')" data-tab="main">基本フィルター</button>
+        <button class="filter-tab-btn" onclick="switchFilterTab('other')" data-tab="other">その他・カスタム</button>
       </div>
       
-      <div class="filter-section">
-        <h4>戦闘スタイル</h4>
-        <div id="fightingStyleFilters" class="filter-options"></div>
-      </div>
-      
-      <div class="filter-section">
-        <h4>属性</h4>
-        <div id="attributeFilters" class="filter-options"></div>
-      </div>
-      
-      <div class="filter-section">
-        <h4>グループ</h4>
-        <div id="groupFilters" class="filter-options"></div>
-      </div>
-
-      
-      <!-- ▼追加：カスタムタグフィルター -->
-      <div class="filter-section">
-        <h4 onclick="toggleCustomTagsFilter()" style="cursor: pointer; user-select: none; position: relative;">
-          カスタムタグ
-          <span id="customTagsToggle" style="position: absolute; right: 0; font-size: 14px;">▼</span>
-        </h4>
-        <div id="customTagsFilters" class="filter-options" style="display: none;"></div>
-      </div>
-      <!-- ▲追加ここまで -->
-
-      <!-- ▼追加：お気に入りフィルター -->
-      <div class="filter-section">
-        <h4>その他</h4>
-        <div class="filter-options">
-          <div id="favoritesOnlyBtn" onclick="toggleFilterOption('favorites', 'favorites', this)" class="filter-option">
-            お気に入り (<span id="favoritesCount">0</span>)
-          </div>
-          <div id="memoOnlyBtn" onclick="toggleFilterOption('memo', 'memo', this)" class="filter-option">
-            メモ済み (<span id="memoCount">0</span>)
-          </div>
-          <div id="uniqueWeaponBtn" onclick="toggleFilterOption('uniqueWeapon', 'uniqueWeapon', this)" class="filter-option">
-            ユニーク武器
+      <!-- メインタブの内容 -->
+      <div id="filterTabMain" class="filter-tab-content active">
+        <div class="filter-sections-container">
+        <!-- ▲追加ここまで -->
+        <!-- ▼追加：世界線フィルター -->
+        <div class="filter-section">
+          <h4>世界線</h4>
+          <div id="worldFilters" class="filter-options"></div>
+        </div>
+        <!-- ▲追加ここまで -->
+        
+        <div class="filter-section">
+          <h4>種族</h4>
+          <div id="raceFilters" class="filter-options"></div>
+        </div>
+        
+        <div class="filter-section">
+          <h4>戦闘スタイル</h4>
+          <div id="fightingStyleFilters" class="filter-options"></div>
+        </div>
+        
+        <div class="filter-section">
+          <h4>属性</h4>
+          <div id="attributeFilters" class="filter-options"></div>
+        </div>
+        
+          <div class="filter-section">
+            <h4>グループ</h4>
+            <div id="groupFilters" class="filter-options"></div>
           </div>
         </div>
       </div>
-      <!-- ▲追加ここまで -->
       
-      <button onclick="applyFilters()" class="buttonRound">適用</button>
+      <!-- その他・カスタムタブの内容 -->
+      <div id="filterTabOther" class="filter-tab-content">
+        <div class="filter-sections-container">
+          <!-- ▼追加：カスタムタグフィルター -->
+          <div class="filter-section">
+            <h4 onclick="toggleCustomTagsFilter()" style="cursor: pointer; user-select: none; position: relative;">
+              カスタムタグ
+              <span id="customTagsToggle" style="position: absolute; right: 0; font-size: 14px;">▼</span>
+            </h4>
+            <div id="customTagsFilters" class="filter-options" style="display: none;"></div>
+          </div>
+          <!-- ▲追加ここまで -->
+
+          <!-- ▼追加：お気に入りフィルター -->
+          <div class="filter-section">
+            <h4>その他</h4>
+            <div class="filter-options">
+              <div id="favoritesOnlyBtn" onclick="toggleFilterOption('favorites', 'favorites', this)" class="filter-option">
+                お気に入り (<span id="favoritesCount">0</span>)
+              </div>
+              <div id="memoOnlyBtn" onclick="toggleFilterOption('memo', 'memo', this)" class="filter-option">
+                メモ済み (<span id="memoCount">0</span>)
+              </div>
+              <div id="uniqueWeaponBtn" onclick="toggleFilterOption('uniqueWeapon', 'uniqueWeapon', this)" class="filter-option">
+                ユニーク武器
+              </div>
+            </div>
+          </div>
+          <!-- ▲追加ここまで -->
+        </div>
+      </div>      <button onclick="applyFilters()" class="buttonRound">適用</button>
       <button onclick="clearFilters()" class="buttonRound">クリア</button>
     </div>
   </div>

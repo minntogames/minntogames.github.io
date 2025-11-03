@@ -1790,6 +1790,34 @@ function clearFilters() {
 }
 
 /**
+ * フィルタータブを切り替える
+ * @param {string} tabName - 切り替え先のタブ名 ('main' または 'other')
+ */
+function switchFilterTab(tabName) {
+  // 全てのタブボタンからactiveクラスを削除
+  document.querySelectorAll('.filter-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // 全てのタブコンテンツを非表示
+  document.querySelectorAll('.filter-tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  
+  // 選択されたタブボタンにactiveクラスを追加
+  const selectedBtn = document.querySelector(`[data-tab="${tabName}"]`);
+  if (selectedBtn) {
+    selectedBtn.classList.add('active');
+  }
+  
+  // 選択されたタブコンテンツを表示
+  const selectedContent = document.getElementById(`filterTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+  if (selectedContent) {
+    selectedContent.classList.add('active');
+  }
+}
+
+/**
  * 特定のカテゴリ（種族、戦闘スタイルなど）の用語を現在の表示言語に変換する
  * @param {string} type - カテゴリの種類 (e.g., 'race', 'fightingStyle')
  * @param {string} termInCharacterData - キャラクターデータに含まれる用語 (例: "棒人間" または "None")

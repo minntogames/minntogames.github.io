@@ -1,0 +1,7 @@
+{ 
+  "buffs":[
+    { "id": 1, "name": "カエルの気まぐれ", "description": "カエルのきまぐれで探索時間が変動する", "layered": 1, "duration": 1 },
+    { "id": 2, "name": "至高のパワー", "description": "探索終了時、探索経験値が2倍になる", "layered": 1, "duration": 3 },
+    { "id": 5, "name": "風のささやき", "description": "探索終了時、レアドロップ率が上がる", "layered": 1, "duration": 3 }
+  ]
+}

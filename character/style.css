@@ -397,6 +397,88 @@ button,
   gap: 8px;
 }
 
+/* PC版でフィルターポップアップを2列表示 */
+@media (min-width: 768px) {
+  #filterPopup .popup-content {
+    max-width: 800px;
+    width: 90%;
+  }
+  
+  #filterPopup .filter-sections-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
+/* フィルタータブナビゲーション */
+.filter-tab-nav {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+  position: relative;
+  top: -10px; /* ポップアップの上にはみ出させる */
+}
+
+.filter-tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s ease;
+  margin-right: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+.filter-tab-btn:last-child {
+  margin-right: 0;
+}
+
+.filter-tab-btn:hover {
+  background: #e8f4f8;
+  color: #4a88a2;
+}
+
+.filter-tab-btn.active {
+  background: #fff;
+  color: #333;
+  border-bottom: 2px solid #4a88a2;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+/* フィルタータブコンテンツ */
+.filter-tab-content {
+  display: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.filter-tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* モバイル版でのタブ調整 */
+@media (max-width: 767px) {
+  .filter-tab-nav {
+    top: -5px; /* モバイルでははみ出しを少なく */
+  }
+  
+  .filter-tab-btn {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+}
+
 /* カスタムタグフィルターコンテナ */
 #customTagsFilters {
   display: flex;
@@ -886,6 +968,27 @@ body.theme-dark .filter-option.selected {
   background: #3a86ff;
   color: #fff;
 }
+
+/* ダークテーマ用タブスタイル */
+body.theme-dark .filter-tab-nav {
+  border-bottom: 2px solid #22305c;
+}
+
+body.theme-dark .filter-tab-btn {
+  background: #1a2540;
+  color: #b0c2e0;
+}
+
+body.theme-dark .filter-tab-btn:hover {
+  background: #22305c;
+  color: #3a86ff;
+}
+
+body.theme-dark .filter-tab-btn.active {
+  background: #2c3e50;
+  color: #e9eaf6;
+  border-bottom: 2px solid #3a86ff;
+}
 body.theme-dark .buttonOutlineGradient_item,
 body.theme-dark .buttonRound {
   background-color: #22305c;
@@ -1097,6 +1200,28 @@ body.theme-modern .filter-option {
 body.theme-modern .filter-option.selected {
   background: #00c3ff;
   color: #fff;
+}
+
+/* モダンテーマ用タブスタイル */
+body.theme-modern .filter-tab-nav {
+  border-bottom: 2px solid #b2eaff;
+}
+
+body.theme-modern .filter-tab-btn {
+  background: #e0faff;
+  color: #156acc;
+  border: 1px solid #b2eaff;
+}
+
+body.theme-modern .filter-tab-btn:hover {
+  background: #b2eaff;
+  color: #0d4b99;
+}
+
+body.theme-modern .filter-tab-btn.active {
+  background: #00c3ff;
+  color: #fff;
+  border-bottom: 2px solid #0d4b99;
 }
 body.theme-modern .buttonOutlineGradient_item,
 body.theme-modern .buttonRound {

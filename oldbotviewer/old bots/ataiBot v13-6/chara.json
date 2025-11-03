@@ -1,0 +1,72 @@
+{
+    "chara":{
+        "NAME": "ちるの",
+        "lv":{
+            "text":{ 
+                "lv": 1, 
+                "xp": 0, 
+                "Totalxp": 0,
+                "seasonTotalxp": 0, 
+                "Nextxp": 100 
+            },
+            "probe":{ 
+                "lv": 1, 
+                "xp": 0, 
+                "Totalxp": 0, 
+                "Nextxp": 50 
+            },
+            "voice":{ 
+                "lv": 1, 
+                "xp": 0, 
+                "Totalxp": 0, 
+                "Nextxp": 100 
+            },
+            "giveXp":{ 
+                "max": 25, 
+                "min": 10 
+            }
+        },
+        "User": {
+          "TotalAction":{
+            "numPing": 0,
+            "numShst": 0,
+            "numTask": 0,
+            "numSell": 0,
+            "numBuy": 0,
+            "numLogin": 0
+          }
+        }
+    },
+    "login": { 
+      "bairitu": 0, 
+      "lastLoginDate": "" 
+    },
+    "setting":{
+        "Usercolor": "#66fffc", 
+        "Lvnotice": "false", 
+        "twitter":{ 
+            "con_x": false, 
+            "con_x_del": false, 
+            "com_x_fix": false, 
+            "com_x_des":"fxtwitter.com"
+        }, 
+        "ping":{
+            "twoping": 0, 
+            "threeping": 0, 
+            "maxping": 0 
+        }
+    },
+    "map":{
+        "mapid": null, 
+        "name": "無名の丘",
+        "gotomoon": false
+    },
+    "alch":{
+      "MAX_SROT": 3, 
+      "ing": [],
+      "test": {
+        "EndDate": "", "id": 0
+      }
+    },
+    "buff":[]
+}

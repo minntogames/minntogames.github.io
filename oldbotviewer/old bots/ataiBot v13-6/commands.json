@@ -1,0 +1,152 @@
+[
+  {
+    "name": "ci!help",
+    "description": "現在見ているものがhelpです",
+    "usage": "ci!help <pageNum>"
+  },
+  {
+    "name": "ci!level",
+    "description": "あなたのLvを確認します。/n他にも色々確認できます。",
+    "usage": "ci!level"
+  },
+  {
+    "name": "ci!ranking",
+    "description": "ランキングを表示します。\nページも指定できます。",
+    "usage": "ci!ranking <num/str[T,P,V]> <str?num>"
+  },
+  {
+    "name": "ci!graf",
+    "description": "ランキングを可視化させたものです。",
+    "usage": "ci!graf"
+  },
+  {
+    "name": "ci!user",
+    "description": "自分の情報が確認できます。",
+    "usage": "ci!user"
+  },
+  {
+    "name": "ci!icoc",
+    "description": "rankcardなどの枠色を自分のイメージカラーに合わせることができます。",
+    "usage": "ci!icoc <ColorCode>"
+  },
+  {
+    "name": "ci!bag",
+    "description": "所持品を確認することができます。ソート機能もついています。",
+    "usage": "ci!bag <num>"
+  },
+  {
+    "name": "ci!shst",
+    "description": "チルノが各地域を探索する機能です。\n一日５回まで探索に行かせることが可能です。",
+    "usage": "ci!shst"
+  },
+  {
+    "name": "ci!shgu",
+    "description": "探索を断念します。これによる回数制限は減りません。\nまた、探索が終了した瞬間shstを行うと高確率で不具合が起こります。\nもしそうなった場合はshguを使いましょう。",
+    "usage": "ci!shgu"
+  },
+  {
+    "name": "ci!ping",
+    "description": "サーバーからの応答速度を返します。遅ければ遅いほどいいものがもらえます。\nちなみにですがあなたの所の回線を重くしても変化はないです。",
+    "usage": "ci!ping"
+  },
+  {
+    "name": "ci!login",
+    "description": "1日1回、お金がもらえます。",
+    "usage": "ci!login"
+  },
+  {
+    "name": "ci!map",
+    "description": "現在地を確認することが可能です",
+    "usage": "ci!map"
+  },
+  {
+    "name": "ci!mmov",
+    "description": "特定のキーを含めて送信するとその地域に移動することができます。/nキーなしでコマンドを送信すると地域のキー一覧が確認できます",
+    "usage": "ci!mmov　<key>"
+  },
+  {
+    "name": "URL",
+    "description": "discordのURLを送信するとそのメッセージ内容が確認できます。\nまた、URLの後に数字を含めると画像のn枚目を指定することができます。",
+    "usage": "<msgURL>　<num>"
+  },
+  {
+    "name": "ci!task",
+    "description": "その日の課題を確認することができます",
+    "usage": "ci!task"
+  },
+  {
+    "name": "ci!janken",
+    "description": "チルノとじゃんけんをします。",
+    "usage": "ci!janken"
+  },
+  {
+    "name": "ci!mmovstop",
+    "description": "他地域への移動を断念します。",
+    "usage": "ci!mmovstop"
+  },
+  {
+    "name": "ci!status",
+    "description": "taskやログイン状況などが確認できます。",
+    "usage": "ci!status"
+  },
+  {
+    "name": "ci!trea",
+    "description": "穴掘りゲームです。景品もあります。",
+    "usage": "ci!trea"
+  },
+  {
+    "name": "ci-twitter-Url-Conversion",
+    "description": "ツイッターのURLを変換します。",
+    "usage": "<comannd> <url>"
+  },
+  {
+    "name": "ci-item-sell",
+    "description": "探索でゲットしたアイテム等が売れます。",
+    "usage": "ci-item-sell"
+  },
+  {
+    "name": "ci-rank-card",
+    "description": "ci!levelの移植です",
+    "usage": "<comannd> <?user>"
+  },
+  {
+    "name": "ci-usericon",
+    "description": "めんばーのアイコンが拡大表示されます",
+    "usage": "ci-usericon <?user>"
+  },
+  {
+    "name": "ci-join-bot-official-server",
+    "description": "botが運営されている鯖の招待リンクを開きます",
+    "usage": "ci-join-bot-official-server"
+  },
+  {
+    "name": "ci-auto-twitter-url-conversion",
+    "description": "twitterurlの自動変換機能の設定をします",
+    "usage": "<command> <on/off> <auto-delete> <auto-fixed> <destination>"
+  },
+  {
+    "name": "ci-levelup-notice",
+    "description": "レベルアップ通知の設定をします",
+    "usage": "<command> <on/off>"
+  },
+  {
+    "name": "ci-urlshort",
+    "description": "URLを変換します。",
+    "usage": "<command> <url> <?ephemeral>"
+  },
+  {
+    "name": "/ci-item-buy",
+    "description": "こーりん堂でアイテムが買えます。",
+    "usage": "<command>"
+  },
+  {
+    "name": "/ci-item-sell",
+    "description": "アイテムが売却できます。",
+    "usage": "<command>"
+  },
+  {
+    "name": "/ci-item-use",
+    "description": "アイテムが使用できます。",
+    "usage": "<command>"
+  }
+]
