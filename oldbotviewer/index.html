@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Old Bot Viewer</title>
+    <!-- Discord / Open Graph -->
+    <meta property="og:title" content="昔作ったDiscordBotのコード保管庫">
+    <meta property="og:description" content="このページは昔Discordで動かすために作ったBotのコードを置いてあります。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://youtube.minntelia.com/oldbotviewer/">
+    <meta property="og:site_name" content="minnteliaのお部屋">
+    <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://youtube.minntelia.com/image/obv.jpg">
+    <meta property="og:image:alt" content="うんち！（せいかいのおと）">
+    <meta property="og:image:type" content="image/jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter (Discord uses Open Graph but these are useful elsewhere) -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@Minntelia_ch">
+    <meta name="twitter:title" content="昔作ったDiscordBotのコード保管庫">
+    <meta name="twitter:description" content="このページは昔Discordで動かすために作ったBotのコードを置いてあります。">
+    <meta name="twitter:image" content="https://youtube.minntelia.com/image/obv.jpg">
+
+    <!-- Optional -->
+    <meta name="theme-color" content="#1a1a1a">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Old Bots</h1>
+                <button id="toggle-sidebar" class="toggle-btn" title="サイドバーを折りたたむ">◀</button>
+            </div>
+            <div id="file-tree"></div>
+        </div>
+        <button id="expand-sidebar" class="expand-btn" style="display: none;" title="サイドバーを展開">▶</button>
+        <div class="main-content">
+            <div class="file-header">
+                <div id="breadcrumb"></div>
+                <div id="file-info"></div>
+                <a id="download-link" class="button" style="display: none;">ダウンロード</a>
+            </div>
+            <div class="file-view">
+                <div id="line-numbers"></div>
+                <pre><code id="file-content" class="hljs"></code></pre>
+            </div>
+            <div id="image-preview" style="display: none;"></div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

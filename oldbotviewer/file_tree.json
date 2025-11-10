@@ -1,0 +1,389 @@
+{
+  "name": "old bots",
+  "type": "directory",
+  "children": [
+    {
+      "name": "tirumiru",
+      "type": "directory",
+      "children": [
+        {
+          "name": ".env",
+          "type": "file",
+          "path": "old bots/tirumiru/.env"
+        },
+        {
+          "name": "db.sqlite",
+          "type": "file",
+          "path": "old bots/tirumiru/db.sqlite"
+        },
+        {
+          "name": "events.js",
+          "type": "file",
+          "path": "old bots/tirumiru/events.js"
+        },
+        {
+          "name": "levels.js",
+          "type": "file",
+          "path": "old bots/tirumiru/levels.js"
+        },
+        {
+          "name": "on_message.js",
+          "type": "file",
+          "path": "old bots/tirumiru/on_message.js"
+        },
+        {
+          "name": "package.json",
+          "type": "file",
+          "path": "old bots/tirumiru/package.json"
+        },
+        {
+          "name": "README.md",
+          "type": "file",
+          "path": "old bots/tirumiru/README.md"
+        },
+        {
+          "name": "server.js",
+          "type": "file",
+          "path": "old bots/tirumiru/server.js"
+        }
+      ]
+    },
+    {
+      "name": "ataibot v13-2",
+      "type": "directory",
+      "children": [
+        {
+          "name": ".env",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/.env"
+        },
+        {
+          "name": "Change.md",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/Change.md"
+        },
+        {
+          "name": "commands",
+          "type": "directory",
+          "children": [
+            {
+              "name": "help.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-2/commands/help.js"
+            },
+            {
+              "name": "rank.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-2/commands/rank.js"
+            },
+            {
+              "name": "URL.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-2/commands/URL.js"
+            }
+          ]
+        },
+        {
+          "name": "config.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/config.json"
+        },
+        {
+          "name": "function.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/function.js"
+        },
+        {
+          "name": "index.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/index.js"
+        },
+        {
+          "name": "level.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/level.js"
+        },
+        {
+          "name": "memo.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/memo.js"
+        },
+        {
+          "name": "package-lock.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/package-lock.json"
+        },
+        {
+          "name": "package.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/package.json"
+        },
+        {
+          "name": "readme.md",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/readme.md"
+        },
+        {
+          "name": "rpg.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-2/rpg.js"
+        },
+        {
+          "name": "sqlite",
+          "type": "directory",
+          "children": [
+            {
+              "name": "C.sqlite",
+              "type": "file",
+              "path": "old bots/ataibot v13-2/sqlite/C.sqlite"
+            },
+            {
+              "name": "db.sqlite",
+              "type": "file",
+              "path": "old bots/ataibot v13-2/sqlite/db.sqlite"
+            },
+            {
+              "name": "rpg.sqlite",
+              "type": "file",
+              "path": "old bots/ataibot v13-2/sqlite/rpg.sqlite"
+            }
+          ]
+        },
+        {
+          "name": "物置",
+          "type": "directory",
+          "children": [
+            {
+              "name": "Christmas.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-2/物置/Christmas.js"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ataibot v13-6",
+      "type": "directory",
+      "children": [
+        {
+          "name": ".env",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/.env"
+        },
+        {
+          "name": "ad-emoji.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/ad-emoji.js"
+        },
+        {
+          "name": "alch.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/alch.js"
+        },
+        {
+          "name": "buff.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/buff.json"
+        },
+        {
+          "name": "buffs.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/buffs.js"
+        },
+        {
+          "name": "chara.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/chara.json"
+        },
+        {
+          "name": "commands",
+          "type": "directory",
+          "children": [
+            {
+              "name": "alch.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/alch.js"
+            },
+            {
+              "name": "conversion_x.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/conversion_x.js"
+            },
+            {
+              "name": "con_x.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/con_x.js"
+            },
+            {
+              "name": "itembuy.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/itembuy.js"
+            },
+            {
+              "name": "itemsell.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/itemsell.js"
+            },
+            {
+              "name": "join_official.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/join_official.js"
+            },
+            {
+              "name": "level.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/level.js"
+            },
+            {
+              "name": "login.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/login.js"
+            },
+            {
+              "name": "l_notice.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/l_notice.js"
+            },
+            {
+              "name": "owner.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/owner.js"
+            },
+            {
+              "name": "role_adds.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/role_adds.js"
+            },
+            {
+              "name": "role_Create.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/role_Create.js"
+            },
+            {
+              "name": "showicon.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/showicon.js"
+            },
+            {
+              "name": "urlshort.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/urlshort.js"
+            },
+            {
+              "name": "Useitem.js",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/commands/Useitem.js"
+            }
+          ]
+        },
+        {
+          "name": "commands.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/commands.json"
+        },
+        {
+          "name": "content.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/content.json"
+        },
+        {
+          "name": "func.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/func.js"
+        },
+        {
+          "name": "genso.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/genso.js"
+        },
+        {
+          "name": "getimg.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/getimg.js"
+        },
+        {
+          "name": "giveroles.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/giveroles.js"
+        },
+        {
+          "name": "index.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/index.js"
+        },
+        {
+          "name": "items.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/items.json"
+        },
+        {
+          "name": "level.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/level.js"
+        },
+        {
+          "name": "level.js.save.7f2013a8f252",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/level.js.save.7f2013a8f252"
+        },
+        {
+          "name": "maps.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/maps.json"
+        },
+        {
+          "name": "memo.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/memo.js"
+        },
+        {
+          "name": "mongoget.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/mongoget.js"
+        },
+        {
+          "name": "package-lock.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/package-lock.json"
+        },
+        {
+          "name": "package.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/package.json"
+        },
+        {
+          "name": "shst.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/shst.json"
+        },
+        {
+          "name": "ter.js",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/ter.js"
+        },
+        {
+          "name": "trophy.json",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/trophy.json"
+        },
+        {
+          "name": "views",
+          "type": "directory",
+          "children": [
+            {
+              "name": "index.ejs",
+              "type": "file",
+              "path": "old bots/ataibot v13-6/views/index.ejs"
+            }
+          ]
+        },
+        {
+          "name": "募集",
+          "type": "file",
+          "path": "old bots/ataibot v13-6/募集"
+        }
+      ]
+    }
+  ]
+}
