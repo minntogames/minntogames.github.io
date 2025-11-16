@@ -99,6 +99,15 @@
       </div>
       <br>
       <div class="fancy-border">
+        <h2>【おためし】</h2>
+        <p>
+          <div class="counter">
+              訪問者数: <?php include './php/counter.php'; ?>
+          </div>
+        </p>
+      </div>
+      <br>
+      <div class="fancy-border">
         <h2>【関連サイト】</h2>
         <p>
           <a href="https://minntogames.github.io/frandre-bot.github.io" aria-label="フランbotのサイト">
