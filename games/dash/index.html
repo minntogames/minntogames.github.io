@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dash Runner - 右へ走り続けるゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- ゲームタイトル画面 -->
+        <div id="title-screen" class="screen">
+            <h1>Dash Runner</h1>
+            <p class="subtitle">右へ右へと走り続けろ！</p>
+            <button id="start-button" class="game-button">スタート</button>
+            <div class="instructions">
+                <h3>操作方法</h3>
+                <p>スペースキー / クリック：ジャンプ</p>
+                <p>障害物を避けて、できるだけ長く走り続けよう！</p>
+            </div>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="game-screen" class="screen" style="display: none;">
+            <!-- UIヘッダー -->
+            <div class="game-header">
+                <div class="score-display">
+                    <span class="label">スコア:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="distance-display">
+                    <span class="label">距離:</span>
+                    <span id="distance">0</span>m
+                </div>
+            </div>
+
+            <!-- ゲームキャンバス -->
+            <canvas id="game-canvas"></canvas>
+
+            <!-- 一時停止メニュー -->
+            <div id="pause-menu" class="overlay" style="display: none;">
+                <div class="menu-content">
+                    <h2>一時停止</h2>
+                    <button id="resume-button" class="game-button">再開</button>
+                    <button id="restart-button" class="game-button">最初から</button>
+                    <button id="quit-button" class="game-button">タイトルへ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ゲームオーバー画面 -->
+        <div id="gameover-screen" class="screen" style="display: none;">
+            <h1>Game Over</h1>
+            <div class="result">
+                <div class="result-item">
+                    <span class="result-label">最終スコア:</span>
+                    <span id="final-score" class="result-value">0</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">走行距離:</span>
+                    <span id="final-distance" class="result-value">0</span>m
+                </div>
+                <div class="result-item">
+                    <span class="result-label">ベストスコア:</span>
+                    <span id="best-score" class="result-value">0</span>
+                </div>
+            </div>
+            <div class="button-group">
+                <button id="retry-button" class="game-button">もう一度</button>
+                <button id="title-button" class="game-button">タイトルへ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
