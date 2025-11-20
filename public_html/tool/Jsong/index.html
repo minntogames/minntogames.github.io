@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="Jsonデータ作成ジェネレーター" >
+<meta property="og:url" content="https://minntogames.github.io/index.html">
+<meta property="og:image" content="https://minntogames.github.io/image/icon.ico">
+<meta property="og:description" content="Jsonデータ作成ジェネレーターです" />
+<meta property="og:type" content="website" >
+<meta property="og:site_name" content="みんてりあの部屋" >
+<title>みんてりあの部屋：Jsonデータ作成</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  .input-group {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .input-group label, .input-group input {
+    width: 48%;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  input[type="text"], input[type="number"], textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+  }
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  pre {
+    display: none;
+  }
+</style>
+</head>
+<body style="background-color: aquamarine">
+
+<div class="container">
+  <h2>JSONデータ作成ジェネレーター</h2>
+  <form id="jsonForm">
+    <div class="input-group">
+      <label for="itemid">Item ID:</label>
+      <input type="number" id="itemid" name="itemid" required>
+    </div>
+    <div class="input-group">
+      <label for="type">Type (comma separated):</label>
+      <input type="text" id="type" name="type" required>
+    </div>
+    <div class="input-group">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+    <div class="input-group">
+      <label for="rarity">Rarity:</label>
+      <input type="number" id="rarity" name="rarity" min="1" max="5" required>
+    </div>
+    <div class="input-group">
+      <label for="min">Min:</label>
+      <input type="number" id="min" name="min" required>
+      <label for="max">Max:</label>
+      <input type="number" id="max" name="max" required>
+    </div>
+    <div class="input-group">
+      <label for="raremin">Rare Min:</label>
+      <input type="number" id="raremin" name="raremin" required>
+      <label for="raremax">Rare Max:</label>
+      <input type="number" id="raremax" name="raremax" required>
+    </div>
+    <div class="input-group">
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" rows="3" required></textarea>
+    </div>
+    
+    <button type="button" onclick="generateJSON(this)">Generate JSON</button>
+    <button type="button" onclick="resetForm(this)">Reset Form</button>
+    <button type="button" onclick="copyToClipboard(this)">Copy to Clipboard</button>
+  </form>
+  
+  <textarea id="jsonOutput" rows="10" readonly></textarea>
+</div>
+
+<script>
+function generateJSON(button) {
+  var originalText = button.textContent;
+  
+  var itemid = document.getElementById('itemid').value;
+  var type = document.getElementById('type').value.split(',');
+  var name = document.getElementById('name').value;
+  var rarity = parseInt(document.getElementById('rarity').value);
+  var min = parseInt(document.getElementById('min').value);
+  var max = parseInt(document.getElementById('max').value);
+  var raremin = parseInt(document.getElementById('raremin').value);
+  var raremax = parseInt(document.getElementById('raremax').value);
+  var description = document.getElementById('description').value;
+  
+  var jsonData = {
+    "itemid": itemid,
+    "type": type,
+    "name": name,
+    "rarity": rarity,
+    "nums": { "min": min, "max": max },
+    "rarenums": { "min": raremin, "max": raremax },
+    "description": description
+  };
+  
+  document.getElementById('jsonOutput').value = JSON.stringify(jsonData, null, 2);
+  
+  button.textContent = 'Generated!';
+  setTimeout(function() {
+    button.textContent = originalText;
+  }, 1000);
+}
+
+function copyToClipboard(button) {
+  var originalText = button.textContent;
+  var jsonOutput = document.getElementById('jsonOutput');
+  jsonOutput.select();
+  document.execCommand('copy');
+  button.textContent = 'Copyed!';
+  setTimeout(function() {
+    button.textContent = originalText;
+  }, 1000);
+}
+
+function resetForm(button) {
+  var originalText = button.textContent;
+  document.getElementById("jsonForm").reset();
+  document.getElementById('jsonOutput').value = '';
+  button.textContent = 'Reseted!';
+  setTimeout(function() {
+    button.textContent = originalText;
+  }, 1000);
+}
+</script>
+
+</body>
+</html>

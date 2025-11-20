@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>宇宙クリッカーゲーム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #e0e7ff; /* Light text color */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Prevent scroll */
+            user-select: none; /* Disable text selection */
+            -webkit-user-select: none; /* For Safari */
+            -moz-user-select: none; /* For Firefox */
+            -ms-user-select: none; /* For IE/Edge */
+            cursor: default; /* Change cursor to default pointer */
+
+            /* Base gradient and some subtle nebula effects */
+            background:
+                radial-gradient(circle at 10% 20%, rgba(30, 30, 80, 0.5) 0%, transparent 60%),
+                radial-gradient(circle at 90% 80%, rgba(50, 20, 70, 0.5) 0%, transparent 60%),
+                linear-gradient(to bottom, #0a0a0f, #1a1a2e); /* Main dark background */
+        }
+
+        /* Pseudo-elements for star layers */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Behind content */
+            background-repeat: repeat;
+        }
+
+        /* Layer 1: Distant, small, dense stars */
+        body::before {
+            background-image: radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 30% 70%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 60% 10%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 80% 90%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 5% 50%, #fff, transparent),
+                              radial-gradient(1.5px 1.5px at 40% 40%, #fff, transparent);
+            background-size: 800px 800px;
+            animation: star-move-1 120s linear infinite;
+        }
+
+        /* Layer 2: Medium-sized, less dense stars */
+        body::after {
+            background-image: radial-gradient(2.5px 2.5px at 15% 85%, #fff, transparent),
+                              radial-gradient(2.5px 2.5px at 70% 30%, #fff, transparent),
+                              radial-gradient(2.5px 2.5px at 25% 60%, #fff, transparent),
+                              radial-gradient(2.5px 2.5px at 95% 5%, #fff, transparent);
+            background-size: 1500px 1500px;
+            animation: star-move-2 200s linear infinite; /* Slower */
+        }
+
+        @keyframes star-move-1 {
+            from { background-position: 0 0; }
+            to { background-position: 800px 800px; }
+        }
+
+        @keyframes star-move-2 {
+            from { background-position: 0 0; }
+            to { background-position: -1500px -1500px; } /* Different direction */
+        }
+
+        .container {
+            max-width: 90%;
+            width: 100%;
+            background-color: rgba(26, 26, 46, 0.8); /* Slightly transparent dark background */
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            height: 90vh; /* Maximize vertical space */
+            margin: 20px auto;
+        }
+        .menu-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        .sidebar {
+            width: 250px;
+            min-width: 250px;
+            background-color: #2a2a4a; /* Darker sidebar */
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 90;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 80px; /* Space for menu button */
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        /* New Upgrade Sidebar */
+        .upgrades-sidebar {
+            width: 300px; /* Slightly wider for upgrades */
+            min-width: 300px;
+            background-color: #2a2a4a; /* Darker sidebar */
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 950; /* Higher than main sidebar, lower than modals */
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            padding: 20px;
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        .upgrades-sidebar.open {
+            transform: translateX(0);
+        }
+        .upgrades-sidebar-content {
+            flex-grow: 1;
+            overflow-y: auto; /* Allow scrolling for upgrade list */
+            padding-right: 10px; /* Space for scrollbar */
+        }
+        .upgrades-sidebar .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto; /* Allow scrolling for content */
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .star-clicker {
+            width: 200px;
+            height: 200px;
+            font-size: 150px; /* Star emoji size */
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s ease-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulse 2s infinite; /* Pulsing effect for the star */
+        }
+        .star-clicker:active {
+            transform: scale(0.95);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .upgrade-item {
+            background-color: #3b3b6b;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column; /* Changed to column for better layout with batch buttons */
+            align-items: flex-start; /* Align content to the start */
+            justify-content: space-between;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .upgrade-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px; /* Space before buttons */
+        }
+        .upgrade-actions {
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap */
+            gap: 5px; /* Space between buttons */
+            width: 100%;
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+        .upgrade-actions button {
+            background-color: #6a6aff;
+            color: white;
+            padding: 8px 12px; /* Smaller padding for batch buttons */
+            border-radius: 8px; /* Slightly smaller radius */
+            transition: background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* Smaller shadow */
+            font-size: 0.85rem; /* Smaller font size */
+            flex-grow: 1; /* Allow buttons to grow */
+            min-width: 50px; /* Minimum width for small buttons */
+        }
+        .upgrade-actions button:hover {
+            background-color: #4a4acb;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        /* Explicitly for disabled state to override default hover/active */
+        .upgrade-actions button[disabled] {
+            background-color: #6b7280 !important; /* Tailwind gray-500, use !important to ensure override */
+            cursor: not-allowed !important;
+            pointer-events: none; /* Disables all mouse events, including hover */
+            box-shadow: none !important; /* Remove shadow when disabled */
+            opacity: 0.7; /* Slightly dim it */
+        }
+        .upgrade-icon {
+            font-size: 2.5em; /* Larger icon */
+            margin-right: 15px; /* Space between icon and text */
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #2a2a4a;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+            position: relative; /* For close button positioning */
+        }
+        .modal.open .modal-content {
+            transform: translateY(0);
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #ccc;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .modal-button {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin: 10px;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal-button.confirm {
+            background-color: #6aff6a;
+        }
+        .modal-button:hover {
+            background-color: #e04a4a;
+        }
+        .modal-button.confirm:hover {
+            background-color: #4acb4a;
+        }
+
+        /* Release Notes and Credits specific styles */
+        .release-notes-content, .credits-content, .inventory-content, .excavation-content {
+            text-align: left;
+            max-height: 400px; /* Limit height for scrolling */
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #1a1a2e;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .release-notes-item, .credits-item, .inventory-item, .excavation-planet-item {
+            background-color: #2a2a4a;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .release-notes-item:last-child, .credits-item:last-child, .inventory-item:last-child, .excavation-planet-item:last-child {
+            margin-bottom: 0;
+        }
+        .release-notes-item h4, .credits-item h4, .inventory-item h4, .excavation-planet-item h4 {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #93c5fd; /* blue-300 */
+            margin-bottom: 5px;
+        }
+        .release-notes-item p, .credits-item p, .inventory-item p, .excavation-planet-item p {
+            font-size: 0.9em;
+            color: #cbd5e1; /* slate-300 */
+        }
+
+        /* Volume slider specific styles */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            color: #e0e7ff;
+        }
+        .volume-control input[type="range"] {
+            width: 70%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #4a4a6b;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6a6aff;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .volume-control input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6a6aff;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .volume-icon svg {
+            width: 24px;
+            height: 24px;
+            transition: color 0.2s ease-in-out; /* Smooth color transition for icon */
+        }
+
+        /* Excavation cooldown bar */
+        .cooldown-bar-wrapper {
+            width: 100%;
+            background-color: #4a4a6b;
+            border-radius: 5px;
+            overflow: hidden;
+            height: 10px;
+            margin-top: 5px;
+        }
+        .cooldown-bar {
+            height: 100%;
+            background-color: #6a6aff;
+            width: 0%;
+            transition: width 0.1s linear; /* Smooth transition for bar fill */
+        }
+
+        .excavation-cooldown-display {
+            display: none; /* 初期は非表示 */
+            font-size: 0.9em;
+            color: #cbd5e1;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* Batch buy button container */
+        .batch-buy-controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: rgba(42, 42, 74, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .batch-cycle-button {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: background-color 0.2s, transform 0.1s;
+            cursor: pointer;
+            text-align: center;
+            color: white;
+            background-color: #6a6aff; /* Default color */
+        }
+        .batch-cycle-button:hover {
+            background-color: #4a4acb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .batch-cycle-button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+    <!-- Hamburger Menu Button -->
+    <button id="menu-button" class="menu-button p-3 rounded-full bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+
+    <!-- Sidebar Navigation (Left) -->
+    <nav id="sidebar" class="sidebar fixed top-0 left-0 w-64 h-full bg-gray-900 shadow-lg text-white p-6 transform -translate-x-full transition-transform duration-300 ease-in-out z-50 rounded-r-lg">
+        <ul class="space-y-4 pt-10">
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="upgrades-sidebar-modal" data-scroll-to="regular-upgrades-section">全アップグレード</a>
+            </li>
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="upgrades-sidebar-modal" data-scroll-to="one-time-upgrades-section">特別アップグレード</a>
+            </li>
+            <!-- Breakthrough menu link is now hidden as breakthroughs are integrated directly -->
+            <!-- <li>
+                <a href="#" id="breakthrough-menu-link" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="upgrades-sidebar-modal" data-scroll-to="breakthrough-upgrades-section" style="display: none;">限界突破</a>
+            </li> -->
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="inventory-modal">インベントリ</a>
+            </li>
+            <li>
+                <a href="#" id="excavation-menu-link" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="excavation-modal" style="display: none;">惑星採掘</a>
+            </li>
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-modal="settings-modal">設定</a>
+            </li>
+            <li>
+                <a href="#" class="block px-4 py-2 text-lg font-semibold rounded-md hover:bg-gray-700 transition duration-200" data-action="rebig-bang">リビッグバン</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container relative flex flex-col md:flex-row items-stretch overflow-hidden">
+        <!-- Main Content Area -->
+        <main class="main-content flex-grow p-6">
+            <!-- Game Section -->
+            <section id="game" class="section active flex flex-col items-center justify-center h-full text-center relative">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 text-blue-300">スタークリック！</h1>
+                <p class="text-2xl mb-4">
+                    星からのエネルギー: <br> <span id="energy-display" class="font-bold text-yellow-300">0</span>
+                </p>
+
+                <div id="star-clicker" class="star-clicker flex justify-center items-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 shadow-xl border-4 border-yellow-200 cursor-pointer select-none mx-auto relative z-20">
+                    ⭐
+                </div>
+                <div class="flex flex-wrap justify-center gap-4 mt-8">
+                    <p class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md">クリックパワー: <span id="click-power-display">1</span></p>
+                    <p class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md">自動クリック: <span id="auto-click-display">0</span>/秒</p>
+                    <!-- Heat Clicker Multiplier Display -->
+                    <p id="heat-clicker-display-wrapper" class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md" style="display: none;">ヒートクリック: <span id="heat-multiplier-display" class="font-bold" style="color: hsl(0, 0%, 100%);">1.0x</span></p>
+                    <!-- Excavation Cooldown Display (appears when excavationLicense is purchased) -->
+                    <p id="excavation-cooldown-display-wrapper" class="text-lg font-medium bg-gray-700 rounded-lg p-2 px-4 shadow-md" style="display: none;">採掘クールダウン: <span id="excavation-cooldown-display" class="font-bold">準備完了</span></p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Upgrades Sidebar Modal (Right) -->
+    <div id="upgrades-sidebar-modal" class="upgrades-sidebar">
+        <button class="modal-close-button" data-action="close-modal">&times;</button>
+        <h2 class="text-3xl md:text-4xl font-bold mb-8 text-purple-300 text-center">アップグレード</h2>
+
+        <!-- Batch Buy Controls -->
+        <div class="batch-buy-controls">
+            <button id="batch-cycle-button" class="batch-cycle-button">購入量: x1</button>
+        </div>
+
+        <div class="upgrades-sidebar-content">
+            <h3 id="regular-upgrades-section" class="text-xl font-bold mb-4 mt-6 text-gray-300">惑星アップグレード</h3>
+            <div id="regular-upgrade-list" class="grid grid-cols-1 gap-6">
+                <!-- Regular Upgrade items will be dynamically inserted here -->
+            </div>
+            <h3 id="one-time-upgrades-section" class="text-xl font-bold mb-4 mt-6 text-gray-300">特別アップグレード</h3>
+            <div id="one-time-upgrade-list" class="grid grid-cols-1 gap-6">
+                <!-- One-Time Upgrade items will be dynamically inserted here -->
+            </div>
+            <!-- Breakthrough Upgrades section header is now hidden -->
+            <!-- <h3 id="breakthrough-upgrades-section" class="text-xl font-bold mb-4 mt-6 text-gray-300" style="display: none;">限界突破</h3> -->
+            <!-- <div id="breakthrough-upgrade-list" class="grid grid-cols-1 gap-6"> -->
+                <!-- Breakthrough Upgrade items will be dynamically inserted here -->
+            <!-- </div> -->
+        </div>
+        <button id="close-upgrades-sidebar" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl">
+            閉じる
+        </button>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div id="inventory-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-yellow-300 text-center">インベントリ</h2>
+            <div id="inventory-content" class="inventory-content">
+                <!-- Inventory items will be dynamically inserted here -->
+            </div>
+            <button id="close-inventory-modal" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Excavation Modal -->
+    <div id="excavation-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-orange-300 text-center">惑星採掘</h2>
+            <div id="excavation-planet-list" class="excavation-content">
+                <!-- Excavation planet items will be dynamically inserted here -->
+            </div>
+            <button id="close-excavation-modal" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Generic Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <p id="modal-message" class="text-xl mb-6 text-gray-200">メッセージ</p>
+            <div class="flex justify-center gap-4">
+                <button id="modal-cancel" class="modal-button bg-gray-500 hover:bg-gray-600">キャンセル</button>
+                <button id="modal-confirm" class="modal-button confirm bg-red-600 hover:bg-red-700">はい、削除します</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-red-300 text-center">設定</h2>
+
+            <!-- Volume Control -->
+            <div class="volume-control">
+                <span id="speaker-icon" class="volume-icon cursor-pointer">
+                    <!-- SVG for volume icon, dynamically updated -->
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor">
+                        <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM3 9v6h4l5 5V4L7 9H3z"/>
+                    </svg>
+                </span>
+                <input type="range" id="volume-slider" min="0" max="100" value="50">
+            </div>
+
+            <button id="release-notes-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
+                リリースノート
+            </button>
+            <button id="credits-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
+                クレジット
+            </button>
+            <button id="delete-data-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 text-xl mb-4">
+                データを削除
+            </button>
+            <button id="close-settings-modal" class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Release Notes Modal -->
+    <div id="release-notes-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 text-center">リリースノート</h2>
+            <div id="release-notes-content" class="release-notes-content">
+                <!-- Release notes will be dynamically inserted here -->
+            </div>
+            <button id="close-release-notes-modal" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Credits Modal -->
+    <div id="credits-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" data-action="close-modal">&times;</button>
+            <h2 class="text-3xl md:text-4xl font-bold mb-8 text-green-300 text-center">クレジット</h2>
+            <div id="credits-content" class="credits-content">
+                <!-- Credits will be dynamically inserted here -->
+            </div>
+            <button id="close-credits-modal" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-200">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Audio Element -->
+    <audio id="background-music" loop src="https://minntogames.github.io/minnntogames.github.io2/edge.wav"></audio>
+
+    <script>
+        // IndexedDB設定
+        const DB_NAME = 'SpaceClickerDB';
+        const STORE_NAME = 'gameState';
+        const DB_VERSION = 1;
+        const BASE_STRONG_START_ENERGY_REQUIREMENT = 1000000; // 100万エネルギーが基本コスト
+        const MAX_INACTIVITY_MS = 24 * 60 * 60 * 1000; // 24時間（ミリ秒）
+        const HEAT_CLICKER_RESET_TIME_MS = 2000; // 2秒間の非アクティブでヒートクリッカーの倍率をリセット
+        const HEAT_CLICKER_INCREMENT = 0.1; // クリックごとに倍率がこの量だけ増加
+        let MAX_HEAT_CLICK_MULTIPLIER = 2.0; // ヒートクリッカー倍率の最大制限 (限界突破で変動)
+        const EXCAVATION_MIN_PLANET_LEVEL = 20; // 採掘可能な惑星の最低レベル
+
+        // 新しい惑星の定義 (wideRangeTransfer でアンロックされる)
+        const newPlanetsData = {
+            cometA: { level: 0, cost: 5e6, clickBonus: 1000, autoBonus: 10000, icon: '☄️', excavationCooldown: 240 * 1000 }, // 4分
+            dwarfPlanet: { level: 0, cost: 1e7, clickBonus: 2000, autoBonus: 20000, icon: '🪐', excavationCooldown: 300 * 1000 },  // 5分
+            gasGiantMoon: { level: 0, cost: 5e7, clickBonus: 5000, autoBonus: 50000, icon: '🌕', excavationCooldown: 480 * 1000 } // 8分
+        };
+
+        let db; // IndexedDBデータベースインスタンス
+        let gameState = {
+            energy: 0, // 開発用に1e101に設定していましたが、0に戻します
+            clickPower: 1,
+            autoClickPower: 0,
+            strongStartLevel: 0, // 強力なスタートが何回開始されたかを追跡
+            lastPlayedTime: Date.now(), // 最後の活動時間を保存
+            heatClickMultiplier: 1.0, // ヒートクリッカーの倍率
+            lastClickTime: Date.now(), // 星が最後にクリックされた時間
+            selectedBatchAmount: 1, // 現在選択されているバッチ購入量 (x1, x10, etc.)
+            upgrades: {
+                mercury: { level: 0, cost: 10, clickBonus: 1, autoBonus: 0, icon: '☿', excavationCooldown: 10 * 1000 }, // 10秒
+                venus: { level: 0, cost: 50, clickBonus: 3, autoBonus: 0, icon: '♀', excavationCooldown: 15 * 1000 }, // 15秒
+                earth: { level: 0, cost: 200, clickBonus: 0, autoBonus: 5, icon: '🌎', excavationCooldown: 20 * 1000 }, // 20秒
+                mars: { level: 0, cost: 1000, clickBonus: 10, autoBonus: 0, icon: '♂', excavationCooldown: 30 * 1000 }, // 30秒
+                jupiter: { level: 0, cost: 5000, clickBonus: 0, autoBonus: 50, icon: '♃', excavationCooldown: 45 * 1000 }, // 45秒
+                saturn: { level: 0, cost: 25000, clickBonus: 0, autoBonus: 200, icon: '♄', excavationCooldown: 60 * 1000 }, // 60秒 (1分)
+                uranus: { level: 0, cost: 100000, clickBonus: 50, autoBonus: 0, icon: '⛢', excavationCooldown: 90 * 1000 }, // 90秒 (1.5分)
+                neptune: { level: 0, cost: 500000, clickBonus: 0, autoBonus: 1000, icon: '♆', excavationCooldown: 120 * 1000 }, // 120秒 (2分)
+                originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐', excavationCooldown: 180 * 1000 }, // 180秒 (3分)
+                // 新しい一回限りアップグレード
+                cosmicDrill: { level: 0, initialCost: 1e7, cost: 1e7, clickBonus: 10000, autoBonus: 0, icon: '⛏️', maxLevel: 1 },
+                galacticReactor: { level: 0, initialCost: 5e7, cost: 5e7, clickBonus: 0, autoBonus: 10000, icon: '⚛️', maxLevel: 1 },
+                heatClicker: { level: 0, initialCost: 1e6, cost: 1e6, clickBonus: 0, autoBonus: 0, icon: '🔥', maxLevel: 1, currentMaxMultiplier: 2.0 }, // ヒートクリッカー
+                excavationLicense: { level: 0, initialCost: 1e5, cost: 1e5, clickBonus: 0, autoBonus: 0, icon: '📜', maxLevel: 1 }, // 採掘ライセンス
+                wideRangeTransfer: { level: 0, initialCost: 1e8, cost: 1e8, clickBonus: 0, autoBonus: 0, icon: '📡', maxLevel: 1, unlockedPlanets: [], breakthroughLevel: 0 }, // アンロックされた惑星を追跡, 限界突破レベル
+                // 限界突破アップグレード
+                heatClickerBreakthrough: { level: 0, initialCost: 1e6, cost: 1e6, itemCost: { ironOre: 100, silverOre: 10 }, targetUpgrade: 'heatClicker', maxLevel: 5, icon: '💥', effect: 0.2, type: 'breakthrough' }, // アイテム消費を伴う限界突破, 効果量
+                wideRangeTransferBreakthrough: { level: 0, initialCost: 5e6, cost: 5e6, itemCost: { goldOre: 5, copperOre: 500 }, targetUpgrade: 'wideRangeTransfer', maxLevel: 3, icon: '⚡', unlocks: [ 'cometA', 'dwarfPlanet', 'gasGiantMoon' ], type: 'breakthrough' } // アンロックする惑星のリスト
+            },
+            volume: 0.5, // デフォルト音量 (0.0 から 1.0)
+            inventory: { // テスト用にいくつかのアイテムを追加
+                ironOre: 0,
+                copperOre: 0,
+                silverOre: 0,
+                goldOre: 0
+            },
+            planetExcavationCooldowns: {} // 各惑星の採掘クールダウン時間
+        };
+
+        // アイテムの定義
+        const itemData = {
+            ironOre: { name: '鉄鉱石', icon: '🪨' },
+            copperOre: { name: '銅鉱石', icon: '🪨' },
+            silverOre: { name: '銀鉱石', icon: '✨' },
+            goldOre: { name: '金鉱石', icon: '🌟' }
+        };
+
+        // リリースノートデータ
+        const releaseNotesData = [
+            { version: "v1.11", date: "2024-06-21", notes: "限界突破アップグレードが、対応する元のアップグレードが購入されるまで表示されないようになりました。" },
+            { version: "v1.10", date: "2024-06-21", notes: "惑星アップグレードの表示順序を固定しました。限界突破アップグレードを、影響を与えるアップグレードの項目内に統合しました。限界突破アップグレードの購入ボタンを赤色にしました。音楽のデフォルト音量を50%に設定しました。オフラインエネルギーポップアップのボタン応答を修正しました。" },
+            { version: "v1.9", date: "2024-06-21", notes: "アップグレード列の表示順を修正しました。オフラインエネルギーポップアップのボタン応答を修正しました。" },
+            { version: "v1.8", date: "2024-06-20", notes: "バッチ購入ボタンを単一のボタンに統合し、クリックで購入量が切り替わるようにしました。サイドバーに「限界突破」メニュー項目を追加しました。限界突破アップグレードのコスト表示を改善しました。ヒートクリッカーの倍率表示の色調整を修正しました。" },
+            { version: "v1.7", date: "2024-06-20", notes: "新しい特殊アップグレード「限界突破」と「広範囲転送装置」を追加しました。「限界突破」メニュー項目を追加しました。限界突破アップグレードのコスト表示を改善しました。ヒートクリッカーの倍率表示の色調整を修正しました。アップグレードのバッチ購入UIを一元化しました。" },
+            { version: "v1.6", date: "2024-06-20", notes: "新しい特殊アップグレード「限界突破」と「広範囲転送装置」を追加しました。アップグレードのバッチ購入UIを改善し、一元化しました。" },
+            { version: "v1.5", date: "2024-06-20", notes: "惑星採掘のクールダウンを惑星のコストに応じて動的に設定しました。アップグレードにバッチレベルアップ機能（+1, +10, +50, +100, Max）を追加しました。" },
+            { version: "v1.4", date: "2024-06-20", notes: "新しいアイテムと惑星採掘機能を追加しました。インベントリを確認できるようになりました。設定にクレジットセクションを追加し、ゲームにBGMを追加し、設定に音量スライダーとミュート機能を追加しました。サイトのズームとテキスト選択を無効にしました。「強力なスタート」を「リビッグバン」に改名しました。" },
+            { version: "v1.3", date: "2024-06-20", notes: "設定にクレジットセクションを追加しました。" },
+            { version: "v1.2", date: "2024-06-20", notes: "ゲームにBGMを追加し、設定に音量スライダーとミュート機能を追加しました。" },
+            { version: "v1.1", date: "2024-06-19", notes: "新しいアップグレードと細かい調整" },
+            { version: "v1.0", date: "2024-06-18", notes: "ゲームがリリースされました" }
+        ];
+
+        // DOM要素
+        const energyDisplay = document.getElementById('energy-display');
+        const clickPowerDisplay = document.getElementById('click-power-display');
+        const autoClickDisplay = document.getElementById('auto-click-display');
+        const starClicker = document.getElementById('star-clicker');
+        // 分割されたアップグレードリスト
+        const regularUpgradeList = document.getElementById('regular-upgrade-list');
+        const oneTimeUpgradeList = document.getElementById('one-time-upgrade-list');
+        // Breakthrough upgrades are now integrated, so these are commented out
+        // const breakthroughUpgradeList = document.getElementById('breakthrough-upgrade-list');
+        const breakthroughUpgradesSectionHeader = document.getElementById('breakthrough-upgrades-section'); // 限界突破ヘッダー
+        const heatClickerDisplayWrapper = document.getElementById('heat-clicker-display-wrapper'); // ヒートクリッカー表示のラッパー
+        const heatMultiplierDisplay = document.getElementById('heat-multiplier-display');
+        const excavationCooldownDisplayWrapper = document.getElementById('excavation-cooldown-display-wrapper');
+        const excavationCooldownDisplay = document.getElementById('excavation-cooldown-display');
+        const breakthroughMenuLink = document.getElementById('breakthrough-menu-link'); // 限界突破メニューリンク
+
+        const menuButton = document.getElementById('menu-button');
+        const sidebar = document.getElementById('sidebar');
+        const navLinks = document.querySelectorAll('#sidebar a');
+        const sections = document.querySelectorAll('.section');
+
+        // モーダル / サイドバー
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCancelButton = document.getElementById('modal-cancel');
+        const modalConfirmButton = document.getElementById('modal-confirm');
+        const settingsModal = document.getElementById('settings-modal');
+        const deleteDataButton = document.getElementById('delete-data-button');
+        const closeSettingsModalButton = document.getElementById('close-settings-modal');
+        const modalCloseButtons = document.querySelectorAll('.modal-close-button'); // サイドバーモーダルの新しいボタンを含む
+
+        // アップグレードサイドバーモーダル要素
+        const upgradesSidebarModal = document.getElementById('upgrades-sidebar-modal');
+        const closeUpgradesSidebarButton = document.getElementById('close-upgrades-sidebar');
+        const batchCycleButton = document.getElementById('batch-cycle-button'); // 新しい単一バッチ購入ボタン
+
+        // インベントリモーダル要素
+        const inventoryModal = document.getElementById('inventory-modal');
+        const inventoryContent = document.getElementById('inventory-content');
+        const closeInventoryModal = document.getElementById('close-inventory-modal');
+
+        // 採掘モーダル要素
+        const excavationMenuLink = document.getElementById('excavation-menu-link');
+        const excavationModal = document.getElementById('excavation-modal');
+        const excavationPlanetList = document.getElementById('excavation-planet-list');
+        const closeExcavationModal = document.getElementById('close-excavation-modal');
+
+
+        // リリースノートモーダル要素
+        const releaseNotesButton = document.getElementById('release-notes-button');
+        const releaseNotesModal = document.getElementById('release-notes-modal');
+        const releaseNotesContent = document.getElementById('release-notes-content');
+        const closeReleaseNotesModalButton = document.getElementById('close-release-notes-modal');
+
+        // クレジットモーダル要素
+        const creditsButton = document.getElementById('credits-button');
+        const creditsModal = document.getElementById('credits-modal');
+        const creditsContent = document.getElementById('credits-content');
+        const closeCreditsModalButton = document.getElementById('close-credits-modal');
+
+        // オーディオ要素
+        const audioElement = document.getElementById('background-music');
+        const volumeSlider = document.getElementById('volume-slider');
+        const speakerIcon = document.getElementById('speaker-icon');
+
+        let currentConfirmCallback = null;
+        let currentCancelCallback = null;
+        let confirmationStep = 0; // 多段階削除確認用
+        let lastVolumeBeforeMute = gameState.volume; // ミュート前の音量を保存
+        const batchAmounts = [1, 10, 50, 100, 'max']; // バッチ購入の選択肢
+
+        // --- ヘルパー関数 ---
+
+        /**
+         * 大きな数値を単位 (K, M, B, T) でフォーマットします。
+         * @param {number} num - フォーマットする数値。
+         * @returns {string} フォーマットされた数値文字列。
+         */
+        function formatNumber(num) {
+            if (num >= 1000000000000) {
+                return (num / 1000000000000).toFixed(2) + 'T';
+            }
+            if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(2) + 'B';
+            }
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(2) + 'K';
+            }
+            return Math.floor(num).toLocaleString();
+        }
+
+        /**
+         * 残り時間をHH:MM:SS形式でフォーマットします。
+         * @param {number} ms - 残り時間 (ミリ秒)。
+         * @returns {string} フォーマットされた時間文字列。
+         */
+        function formatTime(ms) {
+            const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            return [hours, minutes, seconds]
+                .map(unit => String(unit).padStart(2, '0'))
+                .join(':');
+        }
+
+        /**
+         * 「強力な新規ゲーム」の現在のエネルギーコストを計算します。
+         * コストは強力なスタートレベルに応じて指数関数的に増加します。
+         * @returns {number} 次の強力なスタートに必要なエネルギー。
+         */
+        function getStrongStartCurrentCost() {
+            // 指数関数的な増加をより顕著にするために Math.pow(2, ...) を使用
+            return BASE_STRONG_START_ENERGY_REQUIREMENT * Math.pow(2, gameState.strongStartLevel);
+        }
+
+        /**
+         * ヒートクリッカー表示のHSL色を、白から赤へ計算します。
+         * @param {number} multiplier - 現在のヒートクリック倍率。
+         * @returns {string} HSL色文字列。
+         */
+        function getHeatColor(multiplier) {
+            const minMultiplier = 1.0;
+            // currentMaxMultiplierが未定義の場合のフォールバック
+            const maxMultiplier = gameState.upgrades.heatClicker.currentMaxMultiplier !== undefined ? gameState.upgrades.heatClicker.currentMaxMultiplier : MAX_HEAT_CLICK_MULTIPLIER;
+            // 倍率を最小/最大に基づいて0-1の範囲に正規化
+            const normalized = Math.max(0, Math.min(1, (multiplier - minMultiplier) / (maxMultiplier - minMultiplier)));
+
+            // HSL値を補間します。
+            // 色相 (H) は赤/白/グレーの場合0のまま。
+            // 彩度 (S) は0%（白）から100%（赤）に変化。
+            // 明度 (L) は100%（白）から50%（純粋な赤）に減少。
+            const h = 0;
+            const s = normalized * 100; // 彩度が0から100に増加
+            const l = 100 - (normalized * 50); // 明度が100から50に減少
+
+            return `hsl(${h}, ${s}%, ${l}%)`;
+        }
+
+        /**
+         * 音量レベルに基づいてスピーカーアイコンを更新します。
+         * @param {number} volume - 現在の音量 (0-1)。
+         * @param {boolean} isMuted - 現在ミュートされているかどうか。
+         */
+        function updateSpeakerIcon(volume, isMuted) {
+            let pathD;
+            if (isMuted || volume === 0) {
+                // 音量オフアイコン
+                pathD = "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C19.56 15.34 20 13.73 20 12c0-3.28-2.11-6.04-5-6.81v2.06c2.22.82 3.79 3.02 3.79 5.09zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.27 4.27L16 21.73l1.73-1.73L21.73 21 23 19.73 4.27 3zM12 4L9.17 7H5v4h3.17l3.83 3.83V4z";
+            } else if (volume > 0 && volume <= 0.5) {
+                // 音量小アイコン (低音量)
+                pathD = "M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z";
+            } else {
+                // 音量大アイコン (中/高音量)
+                pathD = "M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM3 9v6h4l5 5V4L7 9H3z";
+            }
+            speakerIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="${pathD}"/></svg>`;
+        }
+
+        // --- IndexedDB関数 ---
+
+        /**
+         * IndexedDBデータベースを初期化します。
+         * オブジェクトストアが存在しない場合は作成します。
+         */
+        function initDb() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    console.log('IndexedDBが正常に初期化されました。');
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    console.error('IndexedDBエラー:', event.target.errorCode);
+                    reject(event.target.errorCode);
+                };
+            });
+        }
+
+        /**
+         * 現在のゲーム状態をIndexedDBに保存します。
+         */
+        async function saveGame() {
+            if (!db) {
+                console.error("IndexedDBが初期化されていません。保存できません。");
+                return;
+            }
+            // 保存前にlastPlayedTimeを更新
+            gameState.lastPlayedTime = Date.now();
+            // 現在の音量を保存
+            gameState.volume = audioElement.volume;
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(gameState, 'gameData'); // 固定キー'gameData'を使用
+
+            request.onsuccess = () => {
+                // console.log('ゲームが保存されました。');
+            };
+
+            request.onerror = (event) => {
+                console.error('ゲームの保存エラー:', event.target.errorCode);
+            };
+        }
+
+        /**
+         * IndexedDBからゲーム状態をロードします。
+         * データが見つからない場合、初期ゲーム状態を返します。
+         */
+        async function loadGame() {
+            if (!db) {
+                console.error("IndexedDBが初期化されていません。ロードできません。");
+                return;
+            }
+            return new Promise((resolve) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get('gameData');
+
+                request.onsuccess = (event) => {
+                    let loadedState = event.target.result;
+                    if (loadedState) {
+                        // ロードされた状態をデフォルトとマージして、新しいプロパティが存在するようにします
+                        // これにより、新しいアップグレードやプロパティがgameStateに追加されたが、
+                        // 古い保存データには存在しないケースが処理されます。
+                        gameState.energy = loadedState.energy || 0;
+                        gameState.clickPower = loadedState.clickPower || 1;
+                        gameState.autoClickPower = loadedState.autoClickPower || 0;
+                        gameState.strongStartLevel = loadedState.strongStartLevel || 0;
+                        gameState.lastPlayedTime = loadedState.lastPlayedTime || Date.now();
+                        gameState.heatClickMultiplier = loadedState.heatClickMultiplier || 1.0;
+                        gameState.lastClickTime = loadedState.lastClickTime || Date.now();
+                        gameState.volume = loadedState.volume !== undefined ? loadedState.volume : 0.5; // 音量をロード、存在しない場合は0.5をデフォルト
+                        gameState.inventory = loadedState.inventory || {}; // インベントリをロード、存在しない場合は空のオブジェクトをデフォルト
+                        gameState.planetExcavationCooldowns = loadedState.planetExcavationCooldowns || {}; // クールダウンをロード
+                        gameState.selectedBatchAmount = loadedState.selectedBatchAmount || 1; // バッチ購入量をロード
+
+                        // アップグレードのロードと新しいアップグレードの追加
+                        // 新しいアップグレードが追加された場合に gameState.upgrades が既存のキーを保持し、
+                        // 古い保存データにないプロパティ (例: type, targetUpgrade, maxLevel, icon, effect, unlocks) を
+                        // デフォルト値で埋めるようにします。
+                        for (const key in gameState.upgrades) {
+                            if (loadedState.upgrades && loadedState.upgrades[key]) {
+                                // 既存のアップグレードの場合、保存されたレベルとコストをロード
+                                gameState.upgrades[key].level = loadedState.upgrades[key].level;
+                                gameState.upgrades[key].cost = loadedState.upgrades[key].cost;
+                                // その他のプロパティをマージ (特に新しいプロパティや限界突破関連)
+                                Object.assign(gameState.upgrades[key], loadedState.upgrades[key]);
+                            } else {
+                                // 新しいアップグレードが追加された場合、デフォルトに初期化
+                                // initialCostプロパティが存在する場合、それを使用してコストをリセット
+                                if (gameState.upgrades[key].initialCost) {
+                                    gameState.upgrades[key].cost = gameState.upgrades[key].initialCost;
+                                }
+                                gameState.upgrades[key].level = 0;
+                                if (gameState.upgrades[key].breakthroughLevel !== undefined) {
+                                    gameState.upgrades[key].breakthroughLevel = 0;
+                                }
+                                // wideRangeTransferのunlockedPlanetsも初期化を確実にする
+                                if (key === 'wideRangeTransfer') {
+                                    gameState.upgrades[key].unlockedPlanets = [];
+                                }
+                            }
+                        }
+
+                        // wideRangeTransferによってアンロックされた惑星をgameState.upgradesに追加
+                        // ロードされたunlockedPlanetsに基づいて追加する
+                        if (gameState.upgrades.wideRangeTransfer && gameState.upgrades.wideRangeTransfer.unlockedPlanets) {
+                            gameState.upgrades.wideRangeTransfer.unlockedPlanets.forEach(newPlanetKey => {
+                                if (!(newPlanetKey in gameState.upgrades) && newPlanetsData[newPlanetKey]) {
+                                    gameState.upgrades[newPlanetKey] = { ...newPlanetsData[newPlanetKey] };
+                                }
+                            });
+                        }
+
+
+                        // 熱クリッカーの最大倍率を限界突破レベルに基づいて更新
+                        updateHeatClickerMaxMultiplier();
+                        // 限界突破メニューの表示をチェック (現在は統合されているため不要だが、コードとしては残しておく)
+                        checkBreakthroughMenuVisibility();
+
+                        // オフラインでの獲得を処理
+                        if (gameState.lastPlayedTime) {
+                            const currentTime = Date.now();
+                            let timeAway = currentTime - gameState.lastPlayedTime;
+                            timeAway = Math.min(timeAway, MAX_INACTIVITY_MS); // 24時間で上限設定
+
+                            const offlineEnergy = (gameState.autoClickPower / 1000) * timeAway; // autoClickPowerは1秒あたり
+                            if (offlineEnergy > 0) {
+                                gameState.energy += offlineEnergy;
+                                // オフラインエネルギーポップアップのボタン応答を修正
+                                showGenericModal(confirmationModal, `オフライン中に ${formatNumber(offlineEnergy)} エネルギーを獲得しました！`, () => hideModal(confirmationModal), null, 'OK', 'bg-green-600 hover:bg-green-700');
+                                modalConfirmButton.style.display = 'block'; // OKボタンを表示
+                                modalCancelButton.style.display = 'none'; // Cancelボタンを非表示
+                            }
+                        }
+                        console.log('ゲームがロードされました。');
+                    } else {
+                        console.log('保存されたゲームが見つかりません。新しいゲームを開始します。');
+                        // gameStateはすでに初期状態にデフォルト設定されています
+                        // 新しいゲームの場合も熱クリッカーの最大倍率を初期化
+                        updateHeatClickerMaxMultiplier();
+                    }
+                    updateDisplay();
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    console.error('ゲームのロードエラー:', event.target.errorCode);
+                    updateDisplay(); // エラー発生時でも表示を更新
+                    resolve(); // ロードに失敗した場合でも続行するために解決
+                };
+            });
+        }
+
+        /**
+         * IndexedDBからすべてのゲームデータをクリアします。
+         */
+        async function clearGameData() {
+            if (!db) {
+                console.error("IndexedDBが初期化されていません。データをクリアできません。");
+                return;
+            }
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.clear();
+
+                request.onsuccess = () => {
+                    console.log('IndexedDBからゲームデータがクリアされました。');
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    console.error('ゲームデータのクリアエラー:', event.target.errorCode);
+                    reject(event.target.errorCode);
+                };
+            });
+        }
+
+        // --- ゲームロジック ---
+
+        /**
+         * ヒートクリッカーの最大倍率を限界突破レベルに基づいて更新します。
+         */
+        function updateHeatClickerMaxMultiplier() {
+            const heatClickerBTLvl = gameState.upgrades.heatClickerBreakthrough.level;
+            // heatClickerのcurrentMaxMultiplierプロパティを更新
+            gameState.upgrades.heatClicker.currentMaxMultiplier = 2.0 + (heatClickerBTLvl * gameState.upgrades.heatClickerBreakthrough.effect);
+            // 現在のheatClickMultiplierが新しい最大値を超えないように調整
+            gameState.heatClickMultiplier = Math.min(gameState.heatClickMultiplier, gameState.upgrades.heatClicker.currentMaxMultiplier);
+        }
+
+        /**
+         * 自動クリックパワーに基づいて自動クリックします。
+         */
+        function autoClickLoop() {
+            gameState.energy += gameState.autoClickPower / 10; // 100ms間隔なので10で割る
+            updateDisplay();
+        }
+
+        /**
+         * 非アクティブのためヒートクリッカーの倍率をリセットする必要があるかどうかを確認します。
+         */
+        function checkHeatClickerReset() {
+            if (gameState.upgrades.heatClicker && gameState.upgrades.heatClicker.level > 0 &&
+                gameState.heatClickMultiplier > 1.0 && // すでにブーストされている場合のみリセット
+                Date.now() - gameState.lastClickTime >= HEAT_CLICKER_RESET_TIME_MS) {
+                gameState.heatClickMultiplier = 1.0; // 基本倍率にリセット
+                updateDisplay(); // リセットを反映するために表示を更新
+            }
+        }
+
+        /**
+         * メインの採掘クールダウン表示を更新します。
+         */
+        function updateExcavationCooldownDisplay() {
+            // This display wrapper only makes sense if there's a global cooldown,
+            // but now cooldowns are per-planet.
+            // For simplicity, let's just make this visible if the license is owned.
+            if (gameState.upgrades.excavationLicense && gameState.upgrades.excavationLicense.level > 0) {
+                 excavationCooldownDisplayWrapper.style.display = 'block';
+                 excavationCooldownDisplay.textContent = '各惑星を参照'; // Changed text to reflect per-planet cooldown
+                 excavationCooldownDisplay.style.color = '#cbd5e1'; // Neutral color
+            } else {
+                excavationCooldownDisplayWrapper.style.display = 'none';
+            }
+        }
+
+        /**
+         * 各惑星の採掘ボタンの状態とクールダウン表示を更新します。
+         */
+        function updateExcavationPlanetButtons() {
+            if (!excavationModal.classList.contains('open')) return; // モーダルが開いていない場合は更新しない
+
+            // wideRangeTransferでアンロックされた惑星も含めて全ての惑星をループ
+            const allPlanetKeys = Object.keys(gameState.upgrades).filter(key =>
+                gameState.upgrades[key].icon && gameState.upgrades[key].excavationCooldown
+            );
+
+            for (const planetKey of allPlanetKeys) {
+                const planet = gameState.upgrades[planetKey];
+                const button = document.querySelector(`#excavate-${planetKey}-button`);
+                const cooldownBar = document.querySelector(`#cooldown-bar-${planetKey}`);
+                const cooldownText = document.querySelector(`#cooldown-text-${planetKey}`);
+
+                if (!button || !cooldownBar || !cooldownText) continue;
+
+                const lastExcavated = gameState.planetExcavationCooldowns[planetKey] || 0;
+                const planetCooldown = planet.excavationCooldown; // 惑星固有のクールダウンを取得
+                const timeElapsed = Date.now() - lastExcavated;
+                const remainingTime = planetCooldown - timeElapsed;
+
+                if (planet.level < EXCAVATION_MIN_PLANET_LEVEL) {
+                    button.disabled = true;
+                    button.textContent = `レベル ${planet.level}/${EXCAVATION_MIN_PLANET_LEVEL} 必要`;
+                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    button.classList.add('bg-gray-500');
+                    cooldownBar.style.width = '0%';
+                    cooldownText.textContent = '';
+                } else if (remainingTime > 0) {
+                    button.disabled = true;
+                    button.textContent = `クールダウン中`;
+                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    button.classList.add('bg-gray-500');
+                    const progress = (timeElapsed / planetCooldown) * 100;
+                    cooldownBar.style.width = `${progress}%`;
+                    cooldownText.textContent = `残り: ${formatTime(remainingTime)}`;
+                } else {
+                    button.disabled = false;
+                    button.textContent = `採掘`;
+                    button.classList.remove('bg-gray-500');
+                    button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    cooldownBar.style.width = '100%';
+                    cooldownText.textContent = '準備完了';
+                }
+            }
+        }
+
+
+        /**
+         * Updates the display elements with current game state.
+         */
+        function updateDisplay() {
+            energyDisplay.textContent = formatNumber(gameState.energy);
+            clickPowerDisplay.textContent = formatNumber(gameState.clickPower);
+            autoClickDisplay.textContent = formatNumber(gameState.autoClickPower);
+            
+            // Update heat clicker display visibility and value
+            if (gameState.upgrades.heatClicker && gameState.upgrades.heatClicker.level > 0) {
+                heatClickerDisplayWrapper.style.display = 'block';
+                heatMultiplierDisplay.textContent = `${gameState.heatClickMultiplier.toFixed(1)}x`;
+                heatMultiplierDisplay.style.color = getHeatColor(gameState.heatClickMultiplier);
+            } else {
+                heatClickerDisplayWrapper.style.display = 'none';
+            }
+
+            // Update excavation menu link visibility
+            if (gameState.upgrades.excavationLicense && gameState.upgrades.excavationLicense.level > 0) {
+                excavationMenuLink.style.display = 'block';
+            } else {
+                excavationMenuLink.style.display = 'none';
+            }
+
+            updateExcavationCooldownDisplay();
+            // updateExcavationPlanetButtons(); // This is called in a separate interval now for smoother animation
+            saveGame(); // Save game state whenever display is updated (implies state change)
+        }
+
+        /**
+         * Handles the star click event.
+         */
+        function clickStar() {
+            // Ensure music starts playing on first interaction if not already playing
+            if (audioElement.paused) {
+                audioElement.play().catch(e => console.error("Autoplay failed:", e));
+            }
+
+            // Apply heat clicker bonus first if active
+            if (gameState.upgrades.heatClicker && gameState.upgrades.heatClicker.level > 0) {
+                const currentTime = Date.now();
+                if (currentTime - gameState.lastClickTime < HEAT_CLICKER_RESET_TIME_MS) {
+                    gameState.heatClickMultiplier = Math.min(gameState.upgrades.heatClicker.currentMaxMultiplier, gameState.heatClickMultiplier + HEAT_CLICKER_INCREMENT);
+                } else {
+                    // Reset and start with first increment
+                    gameState.heatClickMultiplier = Math.min(gameState.upgrades.heatClicker.currentMaxMultiplier, 1.0 + HEAT_CLICKER_INCREMENT);
+                }
+                gameState.lastClickTime = currentTime;
+                // Add base click power, then the bonus from multiplier
+                gameState.energy += gameState.clickPower * gameState.heatClickMultiplier;
+            } else {
+                gameState.energy += gameState.clickPower; // Normal click power
+                gameState.heatClickMultiplier = 1.0; // Ensure reset if not active
+            }
+            updateDisplay();
+        }
+
+        /**
+         * Calculates the cost and effects for purchasing a batch of upgrades.
+         * @param {string} upgradeKey - The key of the upgrade to calculate for.
+         * @param {number | 'max'} amount - The number of levels to simulate purchase for, or 'max'.
+         * @returns {{totalEnergyCost: number, totalItemCost: object, levelsBought: number, totalClickBonus: number, totalAutoBonus: number, breakthroughLevelsBought: number}}
+         */
+        function calculateBatchCostAndEffects(upgradeKey, amount) {
+            const upgrade = gameState.upgrades[upgradeKey];
+            let simulatedCost = upgrade.cost;
+            let simulatedLevel = upgrade.level;
+            let totalEnergyCost = 0;
+            let totalItemCost = {}; // アイテムコストを追跡
+            let levelsBought = 0;
+            let totalClickBonus = 0;
+            let totalAutoBonus = 0;
+            let breakthroughLevelsBought = 0;
+
+            // 限界突破アップグレードの場合の特殊処理
+            if (upgrade.type === 'breakthrough') { // 'type'プロパティで判定
+                if (upgrade.level >= upgrade.maxLevel) {
+                    return { totalEnergyCost: 0, totalItemCost: {}, levelsBought: 0, totalClickBonus: 0, totalAutoBonus: 0, breakthroughLevelsBought: 0 };
+                }
+                // 限界突破アップグレードは1レベルずつしか購入できないと仮定
+                amount = 1; // 常に1レベル購入 (max選択時も)
+
+                // エネルギーコストの確認
+                if (gameState.energy < simulatedCost) {
+                    return { totalEnergyCost: 0, totalItemCost: {}, levelsBought: 0, totalClickBonus: 0, totalAutoBonus: 0, breakthroughLevelsBought: 0 };
+                }
+
+                // アイテムコストの確認
+                let canAffordItems = true;
+                if (upgrade.itemCost) {
+                    for (const itemKey in upgrade.itemCost) {
+                        if ((gameState.inventory[itemKey] || 0) < upgrade.itemCost[itemKey]) {
+                            canAffordItems = false;
+                            break;
+                        }
+                    }
+                }
+                if (!canAffordItems) {
+                    return { totalEnergyCost: 0, totalItemCost: {}, levelsBought: 0, totalClickBonus: 0, totalAutoBonus: 0, breakthroughLevelsBought: 0 };
+                }
+
+                totalEnergyCost += simulatedCost;
+                if (upgrade.itemCost) {
+                    for (const itemKey in upgrade.itemCost) {
+                        totalItemCost[itemKey] = (totalItemCost[itemKey] || 0) + upgrade.itemCost[itemKey];
+                    }
+                }
+                breakthroughLevelsBought = 1;
+                levelsBought = 1; // 限界突破も一種のレベルアップとしてカウント
+
+                return { totalEnergyCost, totalItemCost, levelsBought, totalClickBonus, totalAutoBonus, breakthroughLevelsBought };
+            }
+
+            // 通常のアップグレードの場合
+            if (upgrade.maxLevel === 1 && upgrade.level >= 1) {
+                return { totalEnergyCost: 0, totalItemCost: {}, levelsBought: 0, totalClickBonus: 0, totalAutoBonus: 0, breakthroughLevelsBought: 0 }; // Already purchased one-time upgrade
+            }
+
+            let limit = amount;
+            if (amount === 'max') {
+                limit = Infinity; // Try to buy as many as possible
+            }
+
+            for (let i = 0; i < limit; i++) {
+                if (upgrade.maxLevel === 1 && simulatedLevel >= 1) break;
+
+                // 最大値が設定されている場合、そのレベルを超えて購入しようとしない
+                if (upgrade.maxLevel && simulatedLevel >= upgrade.maxLevel) {
+                    break;
+                }
+
+                if (gameState.energy >= (totalEnergyCost + simulatedCost)) {
+                    totalEnergyCost += simulatedCost;
+                    totalClickBonus += upgrade.clickBonus;
+                    totalAutoBonus += upgrade.autoBonus;
+                    levelsBought++;
+                    simulatedLevel++;
+                    if (upgrade.maxLevel !== 1) { // Only increase cost if not a one-time upgrade
+                        simulatedCost = Math.floor(simulatedCost * 1.5); // Calculate next level's cost
+                    }
+                } else {
+                    break; // Cannot afford next level
+                }
+            }
+            return { totalEnergyCost, totalItemCost, levelsBought, totalClickBonus, totalAutoBonus, breakthroughLevelsBought };
+        }
+
+
+        /**
+         * Handles the purchase of an upgrade (single or batch).
+         * @param {string} upgradeKey - The key of the upgrade to purchase.
+         * @param {number | 'max'} amount - The number of levels to buy, or 'max'.
+         */
+        function buyUpgradeLogic(upgradeKey, amount) {
+            const upgrade = gameState.upgrades[upgradeKey];
+
+            // For one-time upgrades, if already purchased, do nothing.
+            if (upgrade.maxLevel === 1 && upgrade.level >= 1 && upgrade.type !== 'breakthrough') {
+                console.log("This upgrade can only be purchased once.");
+                return;
+            }
+
+            const { totalEnergyCost, totalItemCost, levelsBought, totalClickBonus, totalAutoBonus, breakthroughLevelsBought } = calculateBatchCostAndEffects(upgradeKey, amount);
+
+            if (levelsBought > 0) {
+                // エネルギー消費
+                gameState.energy -= totalEnergyCost;
+
+                // アイテム消費
+                for (const itemKey in totalItemCost) {
+                    gameState.inventory[itemKey] -= totalItemCost[itemKey];
+                }
+
+                gameState.clickPower += totalClickBonus;
+                gameState.autoClickPower += totalAutoBonus;
+                upgrade.level += levelsBought;
+
+                // 限界突破アップグレードの場合の特殊な効果
+                if (upgrade.type === 'breakthrough' && upgrade.targetUpgrade) {
+                    const targetUpgrade = gameState.upgrades[upgrade.targetUpgrade];
+                    if (targetUpgrade) {
+                        targetUpgrade.breakthroughLevel = (targetUpgrade.breakthroughLevel || 0) + breakthroughLevelsBought;
+                        // 熱クリッカーの最大倍率を更新
+                        if (upgrade.targetUpgrade === 'heatClicker') {
+                            updateHeatClickerMaxMultiplier();
+                        }
+                        // 広範囲転送装置で新しい惑星をアンロック
+                        if (upgrade.targetUpgrade === 'wideRangeTransfer' && upgrade.unlocks) {
+                            upgrade.unlocks.slice(0, targetUpgrade.breakthroughLevel).forEach(newPlanetKey => {
+                                if (!(newPlanetKey in gameState.upgrades) && newPlanetsData[newPlanetKey]) { // 重複追加を防ぐ
+                                    gameState.upgrades[newPlanetKey] = { ...newPlanetsData[newPlanetKey] };
+                                    // wideRangeTransferのunlockedPlanetsに新しい惑星を追加
+                                    if (!targetUpgrade.unlockedPlanets.includes(newPlanetKey)) {
+                                        targetUpgrade.unlockedPlanets.push(newPlanetKey);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+
+
+                if (upgrade.maxLevel !== 1 && upgrade.type !== 'breakthrough') { // 通常のアップグレードのみコストを増加させる
+                    // Recalculate the cost for the *next* level after the batch purchase
+                    upgrade.cost = Math.floor(upgrade.cost * Math.pow(1.5, levelsBought));
+                }
+
+                updateDisplay();
+                renderUpgrades(); // Re-render upgrades after purchase to update button states
+                renderInventory(); // インベントリを更新
+                renderExcavationPlanets(); // 新しい惑星がアンロックされる可能性があるため更新
+                // If excavationLicense is purchased, update the menu link visibility
+                if (upgradeKey === 'excavationLicense') {
+                    excavationMenuLink.style.display = 'block';
+                }
+                // checkBreakthroughMenuVisibility(); // This is no longer needed as breakthrough link is always hidden
+            } else {
+                console.log("Not enough resources to buy any levels of " + upgradeKey);
+            }
+        }
+
+
+        /**
+         * Renders the upgrade items in the upgrades section.
+         */
+        function renderUpgrades() {
+            // Store current scroll position before clearing
+            const upgradesSidebarContent = upgradesSidebarModal.querySelector('.upgrades-sidebar-content');
+            const upgradesScrollTop = upgradesSidebarContent ? upgradesSidebarContent.scrollTop : 0; // Check if element exists
+
+            regularUpgradeList.innerHTML = ''; // Clear previous regular upgrades
+            oneTimeUpgradeList.innerHTML = ''; // Clear previous one-time upgrades
+            // breakthroughUpgradeList.innerHTML = ''; // Not used directly anymore
+
+            // Hide breakthrough section headers and menu link as breakthroughs are integrated
+            if (breakthroughUpgradesSectionHeader) breakthroughUpgradesSectionHeader.style.display = 'none';
+            if (breakthroughMenuLink) breakthroughMenuLink.style.display = 'none';
+
+
+            // Define a fixed order for regular planet upgrades
+            const fixedRegularOrder = [
+                'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'originalPlanetX',
+                'cometA', 'dwarfPlanet', 'gasGiantMoon' // Add new planets to fixed order
+            ];
+
+            // Define a fixed order for one-time upgrades
+            const fixedOneTimeOrder = [
+                'cosmicDrill', 'galacticReactor', 'excavationLicense', 'heatClicker', 'wideRangeTransfer'
+            ];
+
+            // Collect all breakthrough upgrades for easy lookup
+            const breakthroughUpgradesMap = {};
+            for (const key in gameState.upgrades) {
+                const upgrade = gameState.upgrades[key];
+                if (upgrade.type === 'breakthrough') {
+                    if (upgrade.targetUpgrade) {
+                        if (!breakthroughUpgradesMap[upgrade.targetUpgrade]) {
+                            breakthroughUpgradesMap[upgrade.targetUpgrade] = [];
+                        }
+                        breakthroughUpgradesMap[upgrade.targetUpgrade].push(key);
+                    }
+                }
+            }
+
+            // Sort breakthrough upgrades within their target groups by cost
+            for (const targetKey in breakthroughUpgradesMap) {
+                breakthroughUpgradesMap[targetKey].sort((a, b) => gameState.upgrades[a].cost - gameState.upgrades[b].cost);
+            }
+
+            // Render Regular Upgrades + their breakthroughs
+            fixedRegularOrder.forEach(key => {
+                const upgrade = gameState.upgrades[key];
+                // Ensure the upgrade exists and is a regular planet upgrade (no 'type' and no 'maxLevel')
+                if (upgrade && !upgrade.type && upgrade.maxLevel === undefined) {
+                    const upgradeElement = createUpgradeElement(key, upgrade, breakthroughUpgradesMap[key]);
+                    if (upgradeElement) regularUpgradeList.appendChild(upgradeElement);
+                }
+            });
+
+            // Render One-Time Upgrades + their breakthroughs
+            fixedOneTimeOrder.forEach(key => {
+                const upgrade = gameState.upgrades[key];
+                // Ensure the upgrade exists and is a one-time upgrade (maxLevel is 1, and not a breakthrough type)
+                // Only render if not yet purchased, or if it's heatClicker/wideRangeTransfer (which might have associated breakthroughs)
+                if (upgrade && upgrade.maxLevel === 1 && upgrade.type !== 'breakthrough') {
+                    // Only render if the main upgrade itself has level 0 OR if it has associated breakthroughs
+                    // This covers cases where we want to show heatClicker/wideRangeTransfer even if level 0
+                    // because their breakthroughs might become available later.
+                    // The breakthrough section itself will be hidden if upgrade.level is 0.
+                    const upgradeElement = createUpgradeElement(key, upgrade, breakthroughUpgradesMap[key]);
+                    if (upgradeElement) oneTimeUpgradeList.appendChild(upgradeElement);
+                }
+            });
+
+            // Restore scroll position after rendering
+            // Added a small delay to ensure DOM is rendered before attempting to scroll
+            if (upgradesSidebarContent) {
+                setTimeout(() => {
+                    upgradesSidebarContent.scrollTop = upgradesScrollTop;
+                }, 50); // Small delay
+            }
+        }
+
+        // Helper function to create an individual upgrade element
+        function createUpgradeElement(key, upgrade, associatedBreakthroughKeys = []) {
+            const upgradeElement = document.createElement('div');
+            upgradeElement.className = 'upgrade-item';
+
+            let upgradeStatusText = '';
+            let isPurchasedOneTime = (upgrade.maxLevel === 1 && upgrade.level >= 1 && upgrade.type !== 'breakthrough');
+            let purchaseButtonText = '購入';
+
+            if (isPurchasedOneTime) {
+                upgradeStatusText = `<p class="text-sm text-green-400 font-bold">購入済み</p>`;
+                purchaseButtonText = '完了';
+            } else if (upgrade.type === 'breakthrough' && upgrade.level >= upgrade.maxLevel) {
+                upgradeStatusText = `<p class="text-sm text-green-400 font-bold">最大レベル</p>`;
+                purchaseButtonText = '完了';
+            }
+            else {
+                const { totalEnergyCost, totalItemCost, levelsBought } = calculateBatchCostAndEffects(key, gameState.selectedBatchAmount);
+
+                if (levelsBought === 0) {
+                     purchaseButtonText = '不足';
+                } else if (gameState.selectedBatchAmount === 'max') {
+                    purchaseButtonText = `購入 (Max)`;
+                }
+                else {
+                    purchaseButtonText = `購入 (x${levelsBought})`;
+                }
+
+                // Display cost for the main upgrade
+                let costDetails = `<p class="text-lg font-bold mb-2">エネルギー: ${formatNumber(upgrade.cost)}</p>`;
+                if (upgrade.itemCost) {
+                    for (const itemKey in upgrade.itemCost) {
+                        const item = itemData[itemKey] || { name: itemKey, icon: '❓' };
+                        costDetails += `<p class="text-sm text-gray-400">${item.icon} ${item.name}: ${formatNumber(upgrade.itemCost[itemKey])}</p>`;
+                    }
+                }
+                upgradeStatusText = costDetails;
+            }
+
+            let breakthroughSection = '';
+            // Only render breakthrough section if there are associated breakthroughs AND the main upgrade has been purchased (level > 0)
+            if (associatedBreakthroughKeys.length > 0 && upgrade.level > 0) { // Changed condition here
+                breakthroughSection += `<div class="mt-4 pt-4 border-t border-gray-600 w-full">
+                                    <h4 class="text-md font-semibold text-purple-400 mb-2">限界突破アップグレード:</h4>`;
+                associatedBreakthroughKeys.forEach(btKey => {
+                    const btUpgrade = gameState.upgrades[btKey];
+                    if (!btUpgrade) return; // Skip if breakthrough upgrade not found
+
+                    let btPurchaseButtonText = '購入';
+                    let btCanAfford = true;
+                    const { totalEnergyCost, totalItemCost, levelsBought } = calculateBatchCostAndEffects(btKey, 1); // Breakthroughs are always x1
+
+                    if (btUpgrade.level >= btUpgrade.maxLevel) {
+                        btPurchaseButtonText = '最大レベル';
+                        btCanAfford = false;
+                    } else if (levelsBought === 0) {
+                        btPurchaseButtonText = '不足';
+                        btCanAfford = false;
+                    }
+
+                    let btCostDetails = `<p class="text-sm font-bold mt-1">エネルギー: ${formatNumber(btUpgrade.cost)}</p>`;
+                    if (btUpgrade.itemCost) {
+                        for (const itemKey in btUpgrade.itemCost) {
+                            const item = itemData[itemKey] || { name: itemKey, icon: '❓' };
+                            btCostDetails += `<p class="text-xs text-gray-500">${item.icon} ${item.name}: ${formatNumber(btUpgrade.itemCost[itemKey])}</p>`;
+                        }
+                    }
+
+                    // Apply red color to breakthrough buttons
+                    const buttonClasses = btCanAfford ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-500';
+
+                    breakthroughSection += `
+                        <div class="flex items-center justify-between mt-2 p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <p class="text-base font-medium">${btUpgrade.icon} ${btKey.charAt(0).toUpperCase() + btKey.slice(1).replace(/([A-Z])/g, ' $1').trim()}</p>
+                                <p class="text-sm text-gray-400">レベル: ${btUpgrade.level}/${btUpgrade.maxLevel}</p>
+                                ${btUpgrade.targetUpgrade === 'heatClicker' ? `<p class="text-sm text-gray-400">効果: 最大倍率 +${(btUpgrade.effect * 100).toFixed(0)}%</p>` : ''}
+                                ${btUpgrade.targetUpgrade === 'wideRangeTransfer' ? `<p class="text-sm text-gray-400">効果: 新しい惑星をアンロック</p>` : ''}
+                                ${btCostDetails}
+                            </div>
+                            <button data-upgrade="${btKey}" class="buy-upgrade px-4 py-2 rounded-lg font-semibold transition duration-200 ${buttonClasses}" ${!btCanAfford ? 'disabled' : ''}>
+                                ${btPurchaseButtonText}
+                            </button>
+                        </div>
+                    `;
+                });
+                breakthroughSection += `</div>`;
+            }
+
+
+            upgradeElement.innerHTML = `
+                <div class="flex items-center upgrade-info">
+                    <span class="upgrade-icon">${upgrade.icon}</span>
+                    <div>
+                        <h3 class="text-xl font-semibold">${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}</h3>
+                        <p class="text-sm text-gray-400">レベル: ${upgrade.level}</p>
+                        ${upgrade.clickBonus > 0 ? `<p class="text-sm text-gray-400">クリックパワー +${formatNumber(upgrade.clickBonus)}</p>` : ''}
+                        ${upgrade.autoBonus > 0 ? `<p class="text-sm text-gray-400">自動クリック +${formatNumber(upgrade.autoBonus)}/秒</p>` : ''}
+                    </div>
+                </div>
+                <div class="upgrade-actions">
+                    ${upgradeStatusText}
+                    <button data-upgrade="${key}" class="buy-upgrade px-5 py-2 rounded-lg font-semibold transition duration-200">
+                        ${purchaseButtonText}
+                    </button>
+                </div>
+                ${breakthroughSection} <!-- Insert breakthrough upgrades here -->
+            `;
+
+            // Re-attach event listeners for all new buy-upgrade buttons (both main and breakthrough)
+            upgradeElement.querySelectorAll('.buy-upgrade').forEach(button => {
+                const btnUpgradeKey = button.dataset.upgrade;
+                // For main upgrade buttons, use gameState.selectedBatchAmount
+                // For breakthrough upgrade buttons, always use 1 (as per previous logic)
+                const amountToBuy = gameState.upgrades[btnUpgradeKey].type === 'breakthrough' ? 1 : gameState.selectedBatchAmount;
+                button.addEventListener('click', () => buyUpgradeLogic(btnUpgradeKey, amountToBuy));
+            });
+
+            const buyButton = upgradeElement.querySelector(`.upgrade-actions > button[data-upgrade="${key}"]`); // Get the main upgrade button
+
+            const { totalEnergyCost, totalItemCost, levelsBought } = calculateBatchCostAndEffects(key, gameState.selectedBatchAmount);
+
+            let canAfford = true;
+            if (totalEnergyCost > gameState.energy) canAfford = false;
+            for (const itemKey in totalItemCost) {
+                if ((gameState.inventory[itemKey] || 0) < totalItemCost[itemKey]) {
+                    canAfford = false;
+                    break;
+                }
+            }
+
+            if (isPurchasedOneTime) { // One-time upgrades that are already purchased
+                canAfford = false;
+            }
+
+            if (!canAfford || levelsBought === 0) {
+                if (buyButton) { // Ensure the button exists before trying to modify its properties
+                    buyButton.disabled = true;
+                    buyButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    buyButton.classList.add('bg-gray-500'); // Apply disabled style
+                }
+            } else {
+                if (buyButton) {
+                    buyButton.disabled = false;
+                    buyButton.classList.remove('bg-gray-500'); // Ensure disabled style is removed
+                    buyButton.classList.add('bg-blue-600', 'hover:bg-blue-700'); // Apply active styles
+                }
+            }
+            return upgradeElement;
+        }
+
+
+        /**
+         * インベントリ内のアイテムをレンダリングします。
+         */
+        function renderInventory() {
+            inventoryContent.innerHTML = ''; // 以前のアイテムをクリア
+            const hasItems = Object.keys(gameState.inventory).some(key => gameState.inventory[key] > 0);
+
+            if (!hasItems) {
+                inventoryContent.innerHTML = '<p class="text-center text-gray-400">インベントリは空です。</p>';
+                return;
+            }
+
+            for (const itemKey in itemData) { // 定義されたアイテムのみ表示
+                if (gameState.inventory[itemKey] && gameState.inventory[itemKey] > 0) {
+                    const item = itemData[itemKey];
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'inventory-item flex justify-between items-center';
+                    itemElement.innerHTML = `
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-2">${item.icon}</span>
+                            <p class="text-lg font-semibold">${item.name}</p>
+                        </div>
+                        <p class="text-xl font-bold">${formatNumber(gameState.inventory[itemKey])}</p>
+                    `;
+                    inventoryContent.appendChild(itemElement);
+                }
+            }
+        }
+
+        /**
+         * 採掘セクションの惑星をレンダリングします。
+         */
+        function renderExcavationPlanets() {
+            excavationPlanetList.innerHTML = ''; // 以前の惑星をクリア
+
+            // gameState.upgrades内の通常の惑星アップグレードとwideRangeTransferでアンロックされた惑星をリストアップ
+            const allPlanetKeys = Object.keys(gameState.upgrades).filter(key =>
+                gameState.upgrades[key].icon && gameState.upgrades[key].excavationCooldown
+            );
+
+            // コストでソート（クールダウンの順序と同じになるため）
+            allPlanetKeys.sort((a, b) => gameState.upgrades[a].cost - gameState.upgrades[b].cost);
+
+
+            if (allPlanetKeys.length === 0) {
+                excavationPlanetList.innerHTML = '<p class="text-center text-gray-400">採掘可能な惑星はありません。</p>';
+                return;
+            }
+
+            allPlanetKeys.forEach(key => {
+                const planet = gameState.upgrades[key];
+                const planetName = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(); // キャメルケースをスペース区切りに変換
+                const excavationElement = document.createElement('div');
+                excavationElement.className = 'excavation-planet-item flex flex-col justify-between items-start';
+
+                const lastExcavated = gameState.planetExcavationCooldowns[key] || 0;
+                const planetCooldown = planet.excavationCooldown; // 惑星固有のクールダウンを取得
+                const timeElapsed = Date.now() - lastExcavated;
+                const remainingTime = planetCooldown - timeElapsed;
+                const isReady = remainingTime <= 0;
+                const canExcavate = planet.level >= EXCAVATION_MIN_PLANET_LEVEL && isReady;
+
+                excavationElement.innerHTML = `
+                    <div class="flex items-center w-full">
+                        <span class="text-3xl mr-3">${planet.icon}</span>
+                        <h3 class="text-xl font-semibold flex-grow">${planetName} (Lv ${planet.level})</h3>
+                        <button data-planet="${key}" class="excavate-button px-4 py-2 rounded-lg font-semibold transition duration-200
+                            ${canExcavate ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-500 cursor-not-allowed'}"
+                            ${!canExcavate ? 'disabled' : ''}>
+                            ${planet.level < EXCAVATION_MIN_PLANET_LEVEL ? `レベル ${planet.level}/${EXCAVATION_MIN_PLANET_LEVEL} 必要` : (isReady ? '採掘' : 'クールダウン中')}
+                        </button>
+                    </div>
+                    <div class="w-full mt-2">
+                        <div class="cooldown-bar-wrapper">
+                            <div id="cooldown-bar-${key}" class="cooldown-bar" style="width: ${isReady ? 100 : (timeElapsed / planetCooldown) * 100}%;"></div>
+                        </div>
+                        <p id="cooldown-text-${key}" class="excavation-cooldown-display text-xs text-right mt-1">
+                            ${isReady ? '準備完了' : `残り: ${formatTime(remainingTime)}`}
+                        </p>
+                    </div>
+                `;
+                excavationPlanetList.appendChild(excavationElement);
+            });
+
+            // 新しいボタンにイベントリスナーをアタッチ
+            excavationPlanetList.querySelectorAll('.excavate-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const planetKey = event.target.dataset.planet;
+                    excavatePlanet(planetKey);
+                });
+            });
+            updateExcavationPlanetButtons(); // リアルタイムのクールダウン表示のために初期更新
+        }
+
+        /**
+         * 惑星を採掘してアイテムを取得します。
+         * @param {string} planetKey - 採掘する惑星のキー。
+         */
+        function excavatePlanet(planetKey) {
+            const planet = gameState.upgrades[planetKey];
+            if (planet.level < EXCAVATION_MIN_PLANET_LEVEL) {
+                showGenericModal(confirmationModal, `${planetKey}を採掘するにはレベル${EXCAVATION_MIN_PLANET_LEVEL}が必要です。`, null, () => hideModal(confirmationModal), 'OK', 'bg-blue-600 hover:bg-blue-700', '閉じる');
+                modalConfirmButton.style.display = 'none';
+                return;
+            }
+
+            const lastExcavated = gameState.planetExcavationCooldowns[planetKey] || 0;
+            const planetCooldown = planet.excavationCooldown; // 惑星固有のクールダウンを取得
+            const timeElapsed = Date.now() - lastExcavated;
+            if (timeElapsed < planetCooldown) {
+                const remainingTime = planetCooldown - timeElapsed;
+                showGenericModal(confirmationModal, `${planetKey}はクールダウン中です。残り: ${formatTime(remainingTime)}`, null, () => hideModal(confirmationModal), 'OK', 'bg-blue-600 hover:bg-blue-700', '閉じる');
+                modalConfirmButton.style.display = 'none';
+                return;
+            }
+
+            // 採掘ロジック：惑星レベルに基づいてアイテムをランダムに取得
+            const itemsFound = {};
+            let totalItems = 0;
+            let message = `${planet.icon} ${planetKey.charAt(0).toUpperCase() + planetKey.slice(1).replace(/([A-Z])/g, ' $1').trim()}を採掘しました！`; // 惑星名も整形
+
+            // レベルに応じて獲得アイテムの数を増やす
+            // baseItemsは最低1つ、その後10レベルごとに1つ追加
+            const baseItems = 1 + Math.floor(planet.level / 10);
+            for (let i = 0; i < baseItems; i++) {
+                const random = Math.random();
+                let acquiredItem = '';
+                if (random < 0.5) { // 50% 鉄鉱石
+                    acquiredItem = 'ironOre';
+                } else if (random < 0.8) { // 30% 銅鉱石
+                    acquiredItem = 'copperOre';
+                } else if (random < 0.95) { // 15% 銀鉱石
+                    acquiredItem = 'silverOre';
+                } else { // 5% 金鉱石
+                    acquiredItem = 'goldOre';
+                }
+
+                gameState.inventory[acquiredItem] = (gameState.inventory[acquiredItem] || 0) + 1;
+                itemsFound[acquiredItem] = (itemsFound[acquiredItem] || 0) + 1;
+                totalItems++;
+            }
+
+            if (totalItems > 0) {
+                message += '<br>獲得アイテム:';
+                for (const itemKey in itemsFound) {
+                    message += `<br>${itemData[itemKey].icon} ${itemData[itemKey].name}: ${itemsFound[itemKey]}`;
+                }
+            } else {
+                message += '<br>何も見つかりませんでした。';
+            }
+
+
+            gameState.planetExcavationCooldowns[planetKey] = Date.now(); // クールダウンを設定
+            updateDisplay(); // メインのディスプレイとクールダウンバーを更新
+            renderExcavationPlanets(); // 採掘画面のボタン状態を更新
+            renderInventory(); // インベントリを更新
+
+            showGenericModal(confirmationModal, message, null, () => hideModal(confirmationModal), 'OK', 'bg-green-600 hover:bg-green-700', '閉じる');
+            modalConfirmButton.style.display = 'none';
+        }
+
+
+        /**
+         * ゲームを初期状態にリセットします。
+         * @param {boolean} strongStart - trueの場合、強力なスタートボーナスを適用します。
+         */
+        async function resetGame(strongStart = false) {
+            // strongStartがtrueの場合、クリアする前に現在のstrongStartLevelを保存
+            const prevStrongStartLevel = gameState.strongStartLevel;
+
+            await clearGameData(); // まずIndexedDBをクリア
+
+            // ゲーム状態をリセットし、強力なスタートの場合はstrongStartLevelをインクリメント
+            let newStrongStartLevel = strongStart ? prevStrongStartLevel + 1 : 0;
+
+            // 初期アップグレードをディープコピーして、コストを特にクリーンなリセットを保証する
+            // ここでnewPlanetsDataも考慮に入れて、初期状態には含めないようにする
+            let initialUpgrades = JSON.parse(JSON.stringify({
+                mercury: { level: 0, cost: 10, clickBonus: 1, autoBonus: 0, icon: '☿', excavationCooldown: 10 * 1000 },
+                venus: { level: 0, cost: 50, clickBonus: 3, autoBonus: 0, icon: '♀', excavationCooldown: 15 * 1000 },
+                earth: { level: 0, cost: 200, clickBonus: 0, autoBonus: 5, icon: '🌎', excavationCooldown: 20 * 1000 },
+                mars: { level: 0, cost: 1000, clickBonus: 10, autoBonus: 0, icon: '♂', excavationCooldown: 30 * 1000 },
+                jupiter: { level: 0, cost: 5000, clickBonus: 0, autoBonus: 50, icon: '♃', excavationCooldown: 45 * 1000 },
+                saturn: { level: 0, cost: 25000, clickBonus: 0, autoBonus: 200, icon: '♄', excavationCooldown: 60 * 1000 },
+                uranus: { level: 0, cost: 100000, clickBonus: 50, autoBonus: 0, icon: '⛢', excavationCooldown: 90 * 1000 },
+                neptune: { level: 0, cost: 500000, clickBonus: 0, autoBonus: 1000, icon: '♆', excavationCooldown: 120 * 1000 },
+                originalPlanetX: { level: 0, cost: 2000000, clickBonus: 500, autoBonus: 5000, icon: '🪐', excavationCooldown: 180 * 1000 },
+                cosmicDrill: { level: 0, initialCost: 1e7, cost: 1e7, clickBonus: 10000, autoBonus: 0, icon: '⛏️', maxLevel: 1 },
+                galacticReactor: { level: 0, initialCost: 5e7, cost: 5e7, clickBonus: 0, autoBonus: 10000, icon: '⚛️', maxLevel: 1 },
+                heatClicker: { level: 0, initialCost: 1e6, cost: 1e6, clickBonus: 0, autoBonus: 0, icon: '🔥', maxLevel: 1, currentMaxMultiplier: 2.0 },
+                excavationLicense: { level: 0, initialCost: 1e5, cost: 1e5, clickBonus: 0, autoBonus: 0, icon: '📜', maxLevel: 1 },
+                wideRangeTransfer: { level: 0, initialCost: 1e8, cost: 1e8, clickBonus: 0, autoBonus: 0, icon: '📡', maxLevel: 1, unlockedPlanets: [], breakthroughLevel: 0 },
+                heatClickerBreakthrough: { level: 0, initialCost: 1e6, cost: 1e6, itemCost: { ironOre: 100, silverOre: 10 }, targetUpgrade: 'heatClicker', maxLevel: 5, icon: '💥', effect: 0.2, type: 'breakthrough' },
+                wideRangeTransferBreakthrough: { level: 0, initialCost: 5e6, cost: 5e6, itemCost: { goldOre: 5, copperOre: 500 }, targetUpgrade: 'wideRangeTransfer', maxLevel: 3, icon: '⚡', unlocks: [ 'cometA', 'dwarfPlanet', 'gasGiantMoon' ], type: 'breakthrough' }
+            }));
+
+            // 新しい惑星は初期状態では含めないようにする
+            // initialUpgradesオブジェクトからnewPlanetsDataのキーを削除
+            for (const key in newPlanetsData) {
+                delete initialUpgrades[key];
+            }
+
+
+            gameState = {
+                energy: 0,
+                clickPower: 1,
+                autoClickPower: 0,
+                strongStartLevel: newStrongStartLevel,
+                lastPlayedTime: Date.now(), // 新しいゲームでlastPlayedTimeをリセット
+                heatClickMultiplier: 1.0, // 新しいゲームでリセット
+                lastClickTime: Date.now(), // 新しいゲームでリセット
+                selectedBatchAmount: 1, // デフォルトのバッチ購入量にリセット
+                upgrades: initialUpgrades,
+                volume: 0.5, // 音量をデフォルトにリセット
+                inventory: {}, // インベントリをリセット
+                planetExcavationCooldowns: {} // クールダウンをリセット
+            };
+
+            // 熱クリッカーの最大倍率をリセット
+            MAX_HEAT_CLICK_MULTIPLIER = 2.0;
+
+            if (strongStart) {
+                // ボーナスはstrongStartLevelでスケール
+                // レベル0（最初の強力なスタート）は倍率1.0を意味
+                // レベル1は倍率1.1などを意味
+                const bonusMultiplier = 1 + (newStrongStartLevel * 0.1);
+
+                gameState.energy = 1000 * bonusMultiplier;
+                gameState.clickPower = 10 * bonusMultiplier;
+                gameState.autoClickPower = 1 * bonusMultiplier;
+
+                // 強力なスタートレベルに応じて、通常のアップグレードに初期レベルを適用
+                for (const key in gameState.upgrades) {
+                    if (gameState.upgrades[key].maxLevel !== 1 && gameState.upgrades[key].excavationCooldown) { // excavationCooldownは惑星アップグレードのマーカーとして使用
+                        const initialLevel = key === 'mercury' ? 5 : (key === 'venus' ? 2 : 0); // 特定のアップグレードの基本レベル
+                        const calculatedLevel = Math.floor(initialLevel * bonusMultiplier);
+
+                        if (calculatedLevel > 0) { // レベルが正の場合にのみ適用
+                            gameState.upgrades[key].level = calculatedLevel;
+                            // 新しいレベルに基づいてコストが再計算されることを確認
+                            // initialCostが存在する場合、それを計算の基準として使用し、そうでない場合は現在のコストを使用します。
+                            // これにより、アップグレードが最初に0であった場合に、次のレベルのコストが正しくリセットされます。
+                            gameState.upgrades[key].cost = Math.floor((gameState.upgrades[key].initialCost || gameState.upgrades[key].cost) * Math.pow(1.5, calculatedLevel));
+                            gameState.clickPower += gameState.upgrades[key].clickBonus * calculatedLevel;
+                            gameState.autoClickPower += gameState.upgrades[key].autoBonus * calculatedLevel;
+                        }
+                    }
+                }
+            }
+            // リセット後にオーディオ設定を更新
+            audioElement.volume = gameState.volume;
+            volumeSlider.value = gameState.volume * 100;
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+
+            updateDisplay();
+            renderUpgrades(); // リセット後にアップグレードを再レンダリング
+            hideModal(confirmationModal);
+            hideModal(settingsModal); // 設定モーダルも非表示にする
+            hideModal(upgradesSidebarModal); // アップグレードサイドバーも非表示にする
+            hideModal(releaseNotesModal); // リリースノートモーダルも非表示にする
+            hideModal(creditsModal); // クレジットモーダルも非表示にする
+            hideModal(inventoryModal); // インベントリモーダルも非表示にする
+            hideModal(excavationModal); // 採掘モーダルも非表示にする
+            // リセット後にゲームセクションに戻る
+            showSection('game');
+            // checkBreakthroughMenuVisibility(); // No longer needed
+        }
+
+        /**
+         * 限界突破メニュー項目の表示/非表示をチェックします。
+         * いずれかの限界突破アップグレードが購入済み、または購入可能（エネルギーとアイテムが足りている）であれば表示します。
+         * NOTE: This function is largely vestigial now as breakthrough upgrades are integrated into their target upgrades.
+         * However, the data structure still supports it, and if a future UI needs a global breakthrough list, it could be used.
+         */
+        function checkBreakthroughMenuVisibility() {
+            let shouldShow = false;
+            for (const key in gameState.upgrades) {
+                const upgrade = gameState.upgrades[key];
+                if (upgrade.type === 'breakthrough') {
+                    if (upgrade.level > 0) { // 既に購入済み
+                        shouldShow = true;
+                        break;
+                    }
+                    // 購入可能かをチェック
+                    const { totalEnergyCost, totalItemCost, levelsBought } = calculateBatchCostAndEffects(key, 1); // 1レベル購入でチェック
+                    if (levelsBought > 0 && totalEnergyCost <= gameState.energy) {
+                        let canAffordItems = true;
+                        if (upgrade.itemCost) {
+                            for (const itemKey in upgrade.itemCost) {
+                                if ((gameState.inventory[itemKey] || 0) < upgrade.itemCost[itemKey]) {
+                                    canAffordItems = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (canAffordItems) {
+                            shouldShow = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // The breakthrough menu link is now always hidden in HTML,
+            // so this function effectively does nothing in the current UI.
+            // if (shouldShow) {
+            //     breakthroughMenuLink.style.display = 'block';
+            // } else {
+            //     breakthroughMenuLink.style.display = 'none';
+            // }
+        }
+
+        // --- UI関数 ---
+
+        /**
+         * 特定のセクションを表示し、他のセクションを非表示にします。
+         * @param {string} sectionId - 表示するセクションのID。
+         */
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                if (section.id === sectionId) {
+                    section.classList.add('active');
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+            sidebar.classList.remove('open'); // 選択後に左サイドバーを閉じる
+            hideModal(upgradesSidebarModal); // メインセクションが表示されている場合、アップグレードサイドバーも非表示にする
+            hideModal(settingsModal); // 設定モーダルも非表示にする
+            hideModal(releaseNotesModal); // リリースノートモーダルも非表示にする
+            hideModal(creditsModal); // クレジットモーダルも非表示にする
+            hideModal(inventoryModal); // インベントリモーダルも非表示にする
+            hideModal(excavationModal); // 採掘モーダルも非表示にする
+        }
+
+        /**
+         * モーダルを表示し、そのコンテンツとコールバックを設定します。
+         * @param {HTMLElement} modalElement - モーダルDOM要素。
+         * @param {string} message - 確認モーダルのメッセージ。
+         * @param {function} confirmCallback - 確認ボタンのコールバック。
+         * @param {function} cancelCallback - キャンセルボタンのコールバック。
+         * @param {string} confirmButtonText - 確認ボタンのテキスト。
+         * @param {string} confirmButtonClass - 確認ボタンの背景のTailwindクラス。
+         * @param {string} cancelButtonText - キャンセルボタンのテキスト。
+         */
+        function showGenericModal(modalElement, message, confirmCallback, cancelCallback, confirmButtonText = 'はい', confirmButtonClass = 'bg-red-600 hover:bg-red-700', cancelButtonText = 'キャンセル') {
+            if (modalElement === confirmationModal) {
+                modalMessage.innerHTML = message;
+                modalConfirmButton.textContent = confirmButtonText;
+                modalConfirmButton.className = 'modal-button confirm ' + confirmButtonClass;
+                modalCancelButton.textContent = cancelButtonText;
+
+                // Show/hide buttons based on callbacks
+                if (confirmCallback) {
+                    modalConfirmButton.style.display = 'inline-block';
+                    modalConfirmButton.disabled = false; // Ensure it's not disabled
+                } else {
+                    modalConfirmButton.style.display = 'none';
+                }
+
+                if (cancelCallback) {
+                    modalCancelButton.style.display = 'inline-block';
+                } else {
+                    modalCancelButton.style.display = 'none';
+                }
+            }
+
+            currentConfirmCallback = confirmCallback;
+            currentCancelCallback = cancelCallback;
+
+            modalElement.classList.add('open');
+        }
+
+        /**
+         * モーダルを非表示にします。
+         * @param {HTMLElement} modalElement - 非表示にするモーダルDOM要素。
+         */
+        function hideModal(modalElement) {
+            modalElement.classList.remove('open');
+            currentConfirmCallback = null;
+            currentCancelCallback = null;
+
+            // 確認モーダルボタンのスタイルを非表示時にデフォルトにリセット
+            if (modalElement === confirmationModal) {
+                modalConfirmButton.style.display = 'inline-block';
+                modalConfirmButton.disabled = false;
+                modalCancelButton.textContent = 'キャンセル';
+                // 将来の用途のためにボタンのテキストとクラスをデフォルトにリセット (例: データ削除)
+                modalConfirmButton.textContent = 'はい、削除します'; // 削除のデフォルト
+                modalConfirmButton.classList.remove('bg-yellow-600', 'hover:bg-yellow-700', 'bg-green-600', 'hover:bg-green-700', 'bg-blue-600', 'hover:bg-blue-700', 'bg-red-800', 'hover:bg-red-900');
+                modalConfirmButton.classList.add('bg-red-600', 'hover:bg-red-700');
+            }
+        }
+
+        /**
+         * リリースノートをリリースノートモーダルにレンダリングします。
+         */
+        function renderReleaseNotes() {
+            releaseNotesContent.innerHTML = ''; // 以前のノートをクリア
+            releaseNotesData.forEach(release => {
+                const releaseItem = document.createElement('div');
+                releaseItem.className = 'release-notes-item';
+                releaseItem.innerHTML = `
+                    <h4>${release.version} (${release.date})</h4>
+                    <p>${release.notes}</p>
+                `;
+                releaseNotesContent.appendChild(releaseItem);
+            });
+        }
+
+        /**
+         * クレジットをクレジットモーダルにレンダリングします。
+         */
+        function renderCredits() {
+            creditsContent.innerHTML = `
+                <div class="credits-item">
+                    <h4>作者</h4>
+                    <p>Minntelia</p>
+                </div>
+                <div class="credits-item">
+                    <h4>音楽</h4>
+                    <p>“Edgeworth Kuiperveld” by Akira Hata</p>
+                </div>
+            `;
+        }
+
+        /**
+         * 多段階の削除確認ロジックを処理します。
+         */
+        function confirmDeleteData() {
+            // 確認モーダルを表示する前に設定モーダルを非表示にする
+            hideModal(settingsModal);
+
+            if (confirmationStep === 0) {
+                showGenericModal(confirmationModal, "本当にすべてのゲームデータを削除しますか？これは元に戻せません。", confirmDeleteData, () => { confirmationStep = 0; hideModal(confirmationModal); settingsModal.classList.add('open'); }, 'はい、削除します', 'bg-red-600 hover:bg-red-700');
+                confirmationStep++;
+            } else if (confirmationStep === 1) {
+                showGenericModal(confirmationModal, "最終確認: 本当に本当にすべてのゲームデータを削除しますか？", confirmDeleteData, () => { confirmationStep = 0; hideModal(confirmationModal); settingsModal.classList.add('open'); }, '本当に削除します！', 'bg-yellow-600 hover:bg-yellow-700'); // 追加警告のために色を変更
+                confirmationStep++;
+            } else if (confirmationStep === 2) {
+                showGenericModal(confirmationModal, "最後の確認: ゲームデータはすべて失われます。よろしいですか？", confirmDeleteData, () => { confirmationStep = 0; hideModal(confirmationModal); settingsModal.classList.add('open'); }, '確認して削除！', 'bg-red-800 hover:bg-red-900'); // さらに強い警告色
+                confirmationStep++;
+            } else if (confirmationStep === 3) {
+                resetGame(false); // 完全なリセットを実行（強力なスタートではない）
+                confirmationStep = 0; // 次回のためにリセット
+                hideModal(confirmationModal);
+                hideModal(settingsModal); // 完全なリセット後に設定モーダルも非表示にする
+            }
+        }
+
+        /**
+         * リビッグバン確認ロジックを処理します。
+         */
+        function confirmRebigBang() {
+            const requiredEnergy = getStrongStartCurrentCost();
+            if (gameState.energy < requiredEnergy) {
+                showGenericModal(confirmationModal, `リビッグバンには ${formatNumber(requiredEnergy)} エネルギーが必要です。現在のエネルギーは ${formatNumber(gameState.energy)} です。`, null, () => hideModal(confirmationModal), 'OK', 'bg-blue-600 hover:bg-blue-700', '閉じる');
+                modalConfirmButton.style.display = 'none'; // OKボタンを非表示にし、ユーザーは「閉じる」のみクリック
+                return;
+            }
+
+            showGenericModal(confirmationModal, `リビッグバンを開始します。現在のデータはすべて削除され、レベル ${gameState.strongStartLevel + 1} のボーナス付きで開始されます。よろしいですか？`,
+                () => { // 確認コールバック
+                    resetGame(true);
+                    hideModal(confirmationModal);
+                },
+                () => { // キャンセルコールバック
+                    hideModal(confirmationModal);
+                },
+                '開始！',
+                'bg-green-600 hover:bg-green-700'
+            );
+        }
+
+        // --- イベントリスナー ---
+
+        // 星のクリッカー
+        starClicker.addEventListener('click', clickStar);
+
+        // メニューボタンのトグル
+        menuButton.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+
+        // ナビゲーションリンク (モーダル/セクション用)
+        navLinks.forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const sectionId = event.target.dataset.section;
+                const modalId = event.target.dataset.modal;
+                const action = event.target.dataset.action;
+                const scrollToTarget = event.target.dataset.scrollTo; // 新しい属性
+
+                if (sectionId) {
+                    showSection(sectionId);
+                } else if (modalId === 'settings-modal') {
+                    settingsModal.classList.add('open');
+                } else if (modalId === 'upgrades-sidebar-modal') {
+                    upgradesSidebarModal.classList.add('open');
+                    // スクロールを試みる前にアップグレードがレンダリングされていることを確認
+                    renderUpgrades();
+                    // バッチ購入ボタンの表示を更新
+                    updateBatchCycleButton();
+                    if (scrollToTarget) {
+                        // モーダルが開いてからスクロールできるようにする
+                        setTimeout(() => {
+                            const targetElement = document.getElementById(scrollToTarget);
+                            if (targetElement) {
+                                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }, 300); // モーダルのトランジション時間に合わせる
+                    }
+                } else if (modalId === 'inventory-modal') {
+                    inventoryModal.classList.add('open');
+                    renderInventory(); // インベントリを表示
+                } else if (modalId === 'excavation-modal') {
+                    // 採掘ライセンスが購入済みの場合のみ開く
+                    if (gameState.upgrades.excavationLicense && gameState.upgrades.excavationLicense.level > 0) {
+                        excavationModal.classList.add('open');
+                        renderExcavationPlanets(); // 採掘惑星を表示
+                    } else {
+                        showGenericModal(confirmationModal, "惑星採掘機能を使用するには「採掘ライセンス」アップグレードが必要です。", null, () => hideModal(confirmationModal), 'OK', 'bg-blue-600 hover:bg-blue-700', '閉じる');
+                        modalConfirmButton.style.display = 'none';
+                    }
+                }
+                else if (action === 'rebig-bang') {
+                    confirmRebigBang();
+                }
+                sidebar.classList.remove('open'); // 選択後にサイドバーを閉じる
+            });
+        });
+
+        // バッチ購入サイクリングボタンのイベントリスナー
+        batchCycleButton.addEventListener('click', () => {
+            let currentIndex = batchAmounts.indexOf(gameState.selectedBatchAmount);
+            let nextIndex = (currentIndex + 1) % batchAmounts.length;
+            gameState.selectedBatchAmount = batchAmounts[nextIndex];
+            updateBatchCycleButton();
+            renderUpgrades(); // アップグレードリストを再レンダリングして、購入ボタンの表示を更新
+        });
+
+        /**
+         * バッチ購入サイクルボタンのテキストを更新します。
+         */
+        function updateBatchCycleButton() {
+            if (gameState.selectedBatchAmount === 'max') {
+                batchCycleButton.textContent = '購入量: Max';
+            } else {
+                batchCycleButton.textContent = `購入量: x${gameState.selectedBatchAmount}`;
+            }
+        }
+
+
+        // アップグレードサイドバーを閉じる
+        closeUpgradesSidebarButton.addEventListener('click', () => {
+            hideModal(upgradesSidebarModal);
+        });
+
+        // インベントリモーダルを閉じる
+        closeInventoryModal.addEventListener('click', () => {
+            hideModal(inventoryModal);
+        });
+
+        // 採掘モーダルを閉じる
+        closeExcavationModal.addEventListener('click', () => {
+            hideModal(excavationModal);
+        });
+
+        // 設定モーダルのインタラクション
+        releaseNotesButton.addEventListener('click', () => {
+            hideModal(settingsModal); // リリースノートを開くときに設定モーダルを非表示にする
+            releaseNotesModal.classList.add('open');
+            renderReleaseNotes(); // リリースノートを表示
+        });
+
+        creditsButton.addEventListener('click', () => {
+            hideModal(settingsModal); // クレジットを開くときに設定モーダルを非表示にする
+            creditsModal.classList.add('open');
+            renderCredits(); // クレジットを表示
+        });
+
+        closeReleaseNotesModalButton.addEventListener('click', () => {
+            hideModal(releaseNotesModal);
+        });
+
+        closeCreditsModalButton.addEventListener('click', () => {
+            hideModal(creditsModal);
+        });
+
+        deleteDataButton.addEventListener('click', () => {
+            confirmationStep = 0; // 削除確認ステップをリセット
+            confirmDeleteData();
+        });
+
+        closeSettingsModalButton.addEventListener('click', () => {
+            hideModal(settingsModal);
+        });
+
+        // 汎用モーダルクローズボタン (確認、設定モーダル、新しいアップグレードサイドバー、リリースノートモーダル)
+        modalCloseButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                hideModal(button.closest('.modal') || button.closest('.upgrades-sidebar'));
+            });
+        });
+
+        // 汎用確認モーダルボタンリスナー
+        modalConfirmButton.addEventListener('click', () => {
+            if (currentConfirmCallback) {
+                currentConfirmCallback();
+            }
+            // モーダル固有の状態のリセットはhideModalで処理されるようになりました
+        });
+
+        modalCancelButton.addEventListener('click', () => {
+            if (currentCancelCallback) {
+                currentCancelCallback();
+            }
+            // モーダル固有の状態のリセットはhideModalで処理されるようになりました
+        });
+
+        // 音量コントロールリスナー
+        volumeSlider.addEventListener('input', () => {
+            const volume = parseFloat(volumeSlider.value) / 100;
+            audioElement.volume = volume;
+            if (volume > 0) {
+                audioElement.muted = false;
+                lastVolumeBeforeMute = volume; // ミュートされていない場合、最後の音量を更新
+            }
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+        });
+
+        speakerIcon.addEventListener('click', () => {
+            if (audioElement.muted) {
+                audioElement.muted = false;
+                // 以前の音量またはデフォルト（以前の音量がなければ）を復元
+                audioElement.volume = lastVolumeBeforeMute > 0 ? lastVolumeBeforeMute : 0.5;
+                volumeSlider.value = audioElement.volume * 100;
+                audioElement.play().catch(e => console.error("ミュート解除時の自動再生に失敗しました:", e)); // ミュートされていた場合、再生を試みる
+            } else {
+                lastVolumeBeforeMute = audioElement.volume; // ミュートする前に現在の音量を保存
+                audioElement.muted = true;
+                volumeSlider.value = 0; // ミュート時にスライダーを0に移動
+            }
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+        });
+
+        // クールダウン更新用の定期的なインターバル
+        setInterval(() => {
+            updateExcavationCooldownDisplay(); // This now mainly updates visibility of the wrapper
+            if (excavationModal.classList.contains('open')) {
+                updateExcavationPlanetButtons(); // Only update planet buttons if excavation modal is open
+            }
+        }, 500); // 500msごとに更新
+
+        // ウィンドウロード時にゲームを初期化
+        window.onload = async () => {
+            await initDb();
+            await loadGame();
+            renderUpgrades(); // アップグレードリストの初期レンダリング
+
+            // ロードされたゲーム状態からオーディオ設定を初期化
+            // Music defaults to 50%
+            gameState.volume = 0.5; // Explicitly set default volume
+            audioElement.volume = gameState.volume;
+            volumeSlider.value = gameState.volume * 100;
+            updateSpeakerIcon(audioElement.volume, audioElement.muted);
+            // 音楽の再生を試みます。ユーザーインタラクションまでブロックされる可能性があります。
+            audioElement.play().catch(e => {
+                console.warn("自動再生がブロックされました。音楽は最初のユーザーインタラクション（例：星のクリック）で開始されます。", e);
+                // 自動再生がブロックされた場合、初期状態がこれを反映していることを確認
+                audioElement.muted = true; // 再生できなかった場合、ミュートとしてマーク
+                volumeSlider.value = 0;
+                updateSpeakerIcon(0, true);
+            });
+
+            setInterval(autoClickLoop, 100); // 100msごとに自動クリック
+            setInterval(checkHeatClickerReset, 500); // 500msごとにヒートクリッカーのリセットを確認
+            // 初期アクティブセクションを設定
+            showSection('game'); // ロード時にゲームセクションがアクティブであることを確認
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <!--   メニュー  -->
+    <link rel="stylesheet" href="tab.css" />
+    <!--  ドロップダウン   -->
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.min.js"
+      type="text/javascript"
+    ></script>
+
+    <script type="text/javascript">
+      $(function () {
+        // ▼マウスが載ったらサブメニューを表示
+        $("ul.ddmenu li").mouseenter(function () {
+          $(this).siblings().find("ul").hide(); // 兄弟要素に含まれるサブメニューを全部消す。
+          $(this).children().slideDown(150); // 自分のサブメニューを表示する。
+        });
+        // ▼どこかがクリックされたらサブメニューを消す
+        $("html").click(function () {
+          $("ul.ddmenu ul").slideUp(150);
+        });
+      });
+    </script>
+  </head>
+  <body>
+    スクロールできます。
+    <ul class="ddmenu">
+      <li id="minntok">
+        <a href="#minntok">みんと関連</a>
+        <ul>
+          <li><a href="https://twitter.com/Minntelia_ch" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+          <li><a href="#minntok">youtube</a>
+            <ul>
+              <li><a href="https://www.youtube.com/channel/UCI8wpCAtV_SttGVUeUGw1Pg/featured" target="_blank" rel="noopener noreferrer" >みんと</a></li>
+              <li><a href="https://www.youtube.com/channel/UCxHVd8P3H_B3TBWojRH72Gw" target="_blank" rel="noopener noreferrer">ブラックホール</a></li>
+            </ul>
+          </li>
+          <li><a href="https://discord.gg/XC9jaej6xb" target="_blank" rel="noopener noreferrer">ディスコード鯖</a></li>
+          <li><a href="https://scratch.mit.edu/users/gorirawirusu/" target="_blank" rel="noopener noreferrer" >scratch</a></li>
+          <li>
+            <a href="#minntok">このサイト関連</a>
+            <ul>
+              <li><a href="diary/diary.html">日記部屋</a></li>
+              <li><a href="audio/sound-room-p1.html">サウンドルーム</a></li>
+              <li><a href="museum/museum-room.html">美術館</a></li>
+              <li><a href="regular_customer/menu.html">常連部屋</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li id="sonota">
+        <a href="#sonota">その他・ツール</a>
+        <ul>
+          <li><a href="tetris/index.html">テトリス</a></li>
+          <li><a href="game.html">ダンジョンRPG</a></li>
+          <li><a href="Maze2/Index.html">迷路</a></li>
+          <li><a href="tool/ICPCA/index.html">ICPCA(イプサ)</a></li>
+        </ul>
+      </li>
+      <li id="menu"><a href="menu.html">メニュー</a></li>
+    </ul>
+  </body>
+</html>
