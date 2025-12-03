@@ -38,6 +38,196 @@ strong {
   z-index: 1;
 }
 
+/* フィルターボタンの位置調整 */
+.filter-button-with-info {
+  position: relative;
+}
+
+.filter-button-with-info.has-info {
+  padding-right: 40px !important;
+}
+
+.filter-button-with-info .buttonOutlineGradient_item {
+  padding-right: 0;
+  transition: padding-right 0.2s;
+}
+
+.filter-button-with-info.has-info .buttonOutlineGradient_item {
+  padding-right: 10px;
+}
+
+/* フィルター情報アイコンボタン（インライン） */
+.filter-info-btn-inline {
+  position: absolute;
+  right: 30px;
+  top: 2px;
+  bottom: 2px;
+  margin: auto 0;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 22px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .filter-info-btn-inline {
+    top: 100px;
+    right: 20px;
+  }
+}
+
+
+.filter-info-btn-inline svg {
+  stroke: currentColor;
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.filter-info-btn-inline:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* フィルター情報ミニポップアップ */
+.filter-info-popup {
+  position: fixed;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  padding: 16px;
+  min-width: 250px;
+  max-width: 350px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.18s ease-out;
+  pointer-events: none;
+}
+
+.filter-info-popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.filter-info-content h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #555;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.filter-info-content #filterInfoList {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.filter-info-item {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.filter-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.filter-info-label {
+  font-weight: 600;
+  color: #1976d2;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.filter-info-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.filter-info-tag {
+  background: #e3f2fd;
+  color: #1565c0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: inline-block;
+}
+
+.filter-info-tag.custom-tag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: white;
+}
+
+/* フィルタークリアボタン */
+.filter-clear-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(238, 90, 111, 0.2);
+}
+
+.filter-clear-btn:hover {
+  background: linear-gradient(135deg, #ff5252, #e63946);
+  box-shadow: 0 4px 8px rgba(238, 90, 111, 0.3);
+  transform: translateY(-1px);
+}
+
+.filter-clear-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(238, 90, 111, 0.2);
+}
+
+.filter-clear-btn svg {
+  flex-shrink: 0;
+}
+
+.filter-info-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.filter-info-tag {
+  background: #e3f2fd;
+  color: #1565c0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: inline-block;
+}
+
+.filter-info-tag.custom-tag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: white;
+}
+
 .search-input-wrapper {
   position: relative;
   width: 540px;
@@ -296,6 +486,21 @@ button,
   font-size: 18px;
   margin: 10px 0;
   padding: 0 10px;
+}
+
+/* カード並び替えモード */
+.card.sortable-card {
+  cursor: move;
+}
+
+.card.sortable-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.card.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
 }
 
 /* 世界線ごとの下端バー */
@@ -697,8 +902,11 @@ button,
     margin: 6px 0;
   }
   #relatedCharacters .card {
-    width: 80px;
+    width: 120px;
   }
+  /* .relationCharacters .card-container .card {
+    width: 120px;
+  } */
   .filter-section h4 {
     font-size: 1em;
   }
@@ -2354,7 +2562,7 @@ body.theme-modern .btn-cancel:hover {
   gap: 8px;
 }
 
-.tag-edit-btn, .tag-delete-btn {
+.tag-edit-btn, .tag-delete-btn, .tag-sort-btn {
   padding: 6px 8px;
   border: none;
   border-radius: 4px;
@@ -2370,6 +2578,20 @@ body.theme-modern .btn-cancel:hover {
 
 .tag-edit-btn:hover {
   background: #0056b3;
+}
+
+.tag-sort-btn {
+  background: #28a745;
+  color: white;
+  padding: 6px 6px;
+}
+
+.tag-sort-btn:hover {
+  background: #218838;
+}
+
+.tag-sort-btn svg {
+  display: block;
 }
 
 .tag-delete-btn {
@@ -3052,6 +3274,13 @@ body.theme-modern .character-title-row h2.weapon-title {
     height: 150px;
   }
 
+  /* 関連キャラクターの画像はモバイル版と同じ設定を使用 */
+  #relatedCharacters .card .imgframe img {
+    width: var(--imgsize-mobile, 100%);
+    height: var(--imgsize-mobile, 100%);
+    object-position: var(--image-zoom-position-mobile, center);
+  }
+
   .character-detail-content {
     display: grid;
     grid-template-columns: 500px 1fr;
@@ -3152,10 +3381,29 @@ body.theme-modern .character-title-row h2.weapon-title {
     display: none;
   }
 
-  /* 関係関連キャラクターも非表示 */
+  /* 関係関連キャラクターはPC版でも表示 */
   #relationCharacters {
-    display: none;
+    display: block;
   }
+
+  #relationCharacters .card {
+    width: 150px;
+  }
+
+  #relationCharacters .card .imgframe {
+    width: 150px;
+    height: 150px;
+  }
+
+  /* 関係関連の画像もモバイル版と同じ設定を使用 */
+  #relationCharacters .card .imgframe img {
+    width: var(--imgsize-mobile, 100%);
+    height: var(--imgsize-mobile, 100%);
+    object-position: var(--image-zoom-position-mobile, center);
+  }
+
+
+
 
   /* ダークテーマのスクロールバー */
   body.theme-dark .detail-right-bottom::-webkit-scrollbar-track {
@@ -3348,6 +3596,59 @@ body.theme-modern .context-menu-separator {
   cursor: not-allowed;
 }
 
+/* サブモード切り替えボタン */
+.edit-submode-btn {
+  padding: 8px 16px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-submode-btn:hover {
+  background: #f5f5f5;
+  border-color: #ff6b35;
+}
+
+.edit-submode-btn.active {
+  background: #ff6b35;
+  color: white;
+  border-color: #ff6b35;
+}
+
+.edit-submode-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 並び替えモード用のボタン */
+.edit-btn-apply {
+  background: #2ecc71;
+  color: white;
+}
+
+.edit-btn-apply:hover {
+  background: #27ae60;
+  transform: translateY(-1px);
+}
+
+.edit-btn-cancel {
+  background: #e74c3c;
+  color: white;
+}
+
+.edit-btn-cancel:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
 /* 編集モード時のカード選択状態 */
 .card.edit-mode {
   position: relative;
@@ -3458,6 +3759,23 @@ body.theme-dark .edit-info {
   color: #f39c12;
 }
 
+body.theme-dark .edit-submode-btn {
+  background: #34495e;
+  color: #ecf0f1;
+  border-color: #546e7a;
+}
+
+body.theme-dark .edit-submode-btn:hover {
+  background: #3d566e;
+  border-color: #f39c12;
+}
+
+body.theme-dark .edit-submode-btn.active {
+  background: #f39c12;
+  color: white;
+  border-color: #f39c12;
+}
+
 body.theme-dark .bulk-tag-section h4 {
   color: #e9eaf6;
 }
@@ -3485,6 +3803,23 @@ body.theme-modern .edit-info {
   color: #ff8a65;
 }
 
+body.theme-modern .edit-submode-btn {
+  background: rgba(255, 138, 101, 0.1);
+  color: #ff8a65;
+  border-color: #ffab40;
+}
+
+body.theme-modern .edit-submode-btn:hover {
+  background: rgba(255, 138, 101, 0.2);
+  border-color: #ff7043;
+}
+
+body.theme-modern .edit-submode-btn.active {
+  background: #ff8a65;
+  color: white;
+  border-color: #ff8a65;
+}
+
 body.theme-modern .bulk-tag-section h4 {
   color: #156acc;
 }
@@ -3495,6 +3830,19 @@ body.theme-modern .bulk-tag-section h4 {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
+  }
+  
+  .edit-info {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .edit-submode-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 100px;
   }
   
   .edit-actions {

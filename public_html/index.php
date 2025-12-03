@@ -9,8 +9,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Minntelia chのサイトです。ここでは主にチャンネルの紹介や、キャラクターの紹介、各サイトへのリンクを置いてます。">
   <meta property="og:title" content="みんてりあの部屋">
-  <meta property="og:url" content="https://youtube.minntelia.com/index.html">
-  <link rel="canonical" href="https://youtube.minntelia.com/index.html" />
+  <meta property="og:url" content="https://youtube.minntelia.com">
+  <link rel="canonical" href="https://youtube.minntelia.com" />
   <meta property="og:image" content="https://youtube.minntelia.com/image/icon.ico">
   <meta property="og:description" content="Minntelia chのサイトです。ここでは主にチャンネルの紹介や、キャラクターの紹介、各サイトへのリンクを置いてます。">
   <meta property="og:type" content="website">

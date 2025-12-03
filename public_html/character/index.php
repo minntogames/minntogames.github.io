@@ -73,7 +73,7 @@ if ($characterId) {
         if (isset($characterData['img']) && !empty($characterData['img'])) {
             $imageArray = is_array($characterData['img']) ? $characterData['img'] : [$characterData['img']];
             $targetImage = isset($imageArray[$imgIndex]) ? $imageArray[$imgIndex] : $imageArray[0];
-            $ogImage = 'https://minntogames.github.io/character/img/' . htmlspecialchars($targetImage);
+            $ogImage = 'https://youtube.minntelia.com/character/img/' . htmlspecialchars($targetImage);
         }
     }
 }
@@ -123,6 +123,15 @@ if ($characterId) {
       </button>
       <!-- ▼バツボタンと被らないように下に余白を追加 -->
       <div style="height:38px;"></div>
+
+      <button onclick="showUsageGuide();" class="hamburger-lang-btn" id="usageGuideBtn" title="サイトの使い方">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
+        </svg>
+        使い方
+      </button>
       
       <!-- ▼編集モードボタン -->
       <button onclick="toggleEditMode()" class="hamburger-edit-btn" id="editModeBtn" title="編集モード切り替え">
@@ -196,6 +205,15 @@ if ($characterId) {
         強調表示: <span id="highlightStatus">有効</span>
       </button>
       
+      <button onclick="toggleSortOrder()" class="hamburger-lang-btn" id="sortOrderToggleBtn" title="キャラクターの並び順切り替え">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18"/>
+          <path d="M7 12h14"/>
+          <path d="M10 18h11"/>
+        </svg>
+        並び順: <span id="sortOrderStatus">ID順</span>
+      </button>
+      
       <!-- ▼データ管理セクション -->
       <div style="margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: #666; font-weight: bold;">データ管理</div>
       <button onclick="showDataManagerFromMenu()" class="hamburger-lang-btn" id="dataManagerBtn" title="データのエクスポート・インポート">
@@ -222,15 +240,6 @@ if ($characterId) {
         </svg>
         カスタムタグ
       </button>
-      
-      <button onclick="console.log('使い方ガイドボタンがクリックされました'); showUsageGuide();" class="hamburger-lang-btn" id="usageGuideBtn" title="サイトの使い方">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 16v-4"/>
-          <path d="M12 8h.01"/>
-        </svg>
-        使い方
-      </button>
 
       <div style="margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: #666; font-weight: bold;">その他</div>
       <button onclick="window.location.href='cards.html'" class="hamburger-lang-btn" id="cardsViewBtn" title="ピクセルアートスタイル表示">
@@ -251,9 +260,25 @@ if ($characterId) {
   <div id="editToolbar" class="edit-toolbar" style="display: none;">
     <div class="edit-toolbar-content">
       <div class="edit-info">
-        <span id="selectedCount">0</span>件選択中
+        <button onclick="switchEditSubMode('select')" class="edit-submode-btn" id="editSubModeSelectBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          選択
+        </button>
+        <button onclick="switchEditSubMode('sort')" class="edit-submode-btn" id="editSubModeSortBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+          </svg>
+          並び替え
+        </button>
+        <span id="editModeInfo" style="margin-left: 12px;"><span id="selectedCount">0</span>件選択中</span>
       </div>
-      <div class="edit-actions">
+      <div class="edit-actions" id="selectModeActions">
         <button onclick="selectAllCharacters()" class="edit-btn edit-btn-select">全選択</button>
         <button onclick="clearSelection()" class="edit-btn edit-btn-clear">選択解除</button>
         <button onclick="showBulkTagEditor()" class="edit-btn edit-btn-tag" id="bulkTagBtn" disabled>
@@ -263,6 +288,21 @@ if ($characterId) {
             <circle cx="15.5" cy="6.5" r="1.5"/>
           </svg>
           一括タグ追加
+        </button>
+      </div>
+      <div class="edit-actions" id="sortModeActions" style="display: none;">
+        <button onclick="applyCustomSort()" class="edit-btn edit-btn-apply" id="sortApplyBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          並び順を保存
+        </button>
+        <button onclick="cancelEditModeSort()" class="edit-btn edit-btn-cancel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          キャンセル
         </button>
       </div>
     </div>
@@ -288,10 +328,35 @@ if ($characterId) {
       <div id="nameSuggestions" class="name-suggestions"></div>
     </div>
     <button onclick="filterCharacters()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">検索</div></button>
-    <button id="filterButton" onclick="toggleFilterPopup()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item">フィルター</div></button>
+    <button id="filterButton" onclick="toggleFilterPopup()" class="buttonOutlineGradient filter-button-with-info">
+      <div class="buttonOutlineGradient_item">フィルター</div>
+      <!-- フィルター情報アイコン -->
+      <button id="filterInfoBtn" class="filter-info-btn-inline" style="display: none;" onclick="event.stopPropagation(); toggleFilterInfo()" aria-label="フィルター情報" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </button>
+    </button>
     <!-- ▼言語切り替えボタン削除
     <button onclick="toggleLanguage()" class="buttonOutlineGradient"><div class="buttonOutlineGradient_item" id="langToggleBtn">言語切替 (現在: 日本語)</div></button>
     -->
+  </div>
+
+  <!-- フィルター情報ミニポップアップ -->
+  <div id="filterInfoPopup" class="filter-info-popup" style="display: none;">
+    <div class="filter-info-content">
+      <h4>適用中のフィルター</h4>
+      <div id="filterInfoList"></div>
+      <button onclick="clearFiltersFromPopup()" class="filter-clear-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        フィルターをクリア
+      </button>
+    </div>
   </div>
 
   <div id="filterPopup" class="popup">

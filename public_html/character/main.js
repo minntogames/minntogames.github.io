@@ -83,6 +83,17 @@ let weaponIconDisplayMode = 'filterOnly';
 let weaponSearchEnabled = true;  // 武器名での検索を有効にするか
 let customTagSearchEnabled = true;  // カスタムタグでの検索を有効にするか
 let highlightEnabled = true;  // 予測変換の強調表示を有効にするか
+let currentSortOrder = 'id'; // 'id', 'name', 'random', 'custom' のいずれか
+let tagSortOrders = {}; // カスタムタグごとの並び順設定 {tagId: 'id' | 'name' | 'random' | 'custom'}
+let customCharacterOrder = []; // カスタム並び順 [charId1, charId2, ...]
+let tagCustomOrders = {}; // カスタムタグごとのカスタム並び順 {tagId: [charId1, charId2, ...]}
+let isCustomSortModeActive = false; // カスタム並び替えモードが有効かどうか
+let tempSortOrder = []; // 並び替え編集中の一時的な順序
+let editSubMode = 'select'; // 編集モードのサブモード: 'select' | 'sort'
+
+// フィルター情報ポップアップの状態
+let filterInfoPopupVisible = false;
+let filterInfoHoverTimer = null;
 
 // ===============================================
 // IndexedDB管理クラス
@@ -1541,15 +1552,53 @@ function filterCharacters() {
     else if (filterMatch && matchType === 'partial') partialMatches.push(c);
   });
 
-  // 重複除去（完全一致が優先)
+  // 重複除去(完全一致が優先)
   partialMatches = partialMatches.filter(c => !exactMatches.includes(c));
-  const filtered = [...exactMatches, ...partialMatches];
+  let filtered = [...exactMatches, ...partialMatches];
+
+  // 並び替えモード中の場合、現在のDOM順序を復元
+  if (isCustomSortModeActive && tempSortOrder.length > 0) {
+    // tempSortOrderに基づいて並び替え
+    const orderMap = new Map(tempSortOrder.map((id, index) => [id, index]));
+    filtered.sort((a, b) => {
+      const indexA = orderMap.has(a.id) ? orderMap.get(a.id) : Infinity;
+      const indexB = orderMap.has(b.id) ? orderMap.get(b.id) : Infinity;
+      return indexA - indexB;
+    });
+  } else {
+    // 並び替えを適用
+    // カスタムタグフィルターが1つだけ有効な場合は、そのタグ専用の並び順を使用
+    let sortOrder = currentSortOrder;
+    if (activeFilters.customTags.length === 1) {
+      const tagId = activeFilters.customTags[0];
+      sortOrder = tagSortOrders[tagId] || currentSortOrder;
+    }
+    filtered = applySortOrder(filtered, sortOrder);
+  }
 
   if (filtered.length > 0) {
     characterListContainer.innerHTML = filtered.map(renderCharacter).join("");
     noCharactersMessage.style.display = 'none';
     // 動的に生成された画像要素にイベントリスナーを設定
     setupDynamicImageEventListeners();
+    
+    // 編集モードのUIを復元
+    if (isEditMode) {
+      if (editSubMode === 'select') {
+        // 選択モード: カードにedit-modeクラスを追加
+        const allCards = document.querySelectorAll('.card');
+        allCards.forEach(card => {
+          card.classList.add('edit-mode');
+          const charId = parseInt(card.dataset.charId);
+          if (selectedCharacters.has(charId)) {
+            card.classList.add('selected');
+          }
+        });
+      } else if (editSubMode === 'sort' && isCustomSortModeActive) {
+        // 並び替えモード: ドラッグ機能を再適用
+        reapplyCustomSortMode();
+      }
+    }
   } else {
     characterListContainer.innerHTML = '';
     noCharactersMessage.style.display = 'block';
@@ -1678,33 +1727,36 @@ function toggleFilterOption(type, value, element) {
   
   // お気に入りフィルターの特別処理
   if (type === 'favorites') {
+    favoritesOnly = !favoritesOnly;
     const index = activeFilters.favorites.indexOf('favorites');
-    if (index === -1) {
-      activeFilters.favorites.push('favorites');
+    if (favoritesOnly) {
+      if (index === -1) activeFilters.favorites.push('favorites');
     } else {
-      activeFilters.favorites.splice(index, 1);
+      if (index !== -1) activeFilters.favorites.splice(index, 1);
     }
     return;
   }
   
   // メモ済みフィルターの特別処理
   if (type === 'memo') {
+    memoOnly = !memoOnly;
     const index = activeFilters.memo.indexOf('memo');
-    if (index === -1) {
-      activeFilters.memo.push('memo');
+    if (memoOnly) {
+      if (index === -1) activeFilters.memo.push('memo');
     } else {
-      activeFilters.memo.splice(index, 1);
+      if (index !== -1) activeFilters.memo.splice(index, 1);
     }
     return;
   }
   
   // ユニーク武器フィルターの特別処理
   if (type === 'uniqueWeapon') {
+    uniqueWeaponOnly = !uniqueWeaponOnly;
     const index = activeFilters.uniqueWeapon.indexOf('uniqueWeapon');
-    if (index === -1) {
-      activeFilters.uniqueWeapon.push('uniqueWeapon');
+    if (uniqueWeaponOnly) {
+      if (index === -1) activeFilters.uniqueWeapon.push('uniqueWeapon');
     } else {
-      activeFilters.uniqueWeapon.splice(index, 1);
+      if (index !== -1) activeFilters.uniqueWeapon.splice(index, 1);
     }
     return;
   }
@@ -1744,6 +1796,7 @@ function toggleFilterPopup() {
 function applyFilters() {
   filterCharacters();
   toggleFilterPopup();
+  updateFilterInfoButtonVisibility(); // フィルター情報アイコンの表示を更新
 }
 
 /**
@@ -1787,6 +1840,56 @@ function clearFilters() {
   
   filterCharacters();
   toggleFilterPopup();
+  updateFilterInfoButtonVisibility(); // フィルター情報アイコンの表示を更新
+}
+
+/**
+ * ポップアップからフィルターをクリアする
+ */
+function clearFiltersFromPopup() {
+  // フィルター状態をクリア
+  activeFilters = {
+    race: [],
+    fightingStyle: [],
+    attribute: [],
+    group: [],
+    world: [],
+    favorites: [],
+    memo: [],
+    customTags: [],
+    uniqueWeapon: []
+  };
+  
+  // お気に入りフィルターもクリア
+  favoritesOnly = false;
+  
+  // メモ済みフィルターもクリア
+  memoOnly = false;
+  
+  // ユニーク武器フィルターもクリア
+  uniqueWeaponOnly = false;
+  
+  // 選択状態をクリア
+  document.querySelectorAll('.filter-option').forEach(option => {
+    option.classList.remove('selected');
+  });
+  
+  // カスタムタグフィルターの折りたたみ状態もリセット
+  const customTagsContainer = document.getElementById('customTagsFilters');
+  const customTagsToggle = document.getElementById('customTagsToggle');
+  if (customTagsContainer && customTagsToggle) {
+    customTagsContainer.style.display = 'none';
+    customTagsToggle.textContent = '▼';
+  }
+  
+  // ポップアップを閉じる
+  hideFilterInfo();
+  
+  // キャラクターリストを更新
+  filterCharacters();
+  
+  // フィルター情報アイコンの表示を更新
+  updateFilterInfoButtonVisibility();
 }
 
 /**
@@ -2406,13 +2509,28 @@ function renderRelationCharacters(currentId) {
   // 各グループ内にcurrentIdが含まれていれば、そのグループの他のキャラを表示
   const relationContainerId = 'relationCharacters';
   let relationContainer = document.getElementById(relationContainerId);
+  
   if (!relationContainer) {
-    // 詳細ポップアップのpopup-content内のcharacterDetailsの直後に挿入
+    // PC版では.detail-right-bottom内に、モバイル版ではcharacterDetailsの直後に挿入
+    const isPC = window.innerWidth >= 1024;
     const details = document.getElementById('characterDetails');
     relationContainer = document.createElement('div');
     relationContainer.id = relationContainerId;
     relationContainer.style.marginTop = '30px';
-    details.parentNode.insertBefore(relationContainer, details.nextSibling);
+    
+    if (isPC) {
+      // PC版: .detail-right-bottom内の最後に追加
+      const rightBottom = details.querySelector('.detail-right-bottom');
+      if (rightBottom) {
+        rightBottom.appendChild(relationContainer);
+      } else {
+        // フォールバック: characterDetailsの直後に挿入
+        details.parentNode.insertBefore(relationContainer, details.nextSibling);
+      }
+    } else {
+      // モバイル版: characterDetailsの直後に挿入
+      details.parentNode.insertBefore(relationContainer, details.nextSibling);
+    }
   }
   relationContainer.innerHTML = ''; // クリア
 
@@ -3447,6 +3565,15 @@ function renderCustomTagsList() {
     tagElement.dataset.tagId = tagId;
     tagElement.dataset.index = index;
     
+    // このタグの並び順設定を取得
+    const tagSortOrder = tagSortOrders[tagId] || 'id';
+    const sortLabels = {
+      'id': 'ID順',
+      'name': '名前順', 
+      'random': 'ランダム',
+      'custom': 'カスタム'
+    };
+    
     tagElement.innerHTML = `
       <div class="drag-handle">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3459,9 +3586,19 @@ function renderCustomTagsList() {
         <div class="tag-color-indicator" style="background-color: ${tagData.color}"></div>
         <div class="tag-name">${escapeHtml(tagData.name)}</div>
         <div class="tag-count">${usageCount}キャラ</div>
+        <div class="tag-sort-info" style="font-size: 12px; color: #666; margin-top: 4px;">
+          並び: ${sortLabels[tagSortOrder]}
+        </div>
       </div>
       <div class="tag-actions">
         <button class="tag-edit-btn" onclick="editCustomTag('${tagId}')">編集</button>
+        <button class="tag-sort-btn" onclick="cycleTagSortOrder('${tagId}')" title="並び順を変更">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18"/>
+            <path d="M7 12h14"/>
+            <path d="M10 18h11"/>
+          </svg>
+        </button>
         <button class="tag-delete-btn" onclick="deleteCustomTag('${tagId}')">削除</button>
       </div>
     `;
@@ -3909,6 +4046,310 @@ async function deleteCustomTag(tagId) {
     console.error('カスタムタグ削除エラー:', error);
     alert('タグの削除に失敗しました。');
   }
+}
+
+/**
+ * タグの並び順を切り替える
+ * @param {string} tagId - タグID
+ */
+async function cycleTagSortOrder(tagId) {
+  const orders = ['id', 'name', 'random', 'custom'];
+  const currentOrder = tagSortOrders[tagId] || 'id';
+  const currentIndex = orders.indexOf(currentOrder);
+  const newOrder = orders[(currentIndex + 1) % orders.length];
+  
+  tagSortOrders[tagId] = newOrder;
+  
+  // localStorageに保存
+  localStorage.setItem('tagSortOrders', JSON.stringify(tagSortOrders));
+  
+  // UI更新
+  renderCustomTagsList();
+  
+  // そのタグでフィルター中なら再描画
+  if (activeFilters.customTags.includes(tagId)) {
+    filterCharacters();
+  }
+}
+
+/**
+ * カスタム並び順を設定するモードを開始（後方互換性のため残す）
+ */
+function startCustomSortMode() {
+  // 編集モードを有効化
+  if (!isEditMode) {
+    isEditMode = true;
+    const editModeBtn = document.getElementById('editModeBtn');
+    const editModeStatus = document.getElementById('editModeStatus');
+    if (editModeBtn) editModeBtn.classList.add('active');
+    if (editModeStatus) editModeStatus.textContent = 'オン';
+  }
+  
+  // 並び替えサブモードに切り替え
+  switchEditSubMode('sort');
+}
+
+/**
+ * カードにドラッグ機能を追加
+ */
+function enableCardDragging() {
+  const characterListContainer = document.getElementById('characterList');
+  if (!characterListContainer) return;
+  
+  const cards = Array.from(characterListContainer.querySelectorAll('.card'));
+  
+  // カードにドラッグ可能属性を追加
+  cards.forEach((card, index) => {
+    card.draggable = true;
+    card.dataset.index = index;
+    card.classList.add('sortable-card');
+    
+    // ドラッグイベントを追加
+    card.addEventListener('dragstart', handleCardDragStart);
+    card.addEventListener('dragend', handleCardDragEnd);
+  });
+  
+  // コンテナにdragoverとdropイベントを追加
+  characterListContainer.addEventListener('dragover', handleContainerDragOver);
+  characterListContainer.addEventListener('drop', handleContainerDrop);
+  
+  // 初期状態を保存
+  saveTempSortOrder();
+}
+
+/**
+ * 並び替えモードを再適用（filterCharacters後）
+ */
+function reapplyCustomSortMode() {
+  if (!isCustomSortModeActive) return;
+  
+  // カードにドラッグ機能を再追加
+  enableCardDragging();
+}
+
+/**
+ * 現在のカード順序を一時保存
+ */
+function saveTempSortOrder() {
+  const characterListContainer = document.getElementById('characterList');
+  if (!characterListContainer) return;
+  
+  const cards = Array.from(characterListContainer.querySelectorAll('.card'));
+  tempSortOrder = cards.map(card => parseInt(card.dataset.charId));
+}
+
+// カード並び替え用のドラッグ状態
+let cardDragState = {
+  draggedCard: null,
+  draggedIndex: -1
+};
+
+function handleCardDragStart(e) {
+  cardDragState.draggedCard = e.currentTarget;
+  cardDragState.draggedIndex = parseInt(e.currentTarget.dataset.index);
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+}
+
+function handleContainerDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  
+  const draggingCard = cardDragState.draggedCard;
+  if (!draggingCard) return;
+  
+  const container = e.currentTarget;
+  const afterElement = getDragAfterElement(container, e.clientX, e.clientY);
+  
+  if (afterElement == null) {
+    container.appendChild(draggingCard);
+  } else {
+    container.insertBefore(draggingCard, afterElement);
+  }
+}
+
+function handleContainerDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function handleCardDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  
+  // インデックスを更新
+  const characterListContainer = document.getElementById('characterList');
+  const cards = Array.from(characterListContainer.querySelectorAll('.card'));
+  cards.forEach((card, index) => {
+    card.dataset.index = index;
+  });
+  
+  // 変更後の順序を保存
+  saveTempSortOrder();
+  
+  cardDragState.draggedCard = null;
+  cardDragState.draggedIndex = -1;
+}
+
+function getDragAfterElement(container, x, y) {
+  const draggableElements = [...container.querySelectorAll('.card:not(.dragging)')];
+  
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    
+    // カードの中心点を計算
+    const centerX = box.left + box.width / 2;
+    const centerY = box.top + box.height / 2;
+    
+    // マウス位置との距離を計算
+    const offsetX = x - centerX;
+    const offsetY = y - centerY;
+    
+    // カードレイアウトがグリッド形式なので、Y座標を優先し、同じ行ならX座標で判定
+    let offset;
+    if (Math.abs(offsetY) > box.height / 2) {
+      // 異なる行
+      offset = offsetY;
+    } else {
+      // 同じ行
+      offset = offsetX;
+    }
+    
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+/**
+ * カスタム並び順適用ボタンを表示
+ */
+function showCustomSortApplyButton() {
+  const toolbar = document.getElementById('editToolbar');
+  if (!toolbar) return;
+  
+  // 既存のボタンを非表示
+  const existingButtons = toolbar.querySelectorAll('.edit-btn');
+  existingButtons.forEach(btn => btn.style.display = 'none');
+  
+  // 適用ボタンを作成
+  let applyBtn = document.getElementById('customSortApplyBtn');
+  if (!applyBtn) {
+    applyBtn = document.createElement('button');
+    applyBtn.id = 'customSortApplyBtn';
+    applyBtn.className = 'edit-btn edit-btn-tag';
+    applyBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 7L9 19l-5.5-5.5 1.414-1.414L9 16.172 19.586 5.586z"/>
+      </svg>
+      この並び順を保存
+    `;
+    applyBtn.onclick = applyCustomSort;
+    toolbar.querySelector('.edit-actions').appendChild(applyBtn);
+  }
+  applyBtn.style.display = 'inline-flex';
+  
+  // キャンセルボタンを作成
+  let cancelBtn = document.getElementById('customSortCancelBtn');
+  if (!cancelBtn) {
+    cancelBtn = document.createElement('button');
+    cancelBtn.id = 'customSortCancelBtn';
+    cancelBtn.className = 'edit-btn edit-btn-clear';
+    cancelBtn.textContent = 'キャンセル';
+    cancelBtn.onclick = cancelCustomSort;
+    toolbar.querySelector('.edit-actions').appendChild(cancelBtn);
+  }
+  cancelBtn.style.display = 'inline-block';
+}
+
+/**
+ * カスタム並び順を適用
+ */
+function applyCustomSort() {
+  const characterListContainer = document.getElementById('characterList');
+  const cards = Array.from(characterListContainer.querySelectorAll('.card'));
+  
+  // 現在の並び順からキャラクターIDを取得
+  const newOrder = cards.map(card => parseInt(card.dataset.charId));
+  
+  // カスタムタグフィルターが1つだけ有効な場合は、そのタグ用に保存
+  if (activeFilters.customTags.length === 1) {
+    const tagId = activeFilters.customTags[0];
+    tagCustomOrders[tagId] = newOrder;
+    localStorage.setItem('tagCustomOrders', JSON.stringify(tagCustomOrders));
+    
+    // そのタグの並び順を'custom'に設定
+    tagSortOrders[tagId] = 'custom';
+    localStorage.setItem('tagSortOrders', JSON.stringify(tagSortOrders));
+  } else {
+    // グローバルなカスタム並び順として保存
+    customCharacterOrder = newOrder;
+    localStorage.setItem('customCharacterOrder', JSON.stringify(customCharacterOrder));
+    
+    // 並び順を'custom'に切り替え
+    currentSortOrder = 'custom';
+    localStorage.setItem('sortOrder', currentSortOrder);
+    updateSortOrderStatusText();
+  }
+  
+  // 並び替えモードを終了
+  cancelCustomSort();
+  
+  // 再描画
+  filterCharacters();
+  
+  alert('並び順を保存しました！');
+}
+
+/**
+ * カスタム並び順設定をキャンセル
+ */
+function cancelCustomSort() {
+  // 編集モード内なら選択モードに戻る
+  if (isEditMode) {
+    cancelEditModeSort();
+    return;
+  }
+  
+  // 並び替えモードを無効化
+  isCustomSortModeActive = false;
+  
+  // 一時保存した順序をクリア
+  tempSortOrder = [];
+  
+  const characterListContainer = document.getElementById('characterList');
+  
+  // コンテナのイベントリスナーを削除
+  if (characterListContainer) {
+    characterListContainer.removeEventListener('dragover', handleContainerDragOver);
+    characterListContainer.removeEventListener('drop', handleContainerDrop);
+  }
+  
+  // カードのドラッグイベントを削除
+  const cards = document.querySelectorAll('.card.sortable-card');
+  cards.forEach(card => {
+    card.draggable = false;
+    card.classList.remove('sortable-card', 'dragging');
+    card.removeEventListener('dragstart', handleCardDragStart);
+    card.removeEventListener('dragend', handleCardDragEnd);
+  });
+  
+  // ツールバーを非表示
+  const toolbar = document.getElementById('editToolbar');
+  if (toolbar) {
+    toolbar.style.display = 'none';
+  }
+  
+  // ボタンを削除
+  const applyBtn = document.getElementById('customSortApplyBtn');
+  const cancelBtn = document.getElementById('customSortCancelBtn');
+  if (applyBtn) applyBtn.remove();
+  if (cancelBtn) cancelBtn.remove();
+  
+  // 元の表示に戻す
+  filterCharacters();
 }
 
 /**
@@ -4933,9 +5374,49 @@ document.addEventListener('DOMContentLoaded', function() {
     highlightEnabled = savedHighlight === 'true';
   }
   
+  // 並び順設定を復元
+  const savedSortOrder = localStorage.getItem('sortOrder');
+  if (savedSortOrder && ['id', 'name', 'random', 'custom'].includes(savedSortOrder)) {
+    currentSortOrder = savedSortOrder;
+  }
+  
+  // カスタムタグごとの並び順設定を復元
+  const savedTagSortOrders = localStorage.getItem('tagSortOrders');
+  if (savedTagSortOrders) {
+    try {
+      tagSortOrders = JSON.parse(savedTagSortOrders);
+    } catch (e) {
+      console.error('タグ並び順設定の読み込みエラー:', e);
+      tagSortOrders = {};
+    }
+  }
+  
+  // カスタム並び順を復元
+  const savedCustomOrder = localStorage.getItem('customCharacterOrder');
+  if (savedCustomOrder) {
+    try {
+      customCharacterOrder = JSON.parse(savedCustomOrder);
+    } catch (e) {
+      console.error('カスタム並び順の読み込みエラー:', e);
+      customCharacterOrder = [];
+    }
+  }
+  
+  // タグごとのカスタム並び順を復元
+  const savedTagCustomOrders = localStorage.getItem('tagCustomOrders');
+  if (savedTagCustomOrders) {
+    try {
+      tagCustomOrders = JSON.parse(savedTagCustomOrders);
+    } catch (e) {
+      console.error('タグカスタム並び順の読み込みエラー:', e);
+      tagCustomOrders = {};
+    }
+  }
+  
   updateWeaponSearchStatusText();
   updateCustomTagSearchStatusText();
   updateHighlightStatusText();
+  updateSortOrderStatusText();
 });
 
 // グローバル関数として公開
@@ -4999,6 +5480,103 @@ function updateHighlightStatusText() {
 }
 
 /**
+ * 並び順を切り替える
+ */
+function toggleSortOrder() {
+  const orders = ['id', 'name', 'random', 'custom'];
+  const currentIndex = orders.indexOf(currentSortOrder);
+  currentSortOrder = orders[(currentIndex + 1) % orders.length];
+  localStorage.setItem('sortOrder', currentSortOrder);
+  updateSortOrderStatusText();
+  filterCharacters(); // 並び順変更後に再描画
+}
+
+/**
+ * 並び順のステータステキストを更新
+ */
+function updateSortOrderStatusText() {
+  const statusElement = document.getElementById('sortOrderStatus');
+  if (statusElement) {
+    const labels = {
+      'id': 'ID順',
+      'name': '名前順',
+      'random': 'ランダム',
+      'custom': 'カスタム'
+    };
+    statusElement.textContent = labels[currentSortOrder] || 'ID順';
+  }
+}
+
+/**
+ * キャラクター配列に並び順を適用
+ * @param {Array} characters - キャラクター配列
+ * @param {string} sortOrder - 'id', 'name', 'random'
+ * @returns {Array} 並び替えられたキャラクター配列
+ */
+function applySortOrder(chars, sortOrder) {
+  const sorted = [...chars]; // コピーを作成
+  
+  switch(sortOrder) {
+    case 'name':
+      sorted.sort((a, b) => {
+        const nameA = Array.isArray(a.name) ? a.name[0] : a.name;
+        const nameB = Array.isArray(b.name) ? b.name[0] : b.name;
+        return nameA.localeCompare(nameB, 'ja');
+      });
+      break;
+    case 'random':
+      // Fisher-Yatesシャッフル
+      for (let i = sorted.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
+      }
+      break;
+    case 'custom':
+      // カスタム並び順を適用
+      const orderArray = getCurrentCustomOrder();
+      if (orderArray && orderArray.length > 0) {
+        // orderArrayに含まれるキャラクターを順序通りに配置
+        const orderedChars = [];
+        const charMap = new Map(sorted.map(c => [c.id, c]));
+        
+        orderArray.forEach(charId => {
+          if (charMap.has(charId)) {
+            orderedChars.push(charMap.get(charId));
+            charMap.delete(charId);
+          }
+        });
+        
+        // orderArrayに含まれないキャラクターを後ろに追加
+        const remainingChars = Array.from(charMap.values()).sort((a, b) => a.id - b.id);
+        return [...orderedChars, ...remainingChars];
+      } else {
+        // カスタム順が未設定の場合はID順
+        sorted.sort((a, b) => a.id - b.id);
+      }
+      break;
+    case 'id':
+    default:
+      sorted.sort((a, b) => a.id - b.id);
+      break;
+  }
+  
+  return sorted;
+}
+
+/**
+ * 現在のコンテキストに応じたカスタム並び順を取得
+ */
+function getCurrentCustomOrder() {
+  // カスタムタグフィルターが1つだけ有効な場合は、そのタグのカスタム順
+  if (activeFilters.customTags.length === 1) {
+    const tagId = activeFilters.customTags[0];
+    return tagCustomOrders[tagId] || customCharacterOrder;
+  }
+  // それ以外はグローバルなカスタム順
+  return customCharacterOrder;
+}
+
+/**
  * 使い方ガイドを表示
  */
 function showUsageGuide() {
@@ -5031,6 +5609,8 @@ function closeUsageGuide() {
 window.toggleWeaponSearch = toggleWeaponSearch;
 window.toggleCustomTagSearch = toggleCustomTagSearch;
 window.toggleHighlightMode = toggleHighlightMode;
+window.toggleSortOrder = toggleSortOrder;
+window.startCustomSortMode = startCustomSortMode;
 window.showUsageGuide = showUsageGuide;
 window.closeUsageGuide = closeUsageGuide;
 
@@ -5053,39 +5633,174 @@ function toggleEditMode() {
     editToolbar.style.display = 'block';
     selectedCharacters.clear();
     updateSelectedCount();
+    // デフォルトは選択モード
+    editSubMode = 'select';
+    updateEditSubModeUI();
+    
+    // カードにedit-modeクラスを追加
+    setTimeout(() => {
+      const allCards = document.querySelectorAll('.card');
+      allCards.forEach(card => {
+        card.classList.add('edit-mode');
+      });
+    }, 0);
   } else {
     editModeBtn.classList.remove('active');
     editModeStatus.textContent = 'オフ';
     editToolbar.style.display = 'none';
     selectedCharacters.clear();
+    // 並び替えモードが有効なら終了
+    if (isCustomSortModeActive) {
+      endCustomSortMode();
+    }
+    
+    // カードから編集関連のクラスを削除
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(card => {
+      card.classList.remove('edit-mode', 'selected');
+    });
   }
   
   // カード表示を更新
   filterCharacters();
-  
-  // 既存カードのクラスを即座に更新（リレンダリング前の表示改善）
-  const allCards = document.querySelectorAll('.card[data-char-id]');
-  allCards.forEach(card => {
-    if (isEditMode) {
-      card.classList.add('edit-mode');
-      card.classList.remove('selected');
-    } else {
-      card.classList.remove('edit-mode', 'selected');
-    }
-  });
   
   // ハンバーガーメニューを閉じる
   toggleHamburgerMenu();
 }
 
 /**
+ * 編集サブモード切り替え
+ */
+function switchEditSubMode(mode) {
+  if (!isEditMode) return;
+  
+  const prevMode = editSubMode;
+  editSubMode = mode;
+  
+  if (mode === 'select') {
+    // 並び替えモードを終了
+    if (isCustomSortModeActive) {
+      endCustomSortMode();
+    }
+    selectedCharacters.clear();
+    updateSelectedCount();
+    
+    // カードの選択チェックボックスを表示
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(card => {
+      card.classList.add('edit-mode');
+      card.classList.remove('selected');
+    });
+  } else if (mode === 'sort') {
+    // 選択をクリア
+    selectedCharacters.clear();
+    
+    // カードから編集モードのクラスを削除（チェックボックスを非表示）
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(card => {
+      card.classList.remove('edit-mode', 'selected');
+    });
+    
+    // 並び替えモードを開始
+    startEditModeSortMode();
+  }
+  
+  updateEditSubModeUI();
+}
+
+/**
+ * 編集サブモードUIを更新
+ */
+function updateEditSubModeUI() {
+  const selectBtn = document.getElementById('editSubModeSelectBtn');
+  const sortBtn = document.getElementById('editSubModeSortBtn');
+  const selectActions = document.getElementById('selectModeActions');
+  const sortActions = document.getElementById('sortModeActions');
+  const editModeInfo = document.getElementById('editModeInfo');
+  
+  if (!selectBtn || !sortBtn || !selectActions || !sortActions || !editModeInfo) {
+    console.warn('編集モードUI要素が見つかりません');
+    return;
+  }
+  
+  if (editSubMode === 'select') {
+    selectBtn.classList.add('active');
+    sortBtn.classList.remove('active');
+    selectActions.style.display = 'flex';
+    sortActions.style.display = 'none';
+    editModeInfo.style.display = 'inline';
+  } else if (editSubMode === 'sort') {
+    selectBtn.classList.remove('active');
+    sortBtn.classList.add('active');
+    selectActions.style.display = 'none';
+    sortActions.style.display = 'flex';
+    editModeInfo.style.display = 'none';
+  }
+}
+
+/**
+ * 編集モード内で並び替えモードを開始
+ */
+function startEditModeSortMode() {
+  const characterListContainer = document.getElementById('characterList');
+  const cards = Array.from(characterListContainer.querySelectorAll('.card'));
+  
+  if (cards.length === 0) {
+    alert('キャラクターが表示されていません。まず検索またはフィルターでキャラクターを表示してください。');
+    editSubMode = 'select';
+    updateEditSubModeUI();
+    return;
+  }
+  
+  isCustomSortModeActive = true;
+  enableCardDragging();
+}
+
+/**
+ * 編集モード内で並び替えをキャンセル
+ */
+function cancelEditModeSort() {
+  editSubMode = 'select';
+  endCustomSortMode();
+  updateEditSubModeUI();
+  filterCharacters();
+}
+
+/**
+ * 並び替えモードを終了（内部処理）
+ */
+function endCustomSortMode() {
+  isCustomSortModeActive = false;
+  tempSortOrder = [];
+  
+  const characterListContainer = document.getElementById('characterList');
+  
+  if (characterListContainer) {
+    characterListContainer.removeEventListener('dragover', handleContainerDragOver);
+    characterListContainer.removeEventListener('drop', handleContainerDrop);
+  }
+  
+  const cards = document.querySelectorAll('.card.sortable-card');
+  cards.forEach(card => {
+    card.draggable = false;
+    card.classList.remove('sortable-card', 'dragging');
+    card.removeEventListener('dragstart', handleCardDragStart);
+    card.removeEventListener('dragend', handleCardDragEnd);
+  });
+}
+
+/**
  * カードクリック処理（編集モード対応）
  */
 function handleCardClick(charId, event) {
-  if (isEditMode) {
+  if (isEditMode && editSubMode === 'select') {
     event.preventDefault();
     event.stopPropagation();
     toggleCharacterSelection(charId);
+  } else if (isEditMode && editSubMode === 'sort') {
+    // 並び替えモード中はクリック無効
+    event.preventDefault();
+    event.stopPropagation();
   } else {
     showCharacterDetails(charId);
   }
@@ -5428,3 +6143,367 @@ window.createNewTag = createNewTag;
 window.toggleTagSelection = toggleTagSelection;
 window.editCustomTag = editCustomTag;
 window.deleteCustomTag = deleteCustomTag;
+window.cycleTagSortOrder = cycleTagSortOrder;
+
+// ===============================================
+// フィルター情報表示機能
+// ===============================================
+
+/**
+ * フィルター情報ポップアップの表示/非表示を切り替え
+ */
+function toggleFilterInfo() {
+  const popup = document.getElementById('filterInfoPopup');
+  const btn = document.getElementById('filterInfoBtn');
+  if (!popup || !btn) return;
+  
+  if (filterInfoPopupVisible) {
+    hideFilterInfo();
+  } else {
+    showFilterInfo();
+  }
+}
+
+/**
+ * フィルター情報ポップアップを表示
+ */
+function showFilterInfo() {
+  const popup = document.getElementById('filterInfoPopup');
+  const btn = document.getElementById('filterInfoBtn');
+  if (!popup || !btn) return;
+  
+  // タイマーをクリア
+  if (filterInfoHoverTimer) {
+    clearTimeout(filterInfoHoverTimer);
+    filterInfoHoverTimer = null;
+  }
+  
+  // 既に表示されている場合は何もしない
+  if (filterInfoPopupVisible) return;
+  
+  // 表示する
+  updateFilterInfoContent();
+  
+  // ボタンの位置を取得
+  const btnRect = btn.getBoundingClientRect();
+  const popupWidth = 300; // 推定最大幅
+  const margin = 12;
+  
+  // 画面サイズに応じて位置を調整
+  let left, top;
+  
+  if (window.innerWidth > 900) {
+    // PC: ボタンの右側に表示
+    const rightSpace = window.innerWidth - (btnRect.right + margin + popupWidth);
+    if (rightSpace > 0) {
+      // 右側に十分なスペースがある
+      left = btnRect.right + margin;
+    } else {
+      // 右側にスペースがない場合は左側に表示
+      left = btnRect.left - popupWidth - margin;
+      if (left < 0) {
+        // 左側にもスペースがない場合は画面中央に
+        left = (window.innerWidth - popupWidth) / 2;
+      }
+    }
+    top = btnRect.top;
+  } else {
+    // モバイル: ボタンの下に表示
+    left = btnRect.left;
+    top = btnRect.bottom + 10;
+    
+    // 画面外に出る場合は調整
+    if (left + popupWidth > window.innerWidth) {
+      left = window.innerWidth - popupWidth - 10;
+    }
+    if (left < 10) {
+      left = 10;
+    }
+  }
+  
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+  popup.style.display = 'block';
+  
+  // フェードイン
+  setTimeout(() => {
+    popup.classList.add('visible');
+  }, 10);
+  
+  filterInfoPopupVisible = true;
+}
+
+/**
+ * フィルター情報ポップアップを非表示
+ */
+function hideFilterInfo() {
+  const popup = document.getElementById('filterInfoPopup');
+  if (!popup) return;
+  
+  popup.classList.remove('visible');
+  filterInfoPopupVisible = false;
+  setTimeout(() => {
+    popup.style.display = 'none';
+  }, 180);
+}
+
+/**
+ * フィルター情報ポップアップを遅延表示（ホバー用）
+ */
+function showFilterInfoDelayed() {
+  // タイマーをクリア
+  if (filterInfoHoverTimer) {
+    clearTimeout(filterInfoHoverTimer);
+  }
+  
+  // 300ms後に表示
+  filterInfoHoverTimer = setTimeout(() => {
+    showFilterInfo();
+  }, 300);
+}
+
+/**
+ * フィルター情報ポップアップを遅延非表示（ホバー用）
+ */
+function hideFilterInfoDelayed() {
+  // タイマーをクリア
+  if (filterInfoHoverTimer) {
+    clearTimeout(filterInfoHoverTimer);
+  }
+  
+  // 200ms後に非表示
+  filterInfoHoverTimer = setTimeout(() => {
+    hideFilterInfo();
+  }, 200);
+}
+
+/**
+ * フィルター情報の内容を更新
+ */
+function updateFilterInfoContent() {
+  const listElement = document.getElementById('filterInfoList');
+  if (!listElement) return;
+  
+  const filterItems = [];
+  
+  // 世界線フィルター
+  if (activeFilters.world && activeFilters.world.length > 0) {
+    const values = activeFilters.world.map(w => {
+      const displayName = getDisplayTerm('world', w, currentDisplayLanguage);
+      return `<span class="filter-info-tag">${displayName}</span>`;
+    }).join('');
+    filterItems.push(`
+      <div class="filter-info-item">
+        <span class="filter-info-label">世界線</span>
+        <div class="filter-info-values">${values}</div>
+      </div>
+    `);
+  }
+  
+  // 種族フィルター
+  if (activeFilters.race && activeFilters.race.length > 0) {
+    const values = activeFilters.race.map(r => {
+      const displayName = getDisplayTerm('race', r, currentDisplayLanguage);
+      return `<span class="filter-info-tag">${displayName}</span>`;
+    }).join('');
+    filterItems.push(`
+      <div class="filter-info-item">
+        <span class="filter-info-label">種族</span>
+        <div class="filter-info-values">${values}</div>
+      </div>
+    `);
+  }
+  
+  // 戦闘スタイルフィルター
+  if (activeFilters.fightingStyle && activeFilters.fightingStyle.length > 0) {
+    const values = activeFilters.fightingStyle.map(fs => {
+      const displayName = getDisplayTerm('fightingStyle', fs, currentDisplayLanguage);
+      return `<span class="filter-info-tag">${displayName}</span>`;
+    }).join('');
+    filterItems.push(`
+      <div class="filter-info-item">
+        <span class="filter-info-label">戦闘スタイル</span>
+        <div class="filter-info-values">${values}</div>
+      </div>
+    `);
+  }
+  
+  // 属性フィルター
+  if (activeFilters.attribute && activeFilters.attribute.length > 0) {
+    const values = activeFilters.attribute.map(a => {
+      const displayName = getDisplayTerm('attribute', a, currentDisplayLanguage);
+      return `<span class="filter-info-tag">${displayName}</span>`;
+    }).join('');
+    filterItems.push(`
+      <div class="filter-info-item">
+        <span class="filter-info-label">属性</span>
+        <div class="filter-info-values">${values}</div>
+      </div>
+    `);
+  }
+  
+  // グループフィルター
+  if (activeFilters.group && activeFilters.group.length > 0) {
+    const values = activeFilters.group.map(g => {
+      const displayName = getDisplayTerm('group', g, currentDisplayLanguage);
+      return `<span class="filter-info-tag">${displayName}</span>`;
+    }).join('');
+    filterItems.push(`
+      <div class="filter-info-item">
+        <span class="filter-info-label">グループ</span>
+        <div class="filter-info-values">${values}</div>
+      </div>
+    `);
+  }
+  
+  // カスタムタグフィルター
+  if (activeFilters.customTags && activeFilters.customTags.length > 0) {
+    const values = activeFilters.customTags.map(tagId => {
+      const tag = customTags[tagId];
+      if (!tag) return '';
+      return `<span class="filter-info-tag custom-tag" style="background-color: ${tag.color};">${tag.name}</span>`;
+    }).filter(v => v).join('');
+    if (values) {
+      filterItems.push(`
+        <div class="filter-info-item">
+          <span class="filter-info-label">カスタムタグ</span>
+          <div class="filter-info-values">${values}</div>
+        </div>
+      `);
+    }
+  }
+  
+  // お気に入りフィルター
+  if (favoritesOnly) {
+    filterItems.push(`
+      <div class="filter-info-item">
+        <span class="filter-info-label">その他</span>
+        <div class="filter-info-values"><span class="filter-info-tag">お気に入り</span></div>
+      </div>
+    `);
+  }
+  
+  // メモ済みフィルター
+  if (memoOnly) {
+    const lastItemIndex = filterItems.length - 1;
+    if (favoritesOnly && lastItemIndex >= 0) {
+      // お気に入りと同じ「その他」に追加
+      filterItems[lastItemIndex] = filterItems[lastItemIndex].replace(
+        '</div>\n      </div>',
+        '<span class="filter-info-tag">メモ済み</span></div>\n      </div>'
+      );
+    } else {
+      filterItems.push(`
+        <div class="filter-info-item">
+          <span class="filter-info-label">その他</span>
+          <div class="filter-info-values"><span class="filter-info-tag">メモ済み</span></div>
+        </div>
+      `);
+    }
+  }
+  
+  // ユニーク武器フィルター
+  if (uniqueWeaponOnly) {
+    const lastItemIndex = filterItems.length - 1;
+    if ((favoritesOnly || memoOnly) && lastItemIndex >= 0) {
+      // 「その他」に追加
+      filterItems[lastItemIndex] = filterItems[lastItemIndex].replace(
+        '</div>\n      </div>',
+        '<span class="filter-info-tag">ユニーク武器</span></div>\n      </div>'
+      );
+    } else {
+      filterItems.push(`
+        <div class="filter-info-item">
+          <span class="filter-info-label">その他</span>
+          <div class="filter-info-values"><span class="filter-info-tag">ユニーク武器</span></div>
+        </div>
+      `);
+    }
+  }
+  
+  if (filterItems.length > 0) {
+    listElement.innerHTML = filterItems.join('');
+  } else {
+    listElement.innerHTML = '<div style="color: #999; font-size: 12px;">フィルターが適用されていません</div>';
+  }
+}
+
+/**
+ * フィルター情報アイコンの表示/非表示を更新
+ */
+function updateFilterInfoButtonVisibility() {
+  const filterInfoBtn = document.getElementById('filterInfoBtn');
+  const filterButton = document.getElementById('filterButton');
+  if (!filterInfoBtn || !filterButton) return;
+  
+  // フィルターが適用されているかチェック
+  const hasActiveFilters = 
+    (activeFilters.world && activeFilters.world.length > 0) ||
+    (activeFilters.race && activeFilters.race.length > 0) ||
+    (activeFilters.fightingStyle && activeFilters.fightingStyle.length > 0) ||
+    (activeFilters.attribute && activeFilters.attribute.length > 0) ||
+    (activeFilters.group && activeFilters.group.length > 0) ||
+    (activeFilters.customTags && activeFilters.customTags.length > 0) ||
+    favoritesOnly ||
+    memoOnly ||
+    uniqueWeaponOnly;
+  
+  // フィルターが適用されている場合のみアイコンを表示
+  if (hasActiveFilters) {
+    filterInfoBtn.style.display = 'flex';
+    filterButton.classList.add('has-info');
+  } else {
+    filterInfoBtn.style.display = 'none';
+    filterButton.classList.remove('has-info');
+  }
+}
+
+/**
+ * フィルター情報ポップアップを閉じる（外側クリック用）
+ */
+function closeFilterInfoOnOutsideClick(event) {
+  const popup = document.getElementById('filterInfoPopup');
+  const btn = document.getElementById('filterInfoBtn');
+  
+  if (!popup || !btn) return;
+  if (!filterInfoPopupVisible) return;
+  
+  // クリックされた要素がポップアップ内でもボタンでもない場合は閉じる
+  if (!popup.contains(event.target) && !btn.contains(event.target)) {
+    popup.style.display = 'none';
+    filterInfoPopupVisible = false;
+  }
+}
+
+// グローバル関数として公開
+window.toggleFilterInfo = toggleFilterInfo;
+window.showFilterInfoDelayed = showFilterInfoDelayed;
+window.hideFilterInfoDelayed = hideFilterInfoDelayed;
+window.showFilterInfo = showFilterInfo;
+window.clearFiltersFromPopup = clearFiltersFromPopup;
+
+// ページ読み込み時にイベントリスナーを設定
+document.addEventListener('DOMContentLoaded', () => {
+  // 外側クリックでポップアップを閉じる
+  document.addEventListener('click', closeFilterInfoOnOutsideClick);
+  
+  // ホバーイベントを設定
+  const filterInfoBtn = document.getElementById('filterInfoBtn');
+  const filterInfoPopup = document.getElementById('filterInfoPopup');
+  
+  if (filterInfoBtn) {
+    filterInfoBtn.addEventListener('mouseenter', showFilterInfoDelayed);
+    filterInfoBtn.addEventListener('mouseleave', hideFilterInfoDelayed);
+  }
+  
+  if (filterInfoPopup) {
+    filterInfoPopup.addEventListener('mouseenter', () => {
+      // ポップアップ上にマウスがある場合は非表示タイマーをクリア
+      if (filterInfoHoverTimer) {
+        clearTimeout(filterInfoHoverTimer);
+        filterInfoHoverTimer = null;
+      }
+    });
+    filterInfoPopup.addEventListener('mouseleave', hideFilterInfoDelayed);
+  }
+});
