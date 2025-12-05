@@ -1138,8 +1138,9 @@ function renderCharacter(char) {
       onclick="handleCardClick(${char.id}, event)"
       onmouseenter="onCardHover(this, ${char.id})"
       onmouseleave="onCardLeave()"
-      ontouchstart="onCardHover(this, ${char.id})"
-      ontouchend="onCardLeave()"
+      ontouchstart="handleCardTouchStart(event, ${char.id})"
+      ontouchend="handleCardTouchEnd(event)"
+      ontouchmove="handleCardTouchMove(event)"
       oncontextmenu="showContextMenu(event, ${char.id})">
       
       <!-- 編集モード用チェックボックス -->
@@ -1917,6 +1918,71 @@ function switchFilterTab(tabName) {
   const selectedContent = document.getElementById(`filterTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
   if (selectedContent) {
     selectedContent.classList.add('active');
+    
+    // モバイル版の場合、各タブの最初のカテゴリを表示
+    if (window.innerWidth <= 767) {
+      const firstCatTab = selectedContent.querySelector('.mobile-cat-tab');
+      if (firstCatTab) {
+        const firstCategory = firstCatTab.getAttribute('data-cat');
+        switchMobileCategoryTab(firstCategory, tabName);
+      }
+    }
+  }
+}
+
+/**
+ * モバイル版のカテゴリタブを切り替える
+ * @param {string} category - カテゴリ名 ('world', 'race', 'fighting', 'attribute', 'group', 'customtags', 'other')
+ * @param {string} tabName - 親タブ名 ('main' または 'other'、省略時は自動判定)
+ */
+function switchMobileCategoryTab(category, tabName) {
+  // モバイルでない場合は何もしない
+  if (window.innerWidth > 767) return;
+  
+  // tabNameが指定されていない場合、現在アクティブなタブを取得
+  if (!tabName) {
+    const activeTabContent = document.querySelector('.filter-tab-content.active');
+    if (activeTabContent) {
+      tabName = activeTabContent.id.replace('filterTab', '').toLowerCase();
+    } else {
+      tabName = 'main'; // デフォルト
+    }
+  }
+  
+  // 対応するタブ内のカテゴリタブとセクションのセレクタを構築
+  const tabId = `filterTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`;
+  
+  // 該当タブ内の全てのカテゴリタブからactiveクラスを削除
+  document.querySelectorAll(`#${tabId} .mobile-cat-tab`).forEach(tab => {
+    tab.classList.remove('active');
+  });
+  
+  // 該当タブ内の全てのfilter-sectionを非表示
+  document.querySelectorAll(`#${tabId} .filter-section`).forEach(section => {
+    section.classList.remove('active');
+  });
+  
+  // 選択されたタブにactiveクラスを追加
+  const selectedTab = document.querySelector(`#${tabId} [data-cat="${category}"]`);
+  if (selectedTab) {
+    selectedTab.classList.add('active');
+  }
+  
+  // 選択されたカテゴリのセクションを表示
+  const selectedSection = document.querySelector(`#${tabId} .filter-section[data-category="${category}"]`);
+  if (selectedSection) {
+    selectedSection.classList.add('active');
+    
+    // カスタムタグセクションの場合、フィルターを開いて更新
+    if (category === 'customtags') {
+      const customTagsFilters = document.getElementById('customTagsFilters');
+      const toggle = document.getElementById('customTagsToggle');
+      if (customTagsFilters) {
+        customTagsFilters.style.display = 'flex';
+        if (toggle) toggle.textContent = '▲';
+        updateCustomTagsFilterOptions();
+      }
+    }
   }
 }
 
@@ -2007,7 +2073,7 @@ function toggleLanguage() {
 
 // ▼テーマ切替（3テーマ対応・cookie保存）
 let currentTheme = 'light';
-const themeOrder = ['light', 'dark', 'modern'];
+const themeOrder = ['light', 'dark', 'modern', 'aquamarine'];
 
 function setThemeCookie(theme) {
   document.cookie = `theme=${theme}; path=/; max-age=31536000; samesite=lax`;
@@ -2019,14 +2085,30 @@ function getThemeCookie() {
 
 function applyTheme(theme) {
   const body = document.body;
-  body.classList.remove('theme-dark', 'theme-modern');
+  body.classList.remove('theme-dark', 'theme-modern', 'theme-aquamarine');
   if (theme === 'dark') body.classList.add('theme-dark');
   if (theme === 'modern') body.classList.add('theme-modern');
+  if (theme === 'aquamarine') body.classList.add('theme-aquamarine');
   currentTheme = theme;
   updateThemeButtonText();
   setThemeCookie(theme);
 }
 
+// ドロップダウンメニューの開閉
+function toggleThemeDropdown() {
+  const menu = document.getElementById('themeDropdownMenu');
+  menu.classList.toggle('show');
+}
+
+// テーマを直接選択
+function selectTheme(themeName) {
+  applyTheme(themeName);
+  // ドロップダウンを閉じる
+  const menu = document.getElementById('themeDropdownMenu');
+  menu.classList.remove('show');
+}
+
+// 旧toggleTheme関数(互換性のため残す)
 function toggleTheme() {
   let idx = themeOrder.indexOf(currentTheme);
   idx = (idx + 1) % themeOrder.length;
@@ -2034,14 +2116,24 @@ function toggleTheme() {
 }
 
 function updateThemeButtonText() {
-  const btn = document.getElementById('themeToggleBtn');
-  if (btn) {
-    let label = 'テーマ切替 (現在: ライト)';
-    if (currentTheme === 'dark') label = 'テーマ切替 (現在: ダーク)';
-    if (currentTheme === 'modern') label = 'テーマ切替 (現在: ネオン)';
-    btn.textContent = label;
+  const nameSpan = document.getElementById('currentThemeName');
+  if (nameSpan) {
+    let label = 'ライト';
+    if (currentTheme === 'dark') label = 'ダーク';
+    if (currentTheme === 'modern') label = 'ネオン';
+    if (currentTheme === 'aquamarine') label = 'アクアマリン';
+    nameSpan.textContent = label;
   }
 }
+
+// ドロップダウンの外側をクリックしたら閉じる
+document.addEventListener('click', (e) => {
+  const dropdown = document.querySelector('.theme-dropdown-wrapper');
+  const menu = document.getElementById('themeDropdownMenu');
+  if (menu && dropdown && !dropdown.contains(e.target)) {
+    menu.classList.remove('show');
+  }
+});
 
 // ページロード時にテーマを初期化（cookie対応）
 window.addEventListener('DOMContentLoaded', () => {
@@ -2057,6 +2149,56 @@ window.addEventListener('DOMContentLoaded', () => {
   
   // ハンバーガーメニューのタッチスクロール制御を初期化
   setupHamburgerTouchControl();
+  
+  // モバイル版の初期カテゴリタブをアクティブ化
+  if (window.innerWidth <= 767) {
+    const firstCatTab = document.querySelector('.mobile-cat-tab');
+    if (firstCatTab) {
+      const firstCategory = firstCatTab.getAttribute('data-cat');
+      switchMobileCategoryTab(firstCategory);
+    }
+  }
+});
+
+// ウィンドウリサイズ時の処理
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    // モバイル版に切り替わった時、アクティブなタブの最初のカテゴリを表示
+    if (window.innerWidth <= 767) {
+      const activeTabContent = document.querySelector('.filter-tab-content.active');
+      if (activeTabContent) {
+        const firstCatTab = activeTabContent.querySelector('.mobile-cat-tab');
+        if (firstCatTab) {
+          const firstCategory = firstCatTab.getAttribute('data-cat');
+          const tabName = activeTabContent.id.replace('filterTab', '').toLowerCase();
+          switchMobileCategoryTab(firstCategory, tabName);
+        }
+      }
+    } else {
+      // PC版に切り替わった時、全セクションのactiveクラスを削除
+      document.querySelectorAll('.filter-section').forEach(section => {
+        section.classList.remove('active');
+      });
+    }
+  }, 100);
+});
+
+// ブラウザの戻る/進むボタンでの詳細画面制御
+window.addEventListener('popstate', (event) => {
+  const detailsPopup = document.getElementById('detailsPopup');
+  const urlParams = new URLSearchParams(window.location.search);
+  const charId = urlParams.get('id');
+  
+  if (charId) {
+    // URLにIDがある場合は詳細画面を表示
+    const imgIndex = parseInt(urlParams.get('img')) || 0;
+    showCharacterDetails(parseInt(charId), imgIndex);
+  } else if (detailsPopup && detailsPopup.style.display === 'block') {
+    // URLにIDがなく、詳細画面が開いている場合は閉じる
+    closeDetailsPopup(true); // trueを渡してpushStateをスキップ
+  }
 });
 
 // ハンバーガーメニューのタッチスクロール制御
@@ -2107,6 +2249,57 @@ function setupHamburgerTouchControl() {
     this.startX = null;
   }, { passive: true });
 }
+
+// 画面左端からのスワイプでハンバーガーメニューを開く
+let edgeSwipeStartX = null;
+let edgeSwipeStartY = null;
+let edgeSwipeStartTime = null;
+const EDGE_ZONE_WIDTH = 40; // 左端から20pxの領域
+const SWIPE_THRESHOLD = 50; // 50px以上スワイプで開く
+const SWIPE_MAX_TIME = 300; // 300ms以内のスワイプ
+
+document.addEventListener('touchstart', function(e) {
+  const touch = e.touches[0];
+  // 左端からのタッチかチェック
+  if (touch.clientX <= EDGE_ZONE_WIDTH) {
+    edgeSwipeStartX = touch.clientX;
+    edgeSwipeStartY = touch.clientY;
+    edgeSwipeStartTime = Date.now();
+  }
+}, { passive: true });
+
+document.addEventListener('touchmove', function(e) {
+  if (edgeSwipeStartX === null) return;
+  
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - edgeSwipeStartX;
+  const deltaY = touch.clientY - edgeSwipeStartY;
+  const deltaTime = Date.now() - edgeSwipeStartTime;
+  
+  // 右方向へのスワイプで、横移動が縦移動より大きい場合
+  if (deltaX > SWIPE_THRESHOLD && 
+      Math.abs(deltaX) > Math.abs(deltaY) && 
+      deltaTime < SWIPE_MAX_TIME) {
+    
+    // ハンバーガーメニューが閉じている場合のみ開く
+    const drawer = document.getElementById('hamburgerDrawer');
+    if (drawer && !drawer.classList.contains('open')) {
+      toggleHamburgerMenu();
+    }
+    
+    // スワイプ検出をリセット
+    edgeSwipeStartX = null;
+    edgeSwipeStartY = null;
+    edgeSwipeStartTime = null;
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', function() {
+  // タッチ終了時にスワイプ検出をリセット
+  edgeSwipeStartX = null;
+  edgeSwipeStartY = null;
+  edgeSwipeStartTime = null;
+}, { passive: true });
 
 /**
  * キャラクターの詳細を表示する
@@ -2358,6 +2551,17 @@ function showCharacterDetails(charId, imgIndex = 0) {
     detailsPopup.style.display = 'block';
     document.body.classList.add('modal-open'); // 背景スクロール防止
     updateHamburgerMenuVisibility();
+    
+    // URLにキャラクターIDを追加
+    const newUrl = `?id=${charId}${imgIndex > 0 ? `&img=${imgIndex}` : ''}`;
+    const currentUrl = window.location.search;
+    
+    // 既に詳細画面が開いている場合はreplaceState、新規の場合はpushState
+    if (currentUrl.includes('id=')) {
+      window.history.replaceState({characterId: charId, imgIndex, tab: 'basic'}, '', newUrl);
+    } else {
+      window.history.pushState({characterId: charId, imgIndex, tab: 'basic'}, '', newUrl);
+    }
   }
 }
 
@@ -2383,10 +2587,15 @@ function showCharacterDetailsAndWeapon(charId) {
 /**
  * キャラクター詳細画面を閉じる
  */
-function closeDetailsPopup() {
+function closeDetailsPopup(skipHistoryUpdate = false) {
   document.getElementById('detailsPopup').style.display = 'none';
   document.body.classList.remove('modal-open'); // 背景スクロール防止解除
   updateHamburgerMenuVisibility(); // ▼詳細閉じたらメニュー再表示
+  
+  // URLからパラメータを削除（戻るボタンから呼ばれた場合はスキップ）
+  if (!skipHistoryUpdate) {
+    window.history.pushState({}, '', window.location.pathname);
+  }
 }
 
 /**
@@ -4558,6 +4767,9 @@ async function loadCustomTagsFromIndexedDB() {
  * カスタムタグフィルターの展開/折りたたみを切り替え
  */
 function toggleCustomTagsFilter() {
+  // モバイル版では何もしない(常に開いた状態)
+  if (window.innerWidth <= 767) return;
+  
   const filtersContainer = document.getElementById('customTagsFilters');
   const toggle = document.getElementById('customTagsToggle');
   
@@ -4639,6 +4851,14 @@ function clearCustomTagsFilter() {
 
 // コンテキストメニュー管理
 let currentContextMenu = null;
+
+// 長押し処理用の変数
+let longPressTimer = null;
+let longPressTriggered = false;
+let touchStartX = 0;
+let touchStartY = 0;
+const LONG_PRESS_DURATION = 500; // 500ms
+const MOVE_THRESHOLD = 10; // 10px移動したらキャンセル
 
 /**
  * 右クリックコンテキストメニューを表示
@@ -4859,6 +5079,82 @@ function setupContextMenuEventListeners() {
 }
 
 /**
+ * カードのタッチ開始処理（長押し検出用）
+ */
+function handleCardTouchStart(event, charId) {
+  // 編集モードまたは並び替えモードの場合は長押し無効
+  if (isEditMode) {
+    onCardHover(event.currentTarget, charId);
+    return;
+  }
+  
+  // タッチ開始位置を記録
+  const touch = event.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  longPressTriggered = false;
+  
+  // 長押しタイマーを設定
+  longPressTimer = setTimeout(() => {
+    longPressTriggered = true;
+    // バイブレーション（対応デバイスのみ）
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+    // コンテキストメニューを表示
+    const menuEvent = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: touch.clientX,
+      clientY: touch.clientY
+    });
+    showContextMenu(menuEvent, charId);
+  }, LONG_PRESS_DURATION);
+  
+  // 通常のホバー処理も実行
+  onCardHover(event.currentTarget, charId);
+}
+
+/**
+ * カードのタッチ移動処理（長押しキャンセル用）
+ */
+function handleCardTouchMove(event) {
+  if (!longPressTimer) return;
+  
+  // 移動量を計算
+  const touch = event.touches[0];
+  const moveX = Math.abs(touch.clientX - touchStartX);
+  const moveY = Math.abs(touch.clientY - touchStartY);
+  
+  // 一定以上移動したら長押しをキャンセル
+  if (moveX > MOVE_THRESHOLD || moveY > MOVE_THRESHOLD) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressTriggered = false;
+  }
+}
+
+/**
+ * カードのタッチ終了処理
+ */
+function handleCardTouchEnd(event) {
+  // 長押しタイマーをクリア
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  
+  // 長押しが発動していた場合はクリックイベントを抑制
+  if (longPressTriggered) {
+    event.preventDefault();
+    longPressTriggered = false;
+  }
+  
+  // 通常のホバー解除処理
+  onCardLeave();
+}
+
+/**
  * キャラクター画像をクリップボードにコピー
  * @param {object} character - キャラクターデータ
  */
@@ -4890,7 +5186,7 @@ async function copyCharacterImage(character) {
 async function copyCharacterLink(charId) {
   try {
     const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('char', charId);
+    currentUrl.searchParams.set('id', charId);
     
     await navigator.clipboard.writeText(currentUrl.toString());
     showNotification('リンクをクリップボードにコピーしました');
@@ -5793,6 +6089,13 @@ function endCustomSortMode() {
  * カードクリック処理（編集モード対応）
  */
 function handleCardClick(charId, event) {
+  // 長押しが発動していた場合はクリックを無視
+  if (longPressTriggered) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  
   if (isEditMode && editSubMode === 'select') {
     event.preventDefault();
     event.stopPropagation();
@@ -6123,6 +6426,9 @@ async function createBulkTag() {
 // グローバル関数として公開
 window.toggleEditMode = toggleEditMode;
 window.handleCardClick = handleCardClick;
+window.handleCardTouchStart = handleCardTouchStart;
+window.handleCardTouchMove = handleCardTouchMove;
+window.handleCardTouchEnd = handleCardTouchEnd;
 window.selectAllCharacters = selectAllCharacters;
 window.clearSelection = clearSelection;
 window.showBulkTagEditor = showBulkTagEditor;

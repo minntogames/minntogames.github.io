@@ -5,6 +5,39 @@ body {
   padding: 20px;
 }
 
+/* スクロールバーのカスタムスタイル（デフォルト・ライトテーマ） */
+/* Webkit（Chrome, Safari, Edge） */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4a88a2 0%, #3a7088 100%);
+  border-radius: 6px;
+  border: 2px solid #f0f0f0;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5a98b2 0%, #4a8098 100%);
+}
+
+::-webkit-scrollbar-corner {
+  background: #f0f0f0;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4a88a2 #f0f0f0;
+}
+
 /* 詳細画面表示時の背景スクロール防止 */
 body.modal-open {
   overflow: hidden;
@@ -682,6 +715,112 @@ button,
     font-size: 13px;
     padding: 10px 12px;
   }
+  
+  /* モバイル版でメインタブとその他タブをフレックスコンテナに(アクティブ時のみ) */
+  #filterTabMain.active,
+  #filterTabOther.active {
+    display: flex !important;
+    gap: 0;
+    min-height: 300px;
+    max-height: 400px;
+  }
+  
+  /* 非アクティブなタブは非表示 */
+  #filterTabMain:not(.active),
+  #filterTabOther:not(.active) {
+    display: none !important;
+  }
+  
+  /* モバイル用縦タブナビゲーション */
+  .mobile-category-tabs {
+    display: flex;
+    flex-direction: column;
+    width: 70px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    border-right: 2px solid #e0e0e0;
+    background: #f9f9f9;
+  }
+  
+  .mobile-cat-tab {
+    padding: 12px 8px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #e0e0e0;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    text-align: center;
+    writing-mode: horizontal-tb;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  .mobile-cat-tab:hover {
+    background: #e8f4f8;
+    color: #4a88a2;
+  }
+  
+  .mobile-cat-tab.active {
+    background: #fff;
+    color: #4a88a2;
+    border-right: 3px solid #4a88a2;
+    font-weight: 600;
+  }
+  
+  /* モバイル用コンテンツエリア */
+  .mobile-category-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-left: 12px;
+  }
+  
+  /* デスクトップ専用要素を非表示 */
+  .desktop-only {
+    display: none;
+  }
+  
+  /* モバイルではカテゴリごとに表示切り替え */
+  #filterTabMain .filter-section,
+  #filterTabOther .filter-section {
+    display: none;
+  }
+  
+  #filterTabMain .filter-section.active,
+  #filterTabOther .filter-section.active {
+    display: block;
+  }
+  
+  /* モバイル版ではカスタムタグフィルターを自動表示 */
+  #filterTabOther .filter-section.active #customTagsFilters {
+    display: flex !important;
+  }
+}
+
+/* PC版では縦タブを非表示 */
+@media (min-width: 768px) {
+  .mobile-category-tabs {
+    display: none;
+  }
+  
+  .mobile-category-content {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+  
+  #filterTabMain .filter-section,
+  #filterTabOther .filter-section {
+    display: block !important;
+  }
+  
+  /* PC版ではカスタムタグは折りたたみ */
+  #customTagsFilters {
+    display: none;
+  }
 }
 
 /* カスタムタグフィルターコンテナ */
@@ -801,7 +940,7 @@ button,
   border-radius: 0 0 16px 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.10);
   z-index: 1000; /* 武器アイコンやカード要素より確実に前面に表示 */
-  width: 240px;
+  width: auto;
   max-height: 220px;
   overflow-y: auto;
   display: none;
@@ -1142,6 +1281,29 @@ body.theme-dark {
   background: #14213d;
   color: #e9eaf6;
 }
+
+/* ダークテーマのスクロールバースタイル */
+body.theme-dark ::-webkit-scrollbar-track {
+  background: #1a2540;
+}
+
+body.theme-dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3a86ff 0%, #2a76ef 100%);
+  border: 2px solid #1a2540;
+}
+
+body.theme-dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4a96ff 0%, #3a86ff 100%);
+}
+
+body.theme-dark ::-webkit-scrollbar-corner {
+  background: #1a2540;
+}
+
+body.theme-dark * {
+  scrollbar-color: #3a86ff #1a2540;
+}
+
 body.theme-dark h1,
 body.theme-dark #characterDetails h2 {
   color: #e9eaf6;
@@ -1196,6 +1358,27 @@ body.theme-dark .filter-tab-btn.active {
   background: #2c3e50;
   color: #e9eaf6;
   border-bottom: 2px solid #3a86ff;
+}
+
+body.theme-dark .mobile-category-tabs {
+  background: #1a2540;
+  border-right: 2px solid #3a86ff;
+}
+
+body.theme-dark .mobile-cat-tab {
+  color: #b0c2e0;
+  border-bottom: 1px solid #3a86ff;
+}
+
+body.theme-dark .mobile-cat-tab:hover {
+  background: #22305c;
+  color: #3a86ff;
+}
+
+body.theme-dark .mobile-cat-tab.active {
+  background: #2c3e50;
+  color: #e9eaf6;
+  border-right: 3px solid #3a86ff;
 }
 body.theme-dark .buttonOutlineGradient_item,
 body.theme-dark .buttonRound {
@@ -1276,6 +1459,20 @@ body.theme-dark .hamburger-lang-btn:hover,
 body.theme-dark .hamburger-theme-btn:hover {
   background: linear-gradient(135deg, #14213d, #22305c);
 }
+body.theme-dark .theme-dropdown-menu {
+  background: #1a2540;
+  border-color: #3a86ff;
+  box-shadow: 0 4px 12px rgba(58,134,255,0.3);
+}
+body.theme-dark .theme-option {
+  color: #e9eaf6;
+}
+body.theme-dark .theme-option:hover {
+  background: linear-gradient(135deg, rgba(34,48,92,0.3), rgba(58,134,255,0.3));
+}
+body.theme-dark .theme-option:active {
+  background: linear-gradient(135deg, rgba(34,48,92,0.5), rgba(58,134,255,0.5));
+}
 body.theme-dark .hamburger-data-btn {
   background: linear-gradient(135deg, #d68910, #ca6f1e);
   color: #fff;
@@ -1317,10 +1514,16 @@ body.theme-dark .hamburger-lang-btn span {
   color: #bfc8e6;
 }
 
-/* ▼テーマ切替ボタン */
+/* ▼テーマ切替ドロップダウン */
+.theme-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
 .hamburger-theme-btn {
   width: 100%;
-  padding: 10px 0;
+  padding: 10px 12px;
   background: linear-gradient(135deg, #00ffa6, #156acc);
   color: #fff;
   border: none;
@@ -1328,13 +1531,50 @@ body.theme-dark .hamburger-lang-btn span {
   font-size: 1em;
   font-family: inherit;
   cursor: pointer;
-  margin-bottom: 8px;
   font-weight: 500;
   transition: background 0.18s;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .hamburger-theme-btn:hover {
   background: linear-gradient(135deg, #22305c, #3a86ff);
 }
+
+.theme-dropdown-menu {
+  display: none;
+  position: absolute;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.theme-dropdown-menu.show {
+  display: block;
+}
+
+.theme-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: #333;
+  font-weight: 500;
+}
+
+.theme-option:hover {
+  background: linear-gradient(135deg, rgba(0,255,166,0.1), rgba(21,106,204,0.1));
+}
+
+.theme-option:active {
+  background: linear-gradient(135deg, rgba(0,255,166,0.2), rgba(21,106,204,0.2));
+}
+
 
 /* ▼データ管理ボタン */
 .hamburger-data-btn {
@@ -1374,6 +1614,29 @@ body.theme-modern {
   );
   color: #1a2540;
 }
+
+/* モダンテーマのスクロールバースタイル */
+body.theme-modern ::-webkit-scrollbar-track {
+  background: rgba(178, 234, 255, 0.3);
+}
+
+body.theme-modern ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00c3ff 0%, #00a3df 100%);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+body.theme-modern ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00d3ff 0%, #00b3ef 100%);
+}
+
+body.theme-modern ::-webkit-scrollbar-corner {
+  background: rgba(178, 234, 255, 0.3);
+}
+
+body.theme-modern * {
+  scrollbar-color: #00c3ff rgba(178, 234, 255, 0.3);
+}
+
 body.theme-modern h1,
 body.theme-modern #characterDetails h2 {
   color: #156acc;
@@ -1430,6 +1693,34 @@ body.theme-modern .filter-tab-btn.active {
   background: #00c3ff;
   color: #fff;
   border-bottom: 2px solid #0d4b99;
+}
+
+body.theme-modern .mobile-category-tabs {
+  background: repeating-linear-gradient(
+    90deg,
+    #e0faff 0px,
+    #e0faff 2px,
+    #b2eaff 2px,
+    #b2eaff 4px
+  );
+  border-right: 2px solid #00c3ff;
+}
+
+body.theme-modern .mobile-cat-tab {
+  color: #156acc;
+  border-bottom: 1px solid #00c3ff;
+}
+
+body.theme-modern .mobile-cat-tab:hover {
+  background: rgba(0, 195, 255, 0.2);
+  color: #00c3ff;
+}
+
+body.theme-modern .mobile-cat-tab.active {
+  background: #ffffff;
+  color: #00c3ff;
+  border-right: 3px solid #00c3ff;
+  font-weight: 600;
 }
 body.theme-modern .buttonOutlineGradient_item,
 body.theme-modern .buttonRound {
@@ -1511,6 +1802,21 @@ body.theme-modern .hamburger-lang-btn:hover,
 body.theme-modern .hamburger-theme-btn:hover {
   background: linear-gradient(135deg, #b2eaff, #00c3ff);
   color: #fff;
+}
+body.theme-modern .theme-dropdown-menu {
+  background: #ffffff;
+  border-color: #00c3ff;
+  box-shadow: 0 4px 12px rgba(0,195,255,0.3);
+}
+body.theme-modern .theme-option {
+  color: #156acc;
+}
+body.theme-modern .theme-option:hover {
+  background: linear-gradient(135deg, rgba(0,195,255,0.1), rgba(178,234,255,0.2));
+  color: #00c3ff;
+}
+body.theme-modern .theme-option:active {
+  background: linear-gradient(135deg, rgba(0,195,255,0.2), rgba(178,234,255,0.4));
 }
 body.theme-modern .hamburger-data-btn {
   background: linear-gradient(135deg, #ff9500, #ffcc80);
@@ -1658,7 +1964,6 @@ body.theme-modern .copy-popup {
   position: absolute;
   top: -5px;
   left: -5px;
-  z-index: 3; /* カード内の要素として適切なレイヤーに配置 */
   background: rgba(74, 136, 162, 0.9);
   border: none;
   border-radius: 50%;
@@ -1919,6 +2224,361 @@ body.theme-modern .detail-favorite-svg-btn:hover {
 body.theme-modern .detail-favorite-svg-btn.favorited {
   background: rgba(224, 250, 255, 0.9);
   border-color: #00c3ff;
+}
+
+/* ===============================================
+   Aquamarineテーマ（ホームページスタイル）
+   =============================================== */
+
+body.theme-aquamarine {
+  background-color: aquamarine;
+  color: #000000;
+}
+
+/* Aquamarineテーマのスクロールバースタイル */
+body.theme-aquamarine ::-webkit-scrollbar-track {
+  background: rgba(102, 205, 170, 0.3);
+}
+
+body.theme-aquamarine ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #66cdaa 0%, #4eb99a 100%);
+  border: 2px solid rgba(102, 205, 170, 0.3);
+}
+
+body.theme-aquamarine ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #76ddba 0%, #5ec9aa 100%);
+}
+
+body.theme-aquamarine ::-webkit-scrollbar-corner {
+  background: rgba(102, 205, 170, 0.3);
+}
+
+body.theme-aquamarine * {
+  scrollbar-color: #66cdaa rgba(102, 205, 170, 0.3);
+}
+
+body.theme-aquamarine h1,
+body.theme-aquamarine #characterDetails h2 {
+  color: #000000;
+}
+
+body.theme-aquamarine .search-container {
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(102, 205, 170, 0.2);
+  border: 1px solid #cccccc;
+}
+
+body.theme-aquamarine .card {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 0px solid #cccccc;
+  border-radius: 12px;
+}
+
+body.theme-aquamarine .card h2 {
+  color: #000000;
+}
+
+body.theme-aquamarine .card-world-1::after { 
+  background: linear-gradient(90deg, #66cdaa, #7fd4b8); 
+}
+
+body.theme-aquamarine .card-world-2::after { 
+  background: linear-gradient(90deg, #45528b, #090780); 
+}
+
+body.theme-aquamarine .card-world-3::after { 
+  background: linear-gradient(90deg, #6b4693, #760598); 
+}
+
+body.theme-aquamarine .popup-content,
+body.theme-aquamarine #detailsPopup .popup-content {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #cccccc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+body.theme-aquamarine .filter-option {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #cccccc;
+}
+
+body.theme-aquamarine .filter-option.selected {
+  background: #66cdaa;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .filter-tab-nav {
+  border-bottom: 2px solid #66cdaa;
+}
+
+body.theme-aquamarine .filter-tab-btn {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #cccccc;
+}
+
+body.theme-aquamarine .filter-tab-btn:hover {
+  background: #f0f0f0;
+  color: #000000;
+}
+
+body.theme-aquamarine .filter-tab-btn.active {
+  background: #66cdaa;
+  color: #ffffff;
+  border-bottom: 2px solid #4eb99a;
+}
+
+body.theme-aquamarine .mobile-category-tabs {
+  background: #f0f0f0;
+  border-right: 2px solid #66cdaa;
+}
+
+body.theme-aquamarine .mobile-cat-tab {
+  color: #000000;
+  border-bottom: 1px solid #cccccc;
+}
+
+body.theme-aquamarine .mobile-cat-tab:hover {
+  background: rgba(102, 205, 170, 0.1);
+  color: #4eb99a;
+}
+
+body.theme-aquamarine .mobile-cat-tab.active {
+  background: #ffffff;
+  color: #4eb99a;
+  border-right: 3px solid #66cdaa;
+  font-weight: 600;
+}
+
+body.theme-aquamarine .buttonOutlineGradient_item,
+body.theme-aquamarine .buttonRound {
+  background-color: aquamarine;
+  color: #000000;
+  border: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+body.theme-aquamarine .buttonOutlineGradient_item:hover,
+body.theme-aquamarine .buttonRound:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-aquamarine .buttonOutlineGradient {
+  background: aquamarine;
+}
+
+body.theme-aquamarine .hamburger-close-btn:hover {
+  background: #66cdaa;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .buttonCopyIcon.favorited:hover {
+  background: rgba(102, 205, 170, 0.3);
+}
+
+body.theme-aquamarine .close {
+  color: #000000;
+}
+
+body.theme-aquamarine .close:hover {
+  color: #66cdaa;
+}
+
+body.theme-aquamarine .name-suggestions {
+  background: #ffffff;
+  border: 1px solid #66cdaa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.theme-aquamarine .name-suggestions .suggestion-item {
+  color: #000000;
+}
+
+body.theme-aquamarine .name-suggestions .suggestion-item:hover,
+body.theme-aquamarine .name-suggestions .suggestion-item.active {
+  background: #e0f7f0;
+  color: #4eb99a;
+}
+
+body.theme-aquamarine .thumbnail-circle {
+  background: #ffffff;
+  border: 2px solid #cccccc;
+}
+
+body.theme-aquamarine .thumbnail-circle.selected {
+  border: 3px solid #66cdaa;
+}
+
+body.theme-aquamarine .mini-popup {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #66cdaa;
+}
+
+body.theme-aquamarine .hamburger-drawer {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.1);
+}
+
+body.theme-aquamarine .hamburger-lang-btn,
+body.theme-aquamarine .hamburger-theme-btn {
+  background: #66cdaa;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .hamburger-lang-btn:hover,
+body.theme-aquamarine .hamburger-theme-btn:hover {
+  background: #4eb99a;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .theme-dropdown-menu {
+  background: #ffffff;
+  border-color: #66cdaa;
+  box-shadow: 0 4px 12px rgba(102,205,170,0.3);
+}
+
+body.theme-aquamarine .theme-option {
+  color: #000000;
+}
+
+body.theme-aquamarine .theme-option:hover {
+  background: rgba(102,205,170,0.1);
+  color: #4eb99a;
+}
+
+body.theme-aquamarine .theme-option:active {
+  background: rgba(102,205,170,0.2);
+}
+
+body.theme-aquamarine .hamburger-data-btn {
+  background: #ffa500;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .hamburger-data-btn:hover {
+  background: #ff8c00;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .hamburger-close-btn {
+  background: #f0f0f0;
+  color: #000000;
+}
+
+body.theme-aquamarine .hamburger-close-btn:hover {
+  background: #66cdaa;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .no-characters-message {
+  color: #000000;
+}
+
+body.theme-aquamarine input[type="text"] {
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  color: #000000;
+}
+
+body.theme-aquamarine input[type="text"]:focus {
+  border-color: #66cdaa;
+  box-shadow: 0 0 5px rgba(102, 205, 170, 0.3);
+}
+
+body.theme-aquamarine input[type="text"]::placeholder {
+  color: #999999;
+}
+
+body.theme-aquamarine .filter-section h4 {
+  color: #000000;
+  border-bottom: 2px solid #66cdaa;
+}
+
+body.theme-aquamarine .hamburger-lang-btn {
+  background: #66cdaa;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .hamburger-lang-btn span {
+  color: #ffffff;
+}
+
+body.theme-aquamarine .copy-popup {
+  background: #66cdaa;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .favorite-btn {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+body.theme-aquamarine .favorite-btn.favorited {
+  background: rgba(102, 205, 170, 0.2);
+}
+
+body.theme-aquamarine .favorite-btn.favorited:hover {
+  background: rgba(102, 205, 170, 0.3);
+}
+
+body.theme-aquamarine .detail-favorite-btn {
+  background: #66cdaa;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .detail-favorite-btn.favorited {
+  background: #4eb99a;
+  color: #ffffff;
+}
+
+body.theme-aquamarine .weapon-icon {
+  background: rgba(102, 205, 170, 0.9);
+}
+
+body.theme-aquamarine .weapon-icon:hover {
+  background: rgba(102, 205, 170, 1);
+}
+
+body.theme-aquamarine .weapon-icon svg {
+  stroke: #ffffff;
+}
+
+body.theme-aquamarine .weapon-fallback {
+  stroke: #ffffff;
+}
+
+body.theme-aquamarine .hamburger-lang-btn svg {
+  stroke: #ffffff !important;
+}
+
+body.theme-aquamarine .hamburger-lang-btn svg path {
+  stroke: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+body.theme-aquamarine .hamburger-lang-btn svg .st0 {
+  fill: #ffffff !important;
+}
+
+body.theme-aquamarine .detail-favorite-svg-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #66cdaa;
+}
+
+body.theme-aquamarine .detail-favorite-svg-btn:hover {
+  background: rgba(240, 255, 250, 1);
+}
+
+body.theme-aquamarine .detail-favorite-svg-btn.favorited {
+  background: rgba(230, 250, 240, 0.9);
+  border-color: #66cdaa;
 }
 
 /* レスポンシブ対応 */

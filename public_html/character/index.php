@@ -146,8 +146,18 @@ if ($characterId) {
       <div style="margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: #666; font-weight: bold;">設定</div>
       
       <button onclick="toggleLanguage()" class="hamburger-lang-btn" id="langToggleBtn">言語切替 (現在: 日本語)</button>
-      <!-- ▼テーマ切替ボタン（3テーマ対応） -->
-      <button onclick="toggleTheme()" class="hamburger-theme-btn" id="themeToggleBtn">テーマ切替 (現在: ライト)</button>
+      <!-- ▼テーマ選択ドロップダウン -->
+      <div class="theme-dropdown-wrapper">
+        <button onclick="toggleThemeDropdown()" class="hamburger-theme-btn" id="themeToggleBtn">
+          テーマ: <span id="currentThemeName">ライト</span> ▼
+        </button>
+        <div class="theme-dropdown-menu" id="themeDropdownMenu">
+          <div class="theme-option" onclick="selectTheme('light')">ライト</div>
+          <div class="theme-option" onclick="selectTheme('dark')">ダーク</div>
+          <div class="theme-option" onclick="selectTheme('modern')">ネオン</div>
+          <div class="theme-option" onclick="selectTheme('aquamarine')">アクアマリン</div>
+        </div>
+      </div>
       
       <button onclick="toggleWeaponIconDisplay()" class="hamburger-lang-btn" id="weaponIconToggleBtn" title="武器アイコン表示切り替え">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="14.04107" height="13.96386" viewBox="0,0,14.04107,13.96386">
@@ -251,6 +261,8 @@ if ($characterId) {
         </svg>
         カードビュー
       </button>
+
+      <br><br><br><br>
     </div>
   </div>
 
@@ -372,53 +384,73 @@ if ($characterId) {
       
       <!-- メインタブの内容 -->
       <div id="filterTabMain" class="filter-tab-content active">
-        <div class="filter-sections-container">
+        <!-- モバイル用縦タブナビゲーション -->
+        <div class="mobile-category-tabs">
+          <button class="mobile-cat-tab active" onclick="switchMobileCategoryTab('world')" data-cat="world">世界線</button>
+          <button class="mobile-cat-tab" onclick="switchMobileCategoryTab('race')" data-cat="race">種族</button>
+          <button class="mobile-cat-tab" onclick="switchMobileCategoryTab('fighting')" data-cat="fighting">戦闘</button>
+          <button class="mobile-cat-tab" onclick="switchMobileCategoryTab('attribute')" data-cat="attribute">属性</button>
+          <button class="mobile-cat-tab" onclick="switchMobileCategoryTab('group')" data-cat="group">グループ</button>
+        </div>
+        
+        <!-- モバイル用カテゴリコンテンツエリア -->
+        <div class="mobile-category-content">
+          <div class="filter-sections-container">
         <!-- ▲追加ここまで -->
         <!-- ▼追加：世界線フィルター -->
-        <div class="filter-section">
-          <h4>世界線</h4>
+        <div class="filter-section" data-category="world">
+          <h4 class="desktop-only">世界線</h4>
           <div id="worldFilters" class="filter-options"></div>
         </div>
         <!-- ▲追加ここまで -->
         
-        <div class="filter-section">
-          <h4>種族</h4>
+        <div class="filter-section" data-category="race">
+          <h4 class="desktop-only">種族</h4>
           <div id="raceFilters" class="filter-options"></div>
         </div>
         
-        <div class="filter-section">
-          <h4>戦闘スタイル</h4>
+        <div class="filter-section" data-category="fighting">
+          <h4 class="desktop-only">戦闘スタイル</h4>
           <div id="fightingStyleFilters" class="filter-options"></div>
         </div>
         
-        <div class="filter-section">
-          <h4>属性</h4>
+        <div class="filter-section" data-category="attribute">
+          <h4 class="desktop-only">属性</h4>
           <div id="attributeFilters" class="filter-options"></div>
         </div>
         
-          <div class="filter-section">
-            <h4>グループ</h4>
+          <div class="filter-section" data-category="group">
+            <h4 class="desktop-only">グループ</h4>
             <div id="groupFilters" class="filter-options"></div>
+          </div>
           </div>
         </div>
       </div>
       
       <!-- その他・カスタムタブの内容 -->
       <div id="filterTabOther" class="filter-tab-content">
-        <div class="filter-sections-container">
+        <!-- モバイル用縦タブナビゲーション -->
+        <div class="mobile-category-tabs">
+          <button class="mobile-cat-tab active" onclick="switchMobileCategoryTab('customtags')" data-cat="customtags">カスタム</button>
+          <button class="mobile-cat-tab" onclick="switchMobileCategoryTab('other')" data-cat="other">その他</button>
+        </div>
+        
+        <!-- モバイル用カテゴリコンテンツエリア -->
+        <div class="mobile-category-content">
+          <div class="filter-sections-container">
           <!-- ▼追加：カスタムタグフィルター -->
-          <div class="filter-section">
-            <h4 onclick="toggleCustomTagsFilter()" style="cursor: pointer; user-select: none; position: relative;">
+          <div class="filter-section" data-category="customtags">
+            <h4 class="desktop-only" onclick="toggleCustomTagsFilter()" style="cursor: pointer; user-select: none; position: relative;">
               カスタムタグ
               <span id="customTagsToggle" style="position: absolute; right: 0; font-size: 14px;">▼</span>
             </h4>
-            <div id="customTagsFilters" class="filter-options" style="display: none;"></div>
+            <div id="customTagsFilters" class="filter-options"></div>
           </div>
           <!-- ▲追加ここまで -->
 
           <!-- ▼追加：お気に入りフィルター -->
-          <div class="filter-section">
-            <h4>その他</h4>
+          <div class="filter-section" data-category="other">
+            <h4 class="desktop-only">その他</h4>
             <div class="filter-options">
               <div id="favoritesOnlyBtn" onclick="toggleFilterOption('favorites', 'favorites', this)" class="filter-option">
                 お気に入り (<span id="favoritesCount">0</span>)
@@ -432,6 +464,7 @@ if ($characterId) {
             </div>
           </div>
           <!-- ▲追加ここまで -->
+          </div>
         </div>
       </div>      <button onclick="applyFilters()" class="buttonRound">適用</button>
       <button onclick="clearFilters()" class="buttonRound">クリア</button>
