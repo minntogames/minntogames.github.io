@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta property="og:site_name" content="Minnteliaのお部屋" />
+    <meta property="og:title" content="Neon Defense - ネオンディフェンス">
+    <meta property="og:description" content="ネオンスタイルのタワーディフェンスゲーム。敵の侵攻を防ぎ、タワーを配置・強化して迎撃しよう！">
+    <meta property="og:image" content="https://youtube.minntelia.com/games/tower/img/neon_small_cover.webp">
+    <link rel="icon" href="https://youtube.minntelia.com/games/tower/img/neon_favicon.ico">
+    <meta name="theme-color" content="#6d088f" />
+    <title>Neon Defense - Tower Defense</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            background-color: #050510;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden; /* Prevent scrolling */
+            touch-action: none; /* Prevent zoom on mobile */
+            user-select: none; /* テキスト選択を無効化 */
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameCanvas {
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.1);
+            background-color: #0a0a15;
+            max-width: 100%;
+            max-height: 100%;
+            display: none !important;
+        }
+
+        #gameCanvas.active {
+            display: block !important;
+        }
+
+        .ui-panel {
+            position: absolute;
+            pointer-events: none; /* Let clicks pass through to canvas when possible */
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: none;
+            flex-direction: column;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .ui-panel.active {
+            display: flex;
+        }
+
+        /* Top Section Wrapper */
+        .top-section {
+            width: 100%;
+            pointer-events: auto;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .top-bar {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px 5px 20px;
+            display: flex;
+            align-items: center;
+            /* border-bottom: 1px solid #333; Removed to merge with progress bar */
+            gap: 40px;
+            min-width: max-content;
+        }
+        
+        .pause-btn {
+            background: rgba(0, 200, 200, 0.3);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+        
+        .pause-btn:hover {
+            background: rgba(0, 200, 200, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.85);
+            border-bottom: 1px solid #333;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ffff, #0088ff);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            transition: width 0.3s ease-out;
+        }
+
+        .bottom-bar {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            border-top: 1px solid #333;
+            pointer-events: auto;
+            flex-wrap: wrap;
+            position: relative; /* For upgrade panel positioning context if needed */
+        }
+
+        /* Upgrade Panel Style */
+        .upgrade-panel {
+            position: absolute;
+            bottom: 100px; /* Above bottom bar */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 40, 0.95);
+            border: 2px solid #00ffff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
+            z-index: 50;
+        }
+
+        .evolution-panel {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(40, 20, 60, 0.95);
+            border: 2px solid #ff00ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 300px;
+            z-index: 60;
+        }
+
+        .evolution-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .evolution-btn {
+            background: linear-gradient(45deg, #6600aa, #440066);
+            border: 2px solid #ff00ff;
+            color: white;
+            padding: 10px 15px;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            min-width: 130px;
+        }
+
+        .evolution-btn:hover {
+            background: linear-gradient(45deg, #8800cc, #5500aa);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .evolution-btn .special-tag {
+            display: block;
+            font-size: 0.7rem;
+            color: #ffaaff;
+            margin-top: 4px;
+        }
+
+        .upgrade-btn {
+            background: linear-gradient(45deg, #00aa00, #006600);
+            border: 1px solid #00ff00;
+            color: white;
+            padding: 8px 20px;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .upgrade-btn:hover {
+            background: linear-gradient(45deg, #00cc00, #008800);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+        }
+
+        .upgrade-btn:disabled {
+            background: #333;
+            border-color: #555;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .sell-btn {
+            background: #442222;
+            border: 1px solid #ff4444;
+            color: #ffcccc;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 5px;
+            border-radius: 4px;
+        }
+
+        .tower-btn {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            transition: all 0.3s;
+            border: 2px solid #444;
+            background: #1a1a2e;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 10px;
+        }
+
+        .tower-btn:hover {
+            transform: translateY(-2px);
+            border-color: #00ffff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .tower-btn.selected {
+            border-color: #00ff00;
+            background: #0f2f0f;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .tower-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #333;
+        }
+        
+        .tower-btn.insufficient-funds {
+            animation: shake-and-red 0.5s;
+        }
+        
+        @keyframes shake-and-red {
+            0%, 100% { transform: translateX(0); background-color: rgba(0, 0, 0, 0.5); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); background-color: rgba(255, 0, 0, 0.3); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); background-color: rgba(255, 0, 0, 0.3); }
+        }
+
+        .tower-icon {
+            width: 30px;
+            height: 30px;
+            margin-bottom: 5px;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00ffff;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #888;
+        }
+
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        /* Title Screen Styles */
+        .title-screen {
+            background: linear-gradient(135deg, #001a33 0%, #000814 50%, #1a0033 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 10s ease infinite;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #title-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            opacity: 0.4;
+            z-index: 1;
+            display: block;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .neon-title {
+            font-size: 5rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            text-shadow: 
+                0 0 10px #fff,
+                0 0 20px #fff,
+                0 0 30px #00ffff,
+                0 0 40px #00ffff,
+                0 0 70px #00ffff,
+                0 0 80px #00ffff,
+                0 0 100px #00ffff;
+            letter-spacing: 0.1em;
+            animation: flicker 3s infinite alternate;
+            margin-bottom: 2rem;
+            line-height: 1.2;
+            width: 100%;
+            padding: 0 2rem;
+        }
+
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow: 
+                    0 0 10px #fff,
+                    0 0 20px #fff,
+                    0 0 30px #00ffff,
+                    0 0 40px #00ffff,
+                    0 0 70px #00ffff,
+                    0 0 80px #00ffff,
+                    0 0 100px #00ffff;
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+
+        .touch-prompt {
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            margin-top: 3rem;
+            animation: pulse 2s ease-in-out infinite;
+            cursor: pointer;
+        }
+
+        .creator-credit {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            z-index: 2;
+            font-weight: 400;
+        }
+        
+        .version-label {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            z-index: 2;
+            font-weight: 400;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* Stage Map Styles */
+        .stage-map-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #000000 100%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stage-map-header {
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #00ffff;
+        }
+
+        .stage-map-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ffff;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .stage-map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #stage-map-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* Menu Screen Styles */
+        .menu-screen {
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #6699ff 0%, #001a4d 50%, #000814 100%);
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            position: relative;
+            height: 100%;
+            padding: 2rem 0;
+        }
+
+        .menu-button {
+            background: rgba(200, 220, 255, 0.95);
+            color: #001a4d;
+            padding: 1rem 3rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            min-width: 280px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin: 0;
+            position: relative;
+        }
+
+        .menu-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateX(10px);
+            box-shadow: 0 6px 20px rgba(100, 150, 255, 0.5);
+        }
+
+        .menu-button:active {
+            transform: translateX(10px) scale(0.98);
+        }
+
+        .menu-diagonal {
+            position: absolute;
+            width: 120%;
+            height: 100%;
+            background: #001a4d;
+            transform: skewX(-15deg);
+            left: -10%;
+            z-index: -1;
+        }
+
+        /* Skill Tree Screen Styles */
+        .skill-tree-screen {
+            background: linear-gradient(135deg, #1a0040 0%, #000520 50%, #001a40 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 10s ease infinite;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skill-tree-header {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 10;
+        }
+
+        .skill-tree-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 
+                0 0 10px #fff,
+                0 0 20px #00ffff,
+                0 0 30px #00ffff;
+        }
+
+        .chip-display {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #ffaa00;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chip-icon {
+            font-size: 1.5rem;
+        }
+
+        .skill-canvas-container {
+            position: absolute;
+            top: 100px;
+            left: 10%;
+            right: 10%;
+            bottom: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        #skill-canvas {
+            display: block !important;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+        }
+
+        .skill-back-btn {
+            position: absolute;
+            bottom: 30px;
+            background: rgba(100, 100, 120, 0.9);
+            color: white;
+            padding: 15px 50px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border: 2px solid #aaa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .skill-back-btn:hover {
+            background: rgba(150, 150, 170, 1);
+            box-shadow: 0 0 20px rgba(200, 200, 200, 0.5);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .neon-title {
+                font-size: 3rem;
+            }
+            .touch-prompt {
+                font-size: 1.5rem;
+            }
+            .menu-button {
+                font-size: 1.2rem;
+                padding: 0.8rem 2rem;
+                min-width: 220px;
+            }
+            .skill-tree-title {
+                font-size: 1.8rem;
+            }
+            .chip-display {
+                font-size: 1rem;
+                padding: 8px 15px;
+            }
+            .skill-canvas-container {
+                width: 95%;
+                height: 65%;
+            }
+        }
+
+        .btn-main {
+            margin-top: 20px;
+            padding: 15px 40px;
+            background: linear-gradient(45deg, #00cccc, #008888);
+            border: none;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .btn-main:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #00ffff, #00aaaa);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Confirmation Dialog */
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .confirm-box {
+            background: linear-gradient(135deg, #0a0a15, #1a1a30);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 2rem;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            text-align: center;
+        }
+        
+        .confirm-title {
+            font-size: 1.5rem;
+            color: #00ffff;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .confirm-message {
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .confirm-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .confirm-btn {
+            padding: 0.8rem 2rem;
+            border: 2px solid;
+            border-radius: 5px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .confirm-btn-yes {
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            border-color: #ff6666;
+            color: #ffffff;
+        }
+        
+        .confirm-btn-yes:hover {
+            background: linear-gradient(45deg, #ff6666, #ff0000);
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
+        }
+        
+        .confirm-btn-no {
+            background: linear-gradient(45deg, #444444, #222222);
+            border-color: #666666;
+            color: #ffffff;
+        }
+        
+        .confirm-btn-no:hover {
+            background: linear-gradient(45deg, #666666, #444444);
+            box-shadow: 0 0 15px rgba(100, 100, 100, 0.5);
+        }
+        
+        /* Tutorial Screen Styles */
+        .tutorial-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            z-index: 15000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .tutorial-highlight-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 14999;
+            pointer-events: none;
+        }
+        
+        .tutorial-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .tutorial-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 2rem;
+            position: relative;
+        }
+        
+        .tutorial-character {
+            position: absolute;
+            bottom: -5rem;
+            right: 2rem;
+            width: 650px;
+            height: 650px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1;
+        }
+        
+        .tutorial-character img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+        }
+        
+        .tutorial-text-box {
+            width: 90%;
+            max-width: 900px;
+            background: linear-gradient(135deg, rgba(0, 50, 100, 0.95), rgba(0, 20, 40, 0.95));
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .tutorial-name {
+            color: #00ffff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+        
+        .tutorial-message {
+            color: #ffffff;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            /* min-height: 120px; */
+        }
+        
+        .tutorial-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        
+        .tutorial-page-indicator {
+            color: #00ffff;
+            font-size: 0.9rem;
+            opacity: 0.5;
+        }
+        
+        .tutorial-skip-btn {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(100, 100, 100, 0.5);
+            color: #aaaaaa;
+            padding: 0.5rem 1rem;
+            border: 1px solid #666666;
+            border-radius: 5px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        
+        .tutorial-skip-btn:hover {
+            background: rgba(150, 150, 150, 0.5);
+            color: #ffffff;
+        }
+        
+        .tutorial-text-box {
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .tutorial-screen {
+                padding: 1rem;
+            }
+            
+            .tutorial-content {
+                padding-top: 1rem;
+            }
+            
+            .tutorial-character {
+                width: 480px;
+                height: 620px;
+                bottom: -3rem;
+                right: -5rem;
+            }
+            
+            .tutorial-text-box {
+                width: 95%;
+                padding: 1.5rem;
+            }
+            
+            .tutorial-message {
+                font-size: 1rem;
+                /* min-height: 100px; */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-panel" id="uiLayer">
+        <!-- Top Stats Bar -->
+        <div class="top-section">
+            <div class="top-bar">
+                <button class="pause-btn" onclick="togglePause()">⏸ PAUSE</button>
+                <button class="pause-btn" onclick="toggleDebugMode()" id="debugBtn" style="background: #666;">DEBUG: OFF</button>
+                <div class="stat-box">
+                    <span class="stat-label">WAVE</span>
+                    <span id="waveDisplay" class="stat-value">1</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">LIVES</span>
+                    <span id="livesDisplay" class="stat-value" style="color: #ff4444;">20</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">CREDITS</span>
+                    <span id="moneyDisplay" class="stat-value" style="color: #ffff00;">100</span>
+                </div>
+                <div class="stat-box" id="chipDisplayBox">
+                    <span class="stat-label">CHIP</span>
+                    <span id="chipDisplay" class="stat-value" style="color: #00ffff;">0</span>
+                </div>
+                <div class="stat-box" id="endlessScoreBox" style="display: none;">
+                    <span class="stat-label">SCORE</span>
+                    <span id="endlessScoreDisplay" class="stat-value" style="color: #ff00ff;">0</span>
+                </div>
+                <div class="stat-box" style="margin-left:auto;">
+                    <button id="nextWaveBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold border border-blue-400">
+                        NEXT WAVE
+                    </button>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="progress-track">
+                <div id="waveProgressBar" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Upgrade Panel (Hidden by default) -->
+        <div id="upgradePanel" class="upgrade-panel hidden">
+            <h3 class="text-cyan-400 font-bold" id="upgTitle">Tower Lv.1</h3>
+            <div class="text-xs text-gray-300 mb-2">
+                DMG: <span id="upgDmg" class="text-white"></span> <span class="text-green-400">→ <span id="upgNextDmg"></span></span><br>
+                RNG: <span id="upgRng" class="text-white"></span> <span class="text-green-400">→ <span id="upgNextRng"></span></span>
+            </div>
+            <button id="btnUpgrade" class="upgrade-btn" onmousedown="startUpgradeHold()" onmouseup="stopUpgradeHold()" onmouseleave="stopUpgradeHold()" ontouchstart="startUpgradeHold()" ontouchend="stopUpgradeHold()">
+                UPGRADE ($<span id="upgCost">0</span>)
+            </button>
+            <button id="btnEvolve" class="upgrade-btn hidden" style="background: linear-gradient(45deg, #aa00aa, #660066); border-color: #ff00ff;" onclick="showEvolutionPanel()">
+                ⚡ EVOLVE ⚡
+            </button>
+            <button class="sell-btn" onclick="sellSelectedTower()">SELL ($<span id="sellPrice">0</span>)</button>
+        </div>
+
+        <!-- Evolution Panel -->
+        <div id="evolutionPanel" class="evolution-panel hidden">
+            <h3 class="text-pink-400 font-bold text-lg">⚡ EVOLUTION ⚡</h3>
+            <p class="text-xs text-gray-300">Choose your evolution path:</p>
+            <div id="evolutionOptions" class="evolution-options"></div>
+            <button class="sell-btn" onclick="hideEvolutionPanel()">CANCEL</button>
+        </div>
+
+        <!-- Bottom Tower Selection -->
+        <div class="bottom-bar">
+            <div class="tower-btn" id="btn-turret" onclick="selectTowerToBuild('turret')">
+                <div class="tower-icon" style="background: #00ffff; border-radius: 50%;"></div>
+                <span>TURRET</span>
+                <span style="color:#ffff00; font-size:9px;">$50</span>
+            </div>
+            <div class="tower-btn" id="btn-sniper" onclick="selectTowerToBuild('sniper')">
+                <div class="tower-icon" style="background: #ff00ff; border-radius: 2px;"></div>
+                <span>SNIPER</span>
+                <span style="color:#ffff00; font-size:9px;">$120</span>
+            </div>
+            <div class="tower-btn" id="btn-blaster" onclick="selectTowerToBuild('blaster')">
+                <div class="tower-icon" style="background: #ff8800; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>
+                <span>BLASTER</span>
+                <span style="color:#ffff00; font-size:9px;">$200</span>
+            </div>
+            <div class="tower-btn" id="btn-rod" onclick="selectTowerToBuild('rod')">
+                <div class="tower-icon" style="background: linear-gradient(180deg, #ffff00 0%, #888800 100%); width: 8px; height: 20px; border-radius: 2px;"></div>
+                <span>ROD</span>
+                <span style="color:#ffff00; font-size:9px;">$80</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title Screen -->
+    <div id="title-screen" class="title-screen">
+        <canvas id="title-canvas"></canvas>
+        <div class="neon-title">
+            NEON<br>DEFENCE
+        </div>
+        <div class="touch-prompt" onclick="showMenu()" id="start-prompt">
+            Click to Start
+        </div>
+        <div class="creator-credit">created by Minntelia</div>
+        <div class="version-label">Version 0.1</div>
+    </div>
+
+    <!-- Menu Screen -->
+    <div id="menu-screen" class="menu-screen hidden">
+        <div class="menu-container">
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="showStageMap()" style="margin-bottom: 1rem;">PLAY GAME</button>
+            </div>
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="startEndlessMode()" style="margin-bottom: 1rem; background: linear-gradient(135deg, #ff0066 0%, #6600ff 100%);">ENDLESS MODE</button>
+            </div>
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="showSkillTree()" style="margin-bottom: 1rem;">スキルツリー</button>
+            </div>
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="alert('準備中')" style="margin-bottom: 1rem;">？？？</button>
+            </div>
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="showOptions()">設定</button>
+            </div>
+        </div>
+        <div class="menu-diagonal"></div>
+    </div>
+    
+    <!-- Tutorial Screen -->
+    <div id="tutorial-highlight-overlay" class="tutorial-highlight-overlay hidden"></div>
+    <div id="tutorial-screen" class="tutorial-screen hidden">
+        <button class="tutorial-skip-btn" onclick="skipTutorial(event)">スキップ</button>
+        <div class="tutorial-container">
+            <div class="tutorial-content">
+                <div class="tutorial-character">
+                    <img id="tutorial-character-img" src="img/chara/navi_normal.PNG" alt="Character">
+                </div>
+                <div class="tutorial-text-box" onclick="nextTutorial()">
+                    <div class="tutorial-name" id="tutorial-name">キャラクター</div>
+                    <div class="tutorial-message" id="tutorial-message">
+                        ここにチュートリアルテキストが表示されます。
+                    </div>
+                    <div class="tutorial-controls">
+                        <div class="tutorial-page-indicator" id="tutorial-page-indicator">タップして次へ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stage Map Screen -->
+    <div id="stage-map-screen" class="stage-map-screen hidden">
+        <div class="stage-map-header">
+            <div class="stage-map-title">STAGE SELECT</div>
+            <button class="btn-back" onclick="backToMenuFromStageMap()">← BACK</button>
+        </div>
+        <div class="stage-map-container">
+            <canvas id="stage-map-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Skill Tree Screen -->
+    <div id="skill-tree-screen" class="skill-tree-screen hidden">
+        <div class="skill-tree-header">
+            <div class="skill-tree-title">スキルツリー</div>
+            <div class="chip-display">
+                <span class="chip-icon">💎</span>
+                <span id="chip-count">0</span>
+            </div>
+        </div>
+        <div class="skill-canvas-container">
+            <canvas id="skill-canvas"></canvas>
+        </div>
+        <button class="skill-back-btn" onclick="backToMenuFromSkillTree()">戻る</button>
+    </div>
+
+    <!-- Options Screen -->
+    <div id="options-screen" class="menu-screen hidden">
+        <div class="menu-container">
+            <div style="position: relative; width: 100%; max-width: 400px; margin-bottom: 2rem;">
+                <h2 class="text-3xl font-bold text-center mb-4" style="color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);">OPTIONS</h2>
+                
+                <div style="background: rgba(0, 0, 0, 0.5); padding: 1.5rem; border: 1px solid #00ffff; border-radius: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="gridSnapCheckbox" onchange="toggleGridSnap()" style="width: 20px; height: 20px; margin-right: 1rem; cursor: pointer;">
+                        <span style="font-size: 1.1rem;">グリッドスナップ</span>
+                    </label>
+                    <p style="margin-top: 0.5rem; margin-left: 2.25rem; font-size: 0.85rem; color: #aaa;">タワー設置時にグリッド線を表示し、位置を自動調整</p>
+                </div>
+            </div>
+            
+            <div style="position: relative; width: 100%; max-width: 400px;">
+                <button class="menu-button" id="options-back-btn" onclick="backToMenuFromOptions()">戻る</button>
+            </div>
+        </div>
+        <div class="menu-diagonal"></div>
+    </div>
+    
+    <!-- Pause Screen -->
+    <div id="pause-screen" class="menu-screen hidden">
+        <div class="menu-container">
+            <div style="position: relative; max-width: 400px; margin-bottom: 2rem;">
+                <h2 class="text-5xl font-bold text-center mb-8" style="color: #00ffff; text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);">⏸ PAUSED</h2>
+            </div>
+            
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="resumeGame()" style="margin-bottom: 1rem;">RESUME</button>
+            </div>
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="pauseToOptions()" style="margin-bottom: 1rem;">OPTION</button>
+            </div>
+            <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="pauseToMenu()">BACK MENU</button>
+            </div>
+        </div>
+        <div class="menu-diagonal"></div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="hidden">
+        <h1 class="text-5xl font-bold mb-4 text-red-500">GAME OVER</h1>
+        <p class="text-xl mb-4">WAVE REACHED: <span id="finalWave" class="text-white">0</span></p>
+        <p id="bestScore" class="text-lg mb-4" style="color: #ff00ff; display: none;"></p>
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-main" onclick="resetGame()">RETRY</button>
+            <button class="btn-main" onclick="backToMenu()" style="background: linear-gradient(45deg, #666666, #444444);">MENU</button>
+        </div>
+    </div>
+    
+    <!-- Stage Clear Screen -->
+    <div id="stage-clear-screen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; align-items: center; justify-content: center; z-index: 2000;">
+        <div style="text-align: center;">
+            <h1 class="text-6xl font-bold mb-4" style="color: #00ffff; text-shadow: 0 0 20px #00ffff;">STAGE CLEAR!</h1>
+            <p class="text-2xl mb-4" style="color: #ffffff;">WAVE CLEARED: <span id="clearWave" class="text-white">0</span></p>
+            <p class="text-xl mb-8" style="color: #00ff00;">NEXT STAGE UNLOCKED!</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button class="btn-main" onclick="backToStageMapFromClear()" style="background: linear-gradient(45deg, #00ffff, #0099ff);">STAGE SELECT</button>
+                <button class="btn-main" onclick="backToMenu(); document.getElementById('stage-clear-screen').classList.add('hidden');" style="background: linear-gradient(45deg, #666666, #444444);">MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirm-dialog" class="confirm-dialog hidden">
+        <div class="confirm-box">
+            <div class="confirm-title">⚠ 確認</div>
+            <div class="confirm-message" id="confirm-message">メニューに戻りますか？<br>現在のゲーム進行状況は失われます。</div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-btn-no" onclick="hideConfirmDialog()">キャンセル</button>
+                <button class="confirm-btn confirm-btn-yes" onclick="confirmAction()">メニューに戻る</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

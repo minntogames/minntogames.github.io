@@ -325,6 +325,8 @@
       <div class="fancy-border">
         <h2>【力を入れているページ】</h2>
         <p>
+          MinnteliaGames最新作！！！！タワーディフェンスゲーム！！！！！！！<br/>
+          <h2><a href="./games/tower">Neon Defence</a></h2><br/>
           今まで作ってきた多彩なキャラを収録！！！<br/>
           <h3><a href="./character">キャラ図鑑</a></h3><br/>
           ねこの旅を手助けして伝説の星「に星」へとめざせ！！！<br/>
