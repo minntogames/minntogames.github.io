@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Defense Map Editor</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #00ffff;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 350px;
+            background-color: #222;
+            border-right: 1px solid #00ffff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 255, 255, 0.2);
+            z-index: 10;
+        }
+
+        #main {
+            flex-grow: 1;
+            background-color: #000;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Grid pattern background */
+            background-image: 
+                linear-gradient(rgba(0, 50, 50, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 50, 50, 0.5) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        canvas {
+            background-color: rgba(17, 17, 17, 0.8);
+            border: 2px solid #333;
+            cursor: crosshair;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 0 5px #00ffff;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            margin-bottom: 8px;
+            color: #ccc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-group {
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 5px;
+            background: #2a2a2a;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .input-row label {
+            flex: 1;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .input-row input {
+            width: 100%;
+            background: #111;
+            border: 1px solid #444;
+            color: #00ffff;
+            padding: 4px;
+            font-family: inherit;
+        }
+
+        button {
+            background: linear-gradient(180deg, #004466, #002233);
+            color: #00ffff;
+            border: 1px solid #006688;
+            padding: 8px 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 5px;
+            font-family: inherit;
+            transition: all 0.2s;
+            text-shadow: 0 0 2px rgba(0, 255, 255, 0.5);
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: linear-gradient(180deg, #006688, #004466);
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+            border-color: #00aaff;
+        }
+
+        button.active {
+            background: #00ffff;
+            border-color: #fff;
+            color: #000;
+            text-shadow: none;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+
+        button.danger {
+            background: #442222;
+            border-color: #884444;
+            color: #ff8888;
+        }
+        
+        button.danger:hover {
+            background: #662222;
+            border-color: #ff4444;
+            color: #ffcccc;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background-color: #111;
+            color: #00ff00;
+            border: 1px solid #444;
+            padding: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            resize: vertical;
+            white-space: pre;
+            overflow-x: auto;
+            box-sizing: border-box;
+        }
+
+        .info {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        .coord-display {
+            background: #000;
+            border: 1px solid #333;
+            padding: 5px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #ffff00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .toggle-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .toggle-row button {
+            margin-bottom: 0;
+            flex: 1;
+            font-size: 11px;
+            padding: 8px 4px;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        .badge-shift {
+            background: #444;
+            color: #fff;
+            border: 1px solid #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>NEON DEFENSE<br>MAP EDITOR</h1>
+
+        <div class="coord-display" id="coordDisplay">X: 0, Y: 0</div>
+
+        <div class="control-group">
+            <h2>フィールド設定 (Field Settings)</h2>
+            <div class="input-row">
+                <label>Width<br><input type="number" id="fieldWidth" value="1200"></label>
+                <label>Height<br><input type="number" id="fieldHeight" value="800"></label>
+            </div>
+            <button onclick="updateFieldSize()">サイズ更新 (Update)</button>
+        </div>
+
+        <div class="control-group">
+            <h2>編集モード (Mode)</h2>
+            <div class="toggle-row">
+                <button id="btnModePath" class="active" onclick="setMode('path')">Enemy Path</button>
+                <button id="btnModeRect" onclick="setMode('rect')">Playable Zones</button>
+                <button id="btnModeMap" onclick="setMode('map')">Border Lines</button>
+            </div>
+            <div class="info" id="modeInfo">
+                generatePath() 用の敵ルートを作成します。
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h2>操作 (Tools)</h2>
+            <button onclick="undoLastPoint()">１つ戻る (Undo) [Ctrl+Z]</button>
+            <button class="danger" onclick="clearPoints()">全クリア (Clear)</button>
+            <div class="info">
+                <p><strong>ヒント:</strong></p>
+                <ul id="toolHints">
+                    <li>クリック: ポイント追加</li>
+                    <li><span class="badge badge-shift">Shift</span> + クリック: 垂直/水平スナップ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h2>出力コード (Output)</h2>
+            <div id="codeLabel" class="info">generatePath() 内に貼り付け:</div>
+            <textarea id="outputCode" readonly onclick="this.select()"></textarea>
+            <button onclick="copyToClipboard()">コードをコピー</button>
+        </div>
+        
+        <div class="info" style="border-top: 1px solid #333; paddingTop: 10px;">
+            <p>Margin: 50, Grid: 40px<br>
+            ※script.jsの定数と同じ設定で出力されます</p>
+        </div>
+    </div>
+
+    <div id="main">
+        <canvas id="editorCanvas"></canvas>
+    </div>
+
+    <script>
+        // Game Constants (Changeable)
+        let FIELD_WIDTH = 1200;
+        let FIELD_HEIGHT = 800;
+        const FIELD_MARGIN = 50;
+        const GRID_SIZE = 40;
+
+        // Computed Canvas Size
+        let CANVAS_WIDTH = FIELD_WIDTH + (FIELD_MARGIN * 2);
+        let CANVAS_HEIGHT = FIELD_HEIGHT + (FIELD_MARGIN * 2);
+
+        // State
+        let mode = 'path'; // 'path', 'rect', or 'map'
+        let pathPoints = [];
+        let mapPoints = [];
+        let rects = []; // Array of {x, y, width, height}
+        
+        let mouseX = 0;
+        let mouseY = 0;
+        let isShiftPressed = false;
+        
+        // Dragging state for Rect mode
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+
+        // DOM Elements
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const outputArea = document.getElementById('outputCode');
+        const coordDisplay = document.getElementById('coordDisplay');
+        const codeLabel = document.getElementById('codeLabel');
+        const modeInfo = document.getElementById('modeInfo');
+        const toolHints = document.getElementById('toolHints');
+        const btnModePath = document.getElementById('btnModePath');
+        const btnModeRect = document.getElementById('btnModeRect');
+        const btnModeMap = document.getElementById('btnModeMap');
+        const inputFieldWidth = document.getElementById('fieldWidth');
+        const inputFieldHeight = document.getElementById('fieldHeight');
+
+        // Initial setup
+        updateCanvasSize();
+
+        // Functions to handle field size changes
+        function updateFieldSize() {
+            const newW = parseInt(inputFieldWidth.value);
+            const newH = parseInt(inputFieldHeight.value);
+            
+            if (newW > 0 && newH > 0) {
+                FIELD_WIDTH = newW;
+                FIELD_HEIGHT = newH;
+                updateCanvasSize();
+                resizeCanvasView(); // Re-fit to screen
+                draw(); // Redraw
+            } else {
+                alert("幅と高さは正の数値を入力してください。");
+            }
+        }
+
+        function updateCanvasSize() {
+            CANVAS_WIDTH = FIELD_WIDTH + (FIELD_MARGIN * 2);
+            CANVAS_HEIGHT = FIELD_HEIGHT + (FIELD_MARGIN * 2);
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+        }
+
+        // Resize handling (Window resize)
+        function resizeCanvasView() {
+            const container = document.getElementById('main');
+            // Fit canvas to screen but maintain aspect ratio, max scale 1.0
+            const scale = Math.min(
+                (container.clientWidth - 40) / CANVAS_WIDTH,
+                (container.clientHeight - 40) / CANVAS_HEIGHT
+            );
+            const finalScale = Math.min(scale, 1.0); // Don't zoom in beyond 100% to keep pixels sharp
+            
+            canvas.style.width = `${CANVAS_WIDTH * finalScale}px`;
+            canvas.style.height = `${CANVAS_HEIGHT * finalScale}px`;
+        }
+        window.addEventListener('resize', resizeCanvasView);
+        setTimeout(resizeCanvasView, 100);
+
+        // Event Listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') isShiftPressed = true;
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                undoLastPoint();
+            }
+            draw();
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') isShiftPressed = false;
+            draw();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            // Raw coordinates relative to canvas 0,0
+            let rawX = (e.clientX - rect.left) * scaleX;
+            let rawY = (e.clientY - rect.top) * scaleY;
+
+            // Basic Grid Snap (20px resolution for finer control, 40px grid vis)
+            const snap = 50; 
+            
+            // Offset snap calculation by FIELD_MARGIN to align with the visual grid
+            // (raw - margin) / snap -> round -> * snap + margin
+            let targetX = Math.round((rawX - FIELD_MARGIN) / snap) * snap + FIELD_MARGIN;
+            let targetY = Math.round((rawY - FIELD_MARGIN) / snap) * snap + FIELD_MARGIN;
+
+            // Ortho Snap (Shift Key) - Only for Path/Map modes, not dragging rect
+            if (isShiftPressed && !isDragging && (mode === 'path' || mode === 'map')) {
+                const currentPoints = mode === 'path' ? pathPoints : mapPoints;
+                if (currentPoints.length > 0) {
+                    const lastPoint = currentPoints[currentPoints.length - 1];
+                    const dx = Math.abs(targetX - lastPoint.x);
+                    const dy = Math.abs(targetY - lastPoint.y);
+                    
+                    // Snap to whichever axis is closer
+                    if (dx < dy) {
+                        targetX = lastPoint.x; // Vertical line
+                    } else {
+                        targetY = lastPoint.y; // Horizontal line
+                    }
+                }
+            }
+
+            mouseX = targetX;
+            mouseY = targetY;
+
+            coordDisplay.innerText = `X: ${mouseX}, Y: ${mouseY}`;
+            draw();
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Only left click
+
+            if (mode === 'rect') {
+                isDragging = true;
+                dragStartX = mouseX;
+                dragStartY = mouseY;
+            } else if (mode === 'path') {
+                pathPoints.push({ x: mouseX, y: mouseY });
+                generateCode();
+            } else {
+                mapPoints.push({ x: mouseX, y: mouseY });
+                generateCode();
+            }
+            draw();
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (mode === 'rect' && isDragging) {
+                isDragging = false;
+                
+                // Calculate width and height
+                let width = mouseX - dragStartX;
+                let height = mouseY - dragStartY;
+                
+                // Normalize rect (allow dragging in any direction)
+                let x = dragStartX;
+                let y = dragStartY;
+                
+                if (width < 0) { x = mouseX; width = Math.abs(width); }
+                if (height < 0) { y = mouseY; height = Math.abs(height); }
+                
+                // Only add if size is significant
+                if (width > 5 && height > 5) {
+                    rects.push({ x, y, width, height });
+                    generateCode();
+                }
+                draw();
+            }
+        });
+
+        // Functions
+        function setMode(newMode) {
+            mode = newMode;
+            btnModePath.className = mode === 'path' ? 'active' : '';
+            btnModeRect.className = mode === 'rect' ? 'active' : '';
+            btnModeMap.className = mode === 'map' ? 'active' : '';
+            
+            // Update Info text
+            let hintHtml = "";
+            if (mode === 'path') {
+                codeLabel.innerText = "generatePath() 内で使用:";
+                modeInfo.innerText = "generatePath() 用の敵ルートを作成します。";
+                hintHtml = `<li>クリック: ポイント追加</li><li><span class="badge badge-shift">Shift</span> + クリック: 垂直/水平スナップ</li>`;
+            } else if (mode === 'rect') {
+                codeLabel.innerText = "stageFieldShapes 内で使用:";
+                modeInfo.innerText = "stageFieldShapes の customPlayableZones を作成します。";
+                hintHtml = `<li>ドラッグ: 矩形エリアを作成</li>`;
+            } else {
+                codeLabel.innerText = "drawMap() の境界線描画で使用:";
+                modeInfo.innerText = "境界線（枠線）の描画コードを作成します。";
+                hintHtml = `<li>クリック: ポイント追加</li><li><span class="badge badge-shift">Shift</span> + クリック: 垂直/水平スナップ</li>`;
+            }
+            toolHints.innerHTML = hintHtml;
+
+            generateCode();
+            draw();
+        }
+
+        function undoLastPoint() {
+            if (mode === 'path') {
+                pathPoints.pop();
+            } else if (mode === 'rect') {
+                rects.pop();
+            } else {
+                mapPoints.pop();
+            }
+            generateCode();
+            draw();
+        }
+
+        function clearPoints() {
+            if (confirm("現在のモードのデータを全て削除しますか？")) {
+                if (mode === 'path') {
+                    pathPoints = [];
+                } else if (mode === 'rect') {
+                    rects = [];
+                } else {
+                    mapPoints = [];
+                }
+                generateCode();
+                draw();
+            }
+        }
+
+        function generateCode() {
+            let code = "";
+
+            if (mode === 'path') {
+                // Generate path array code
+                code = `// generatePath() function inside\npath = [\n`;
+                pathPoints.forEach((p, i) => {
+                    code += `    { x: ${p.x}, y: ${p.y} }${i < pathPoints.length - 1 ? ',' : ''}\n`;
+                });
+                code += `];`;
+            } else if (mode === 'rect') {
+                // Generate customPlayableZones code
+                code = `// stageFieldShapes definition\ncustomPlayableZones: [\n`;
+                rects.forEach((r, i) => {
+                    code += `    { x: ${r.x}, y: ${r.y}, width: ${r.width}, height: ${r.height} }${i < rects.length - 1 ? ',' : ''}\n`;
+                });
+                code += `]`;
+            } else {
+                // Generate Canvas drawing commands
+                code = `// drawMap() function inside\nctx.beginPath();\n`;
+                if (mapPoints.length > 0) {
+                    code += `ctx.moveTo(${mapPoints[0].x}, ${mapPoints[0].y});\n`;
+                    for (let i = 1; i < mapPoints.length; i++) {
+                        code += `ctx.lineTo(${mapPoints[i].x}, ${mapPoints[i].y});\n`;
+                    }
+                    code += `ctx.lineTo(${mapPoints[0].x}, ${mapPoints[0].y}); // Close shape\n`;
+                }
+                code += `ctx.stroke();`;
+            }
+
+            outputArea.value = code;
+        }
+
+        function copyToClipboard() {
+            outputArea.select();
+            document.execCommand('copy');
+            // Visual feedback
+            const btn = document.querySelector('#sidebar button:last-child'); // The copy button
+            const originalText = btn.innerText;
+            btn.innerText = "コピーしました！";
+            setTimeout(() => btn.innerText = originalText, 1500);
+        }
+
+        function draw() {
+            // Clear Background
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Margins (Playable Area Boundary)
+            ctx.strokeStyle = '#004444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(FIELD_MARGIN, FIELD_MARGIN, FIELD_WIDTH, FIELD_HEIGHT);
+            ctx.setLineDash([]);
+
+            // Draw Grid
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = FIELD_MARGIN; x <= FIELD_WIDTH + FIELD_MARGIN; x += GRID_SIZE) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, CANVAS_HEIGHT);
+            }
+            for (let y = FIELD_MARGIN; y <= FIELD_HEIGHT + FIELD_MARGIN; y += GRID_SIZE) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(CANVAS_WIDTH, y);
+            }
+            ctx.stroke();
+
+            // Draw Text Indicators
+            ctx.font = '14px monospace';
+            ctx.fillStyle = '#4488ff';
+            ctx.fillText("MARGIN AREA", 10, 30);
+            ctx.fillText(`FIELD: ${FIELD_WIDTH}x${FIELD_HEIGHT}`, 10, 50);
+            
+            // Draw Ghost Items (Inactive Modes)
+            ctx.globalAlpha = 0.2;
+            if (mode !== 'path') drawPathShape();
+            if (mode !== 'rect') drawRects();
+            if (mode !== 'map') drawMapShape();
+            ctx.globalAlpha = 1.0;
+
+            // Draw Active Mode Items
+            if (mode === 'path') drawPathShape();
+            else if (mode === 'rect') drawRects();
+            else drawMapShape();
+
+            // Draw Interaction Previews
+            if (mode === 'path' || mode === 'map') {
+                const currentPoints = mode === 'path' ? pathPoints : mapPoints;
+                if (currentPoints.length > 0) {
+                    const lastP = currentPoints[currentPoints.length - 1];
+                    ctx.beginPath();
+                    ctx.moveTo(lastP.x, lastP.y);
+                    ctx.lineTo(mouseX, mouseY);
+                    ctx.strokeStyle = isShiftPressed ? '#ffffff' : (mode === 'path' ? 'rgba(255, 50, 50, 0.5)' : 'rgba(0, 255, 255, 0.5)');
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 2]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            } else if (mode === 'rect' && isDragging) {
+                // Draw rect being dragged
+                const w = mouseX - dragStartX;
+                const h = mouseY - dragStartY;
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(dragStartX, dragStartY, w, h);
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                ctx.fillRect(dragStartX, dragStartY, w, h);
+                ctx.setLineDash([]);
+                
+                // Dimensions text
+                ctx.fillStyle = '#fff';
+                ctx.fillText(`${Math.abs(w)} x ${Math.abs(h)}`, mouseX + 10, mouseY + 20);
+            }
+
+            // Draw Cursor
+            ctx.fillStyle = isShiftPressed ? '#ffffff' : (mode === 'path' ? '#ff3333' : mode === 'rect' ? '#00ff00' : '#00ffff');
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Cursor coordinates tooltip
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px monospace';
+            ctx.fillText(`(${mouseX}, ${mouseY})`, mouseX + 10, mouseY - 10);
+            
+            // Shift indicator
+            if (isShiftPressed && mode !== 'rect') {
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText("SNAP ON", mouseX + 10, mouseY + 20);
+            }
+        }
+
+        function drawPathShape() {
+            if (pathPoints.length === 0) return;
+
+            // Draw Line
+            ctx.strokeStyle = '#ff3333';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+            for (let i = 1; i < pathPoints.length; i++) {
+                ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+            }
+            ctx.stroke();
+
+            // Draw Points
+            pathPoints.forEach((p, i) => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+                
+                if (i === 0) ctx.fillStyle = '#00ff00'; // Start
+                else if (i === pathPoints.length - 1) ctx.fillStyle = '#ff0000'; // End
+                else ctx.fillStyle = '#ffaaaa';
+                
+                ctx.fill();
+                
+                // Index number
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i, p.x, p.y);
+            });
+            
+            // Labels
+            if (pathPoints.length > 0) {
+                ctx.fillStyle = '#00ff00';
+                ctx.fillText("START", pathPoints[0].x, pathPoints[0].y - 15);
+                ctx.fillStyle = '#ff0000';
+                ctx.fillText("GOAL", pathPoints[pathPoints.length-1].x, pathPoints[pathPoints.length-1].y - 15);
+            }
+        }
+
+        function drawRects() {
+            rects.forEach((r, i) => {
+                // Draw filled rect
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.15)';
+                ctx.fillRect(r.x, r.y, r.width, r.height);
+                
+                // Draw border
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(r.x, r.y, r.width, r.height);
+                
+                // Draw dimensions center
+                ctx.fillStyle = '#ccffcc';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`Zone ${i+1}`, r.x + r.width/2, r.y + r.height/2);
+            });
+        }
+
+        function drawMapShape() {
+            if (mapPoints.length === 0) return;
+
+            // Draw Polygon
+            ctx.strokeStyle = '#00ffff';
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.lineWidth = 3;
+            
+            ctx.beginPath();
+            ctx.moveTo(mapPoints[0].x, mapPoints[0].y);
+            for (let i = 1; i < mapPoints.length; i++) {
+                ctx.lineTo(mapPoints[i].x, mapPoints[i].y);
+            }
+            // Close loop visually to see the shape
+            if (mapPoints.length > 2) {
+                ctx.lineTo(mapPoints[0].x, mapPoints[0].y);
+            }
+            ctx.stroke();
+            ctx.fill();
+
+            // Draw Points
+            ctx.fillStyle = '#ccffff';
+            mapPoints.forEach(p => {
+                ctx.beginPath();
+                ctx.fillRect(p.x - 4, p.y - 4, 8, 8);
+            });
+        }
+
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>

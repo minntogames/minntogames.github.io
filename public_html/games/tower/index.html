@@ -907,6 +907,9 @@
 
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
+    
+    <!-- FPS Counter (front layer) -->
+    <div id="fps-counter" style="position: fixed; bottom: 100px; right: 10px; background: rgba(0, 0, 0, 0.3); color: rgba(0, 255, 0, 0.3); padding: 8px 12px; font-family: monospace; font-size: 16px; border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 4px; z-index: 10000; display: none; pointer-events: none;">FPS 60</div>
 
     <div class="ui-panel" id="uiLayer">
         <!-- Top Stats Bar -->
@@ -1081,15 +1084,65 @@
     <!-- Options Screen -->
     <div id="options-screen" class="menu-screen hidden">
         <div class="menu-container">
-            <div style="position: relative; width: 100%; max-width: 400px; margin-bottom: 2rem;">
+            <div style="position: relative; width: 100%; max-width: 500px; margin-bottom: 2rem;">
                 <h2 class="text-3xl font-bold text-center mb-4" style="color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);">OPTIONS</h2>
                 
-                <div style="background: rgba(0, 0, 0, 0.5); padding: 1.5rem; border: 1px solid #00ffff; border-radius: 8px;">
-                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+                <div style="background: rgba(0, 0, 0, 0.5); padding: 1.5rem; border: 1px solid #00ffff; border-radius: 8px; margin-bottom: 1rem;">
+                    <!-- Grid Snap -->
+                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none; margin-bottom: 1.5rem;">
                         <input type="checkbox" id="gridSnapCheckbox" onchange="toggleGridSnap()" style="width: 20px; height: 20px; margin-right: 1rem; cursor: pointer;">
                         <span style="font-size: 1.1rem;">グリッドスナップ</span>
                     </label>
-                    <p style="margin-top: 0.5rem; margin-left: 2.25rem; font-size: 0.85rem; color: #aaa;">タワー設置時にグリッド線を表示し、位置を自動調整</p>
+                    
+                    <!-- Graphics Quality -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">画質設定</label>
+                        <select id="graphicsQuality" onchange="updateGraphicsQuality()" style="width: 100%; padding: 0.5rem; background: rgba(0, 0, 0, 0.7); color: white; border: 1px solid #00ffff; border-radius: 4px; font-size: 1rem;">
+                            <option value="high">高</option>
+                            <option value="medium">中</option>
+                            <option value="low">低</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Effects -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">エフェクト量</label>
+                        <select id="effectsQuality" onchange="updateEffectsQuality()" style="width: 100%; padding: 0.5rem; background: rgba(0, 0, 0, 0.7); color: white; border: 1px solid #00ffff; border-radius: 4px; font-size: 1rem;">
+                            <option value="standard">標準</option>
+                            <option value="low">低</option>
+                        </select>
+                    </div>
+                    
+                    <!-- SE Volume -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">SE音量: <span id="seVolumeLabel">75%</span></label>
+                        <input type="range" id="seVolume" min="0" max="100" value="75" onchange="updateSEVolume()" style="width: 100%;">
+                    </div>
+                    
+                    <!-- BGM Volume -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">BGM音量: <span id="bgmVolumeLabel">25%</span></label>
+                        <input type="range" id="bgmVolume" min="0" max="100" value="25" onchange="updateBGMVolume()" style="width: 100%;">
+                    </div>
+                    
+                    <!-- FPS Display -->
+                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none; margin-bottom: 1.5rem;">
+                        <input type="checkbox" id="showFPSCheckbox" onchange="toggleFPS()" style="width: 20px; height: 20px; margin-right: 1rem; cursor: pointer;">
+                        <span style="font-size: 1.1rem;">FPS表示</span>
+                    </label>
+                    
+                    <!-- FPS Limit -->
+                    <div style="margin-bottom: 0;">
+                        <label style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">FPS上限: <span id="fpsLimitLabel">無制限</span></label>
+                        <input type="range" id="fpsLimit" min="0" max="144" value="0" step="1" onchange="updateFPSLimit()" style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; margin-top: 0.25rem;">
+                            <span>無制限</span>
+                            <span>30</span>
+                            <span>60</span>
+                            <span>120</span>
+                            <span>144</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
