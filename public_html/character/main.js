@@ -1,3 +1,167 @@
+// ===============================================
+// 通知システム
+// ===============================================
+let notifications = [];
+const notificationContainer = document.getElementById('notification-container');
+
+const NOTIFICATION_CONFIG = {
+  success: { 
+    bg: 'bg-green-50', 
+    border: 'border-green-200', 
+    text: 'text-green-800', 
+    icon: `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,
+    style: 'background-color: #f0fdf4; border-color: #bbf7d0; color: #166534;'
+  },
+  error: { 
+    bg: 'bg-red-50', 
+    border: 'border-red-200', 
+    text: 'text-red-800', 
+    icon: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`,
+    style: 'background-color: #fef2f2; border-color: #fecaca; color: #991b1b;'
+  },
+  info: { 
+    bg: 'bg-blue-50', 
+    border: 'border-blue-200', 
+    text: 'text-blue-800', 
+    icon: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12.01" y2="16"/><line x1="12" y1="8" x2="12" y2="12"/>`,
+    style: 'background-color: #eff6ff; border-color: #bfdbfe; color: #1e40af;'
+  }
+};
+
+const NOTIFICATION_HEIGHT = 50;
+const NOTIFICATION_GAP = 12;
+const NOTIFICATION_BASE_STEP = NOTIFICATION_HEIGHT + NOTIFICATION_GAP;
+const MAX_NOTIFICATIONS = 50; // 最大通知数
+
+function addNotification(message, type = 'info') {
+  const id = Date.now();
+  const notification = {
+    id,
+    message,
+    type,
+    isExiting: false,
+    element: createNotificationElement(id, message, type)
+  };
+
+  // 配列の先頭に追加（新しいものが上）
+  notifications.unshift(notification);
+  notificationContainer.appendChild(notification.element);
+
+  // 50個を超えた場合、古い通知を削除
+  if (notifications.length > MAX_NOTIFICATIONS) {
+    const toRemove = notifications.slice(MAX_NOTIFICATIONS);
+    toRemove.forEach(notif => {
+      if (notif.element && notif.element.parentNode) {
+        notif.element.remove();
+      }
+    });
+    notifications = notifications.slice(0, MAX_NOTIFICATIONS);
+  }
+
+  // ブラウザの再描画を待ってからアニメーション開始
+  requestAnimationFrame(() => {
+    updateNotificationPositions();
+  });
+
+  // 5秒後に自動消去
+  setTimeout(() => {
+    removeNotification(id);
+  }, 5000);
+}
+
+function createNotificationElement(id, message, type) {
+  const config = NOTIFICATION_CONFIG[type] || NOTIFICATION_CONFIG.info;
+  const div = document.createElement('div');
+  div.id = `notif-${id}`;
+  div.className = 'notification-item notification-enter';
+  div.style.cssText = 'pointer-events: auto; width: 320px;';
+  
+  div.innerHTML = `
+    <div style="display: flex; align-items: flex-start; padding: 16px; border-radius: 16px; border: 1px solid; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); ${config.style}">
+      <div style="flex-shrink: 0; margin-right: 12px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${config.icon}</svg>
+      </div>
+      <div style="flex-grow: 1; font-size: 12px; font-weight: bold; padding-top: 2px; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+        ${escapeHtml(message)}
+      </div>
+      <button onclick="removeNotification(${id})" style="flex-shrink: 0; margin-left: 8px; background: none; border: none; cursor: pointer; color: #9ca3af; transition: color 0.2s; padding: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `;
+  return div;
+}
+
+function removeNotification(id) {
+  const index = notifications.findIndex(n => n.id === id);
+  if (index === -1 || notifications[index].isExiting) return;
+
+  const notif = notifications[index];
+  notif.isExiting = true;
+  
+  // 消去中の見た目
+  notif.element.style.opacity = '0';
+  notif.element.style.transform += ' translate3d(40px, 0, 0) scale(0.95)';
+  notif.element.style.pointerEvents = 'none';
+
+  // 位置計算を即座に更新（下の通知を上に詰める）
+  updateNotificationPositions();
+
+  // アニメーション完了後にDOMから削除
+  setTimeout(() => {
+    const finalIndex = notifications.findIndex(n => n.id === id);
+    if (finalIndex !== -1) {
+      notif.element.remove();
+      notifications.splice(finalIndex, 1);
+    }
+  }, 500);
+}
+
+function updateNotificationPositions() {
+  let visualIndex = 0;
+  
+  notifications.forEach((notif) => {
+    if (notif.isExiting) return;
+
+    let translateY = 0;
+    let scale = 1;
+    let opacity = 1;
+    let zIndex = 100 - visualIndex;
+    let blur = '0px';
+
+    if (visualIndex === 0) {
+      translateY = 0;
+    } else if (visualIndex === 1) {
+      translateY = NOTIFICATION_BASE_STEP;
+    } else {
+      const stackDepth = visualIndex - 2;
+      translateY = (NOTIFICATION_BASE_STEP * 2) + (stackDepth * 8);
+      scale = Math.max(0.8, 1 - (stackDepth * 0.05));
+      opacity = Math.max(0, 1 - (stackDepth * 0.2));
+      blur = stackDepth > 0 ? `${stackDepth * 1}px` : '0px';
+    }
+
+    notif.element.style.zIndex = zIndex;
+    notif.element.style.opacity = opacity;
+    notif.element.style.filter = `blur(${blur})`;
+    notif.element.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
+    
+    visualIndex++;
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// グローバルに公開
+window.addNotification = addNotification;
+
+// ===============================================
+// キャラクターデータ管理
+// ===============================================
 let characters = [];
 let settings = {};
 let activeFilters = {
@@ -83,7 +247,7 @@ let weaponIconDisplayMode = 'filterOnly';
 let weaponSearchEnabled = true;  // 武器名での検索を有効にするか
 let customTagSearchEnabled = true;  // カスタムタグでの検索を有効にするか
 let highlightEnabled = true;  // 予測変換の強調表示を有効にするか
-let currentSortOrder = 'id'; // 'id', 'name', 'random', 'custom' のいずれか
+let currentSortOrder = 'world'; // 'world', 'id', 'name', 'random', 'custom' のいずれか
 let tagSortOrders = {}; // カスタムタグごとの並び順設定 {tagId: 'id' | 'name' | 'random' | 'custom'}
 let customCharacterOrder = []; // カスタム並び順 [charId1, charId2, ...]
 let tagCustomOrders = {}; // カスタムタグごとのカスタム並び順 {tagId: [charId1, charId2, ...]}
@@ -763,15 +927,15 @@ async function importAllData(file) {
     }
     
     console.log('データインポート完了');
-    alert('BMCDデータのインポートが完了しました。');
+    addNotification('設定の読み込みが成功しました', 'success');
   } catch (error) {
     console.error('データインポートエラー:', error);
     if (error.message.includes('BMCDファイル')) {
-      alert(error.message);
+      addNotification(error.message, 'error');
     } else if (error.message.includes('JSON')) {
-      alert('BMCDファイルの形式が正しくありません。正しいBMCDファイルを選択してください。');
+      addNotification('BMCDファイルの形式が正しくないか破損しています', 'error');
     } else {
-      alert('データのインポートに失敗しました。正しいBMCDファイルか確認してください。');
+      addNotification('データのインポートに失敗しました', 'error');
     }
   }
 }
@@ -963,6 +1127,13 @@ fetch('cha.json')
     // relationデータも保持
     relationGroups = data[0].relation || [];
     
+    // worldの値でソート（1, 2, 3...順）
+    characters.sort((a, b) => {
+      const worldA = Number(a.world) || 0;
+      const worldB = Number(b.world) || 0;
+      return worldA - worldB;
+    });
+    
     // 言語マッピングを作成
     createLanguageMaps();
 
@@ -1102,7 +1273,8 @@ function renderCharacter(char) {
 
   const world = char.world ? String(char.world) : "1";
   let worldClass = "";
-  if (world === "1") worldClass = "card-world-1";
+  if (world === "0") worldClass = "card-world-0";
+  else if (world === "1") worldClass = "card-world-1";
   else if (world === "2") worldClass = "card-world-2";
   else if (world === "3") worldClass = "card-world-3";
 
@@ -1603,6 +1775,7 @@ function filterCharacters() {
   } else {
     characterListContainer.innerHTML = '';
     noCharactersMessage.style.display = 'block';
+    addNotification('該当するキャラクターが見つかりませんでした', 'info');
   }
   } catch (error) {
     console.error('filterCharacters エラー:', error);
@@ -2396,16 +2569,16 @@ function showCharacterDetails(charId, imgIndex = 0) {
           ${hasWeapons ? '<button class="tab-nav-item" onclick="switchTab(\'weapon\', this)">武器情報</button>' : ''}
         </div>
         <div id="basic-tab" class="tab-content active">
-          <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || 'N/A'}</p>
-          <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || 'N/A'}</p>
-          <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race ? getDisplayTerm('race', character.race, currentDisplayLanguage) : 'N/A')}</p>
-          <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle ? getDisplayTerm('fightingStyle', fightingStyle, currentDisplayLanguage) : 'N/A')}</p>
-          <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute ? getDisplayTerm('attribute', attribute, currentDisplayLanguage) : 'N/A')}</p>
-          <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
-          ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
-          <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
-          <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
-          <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group ? getDisplayTerm('group', character.group, currentDisplayLanguage) : 'N/A')}</p>
+          <p><strong>${getTranslatedLabel('description')}:</strong> ${desc || '概要なし'}</p>
+          <p><strong>${getTranslatedLabel('world')}:</strong> ${character.world || '不明'}</p>
+          <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race ? getDisplayTerm('race', character.race, currentDisplayLanguage) : '不明')}</p>
+          <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle ? getDisplayTerm('fightingStyle', fightingStyle, currentDisplayLanguage) : '不明')}</p>
+          <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute ? getDisplayTerm('attribute', attribute, currentDisplayLanguage) : '不明')}</p>
+          <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : '不明'}</p>
+          <p><strong>${getTranslatedLabel('age')}:</strong> ${character.age || '不明'}</p>
+          <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month !== null ? character.birthday.month + getTranslatedLabel('month') : '不明'}${character.birthday.day !== null ? character.birthday.day + getTranslatedLabel('day') : (character.birthday.month !== null ? '不明' : '')}` : 'N/A'}</p>
+          <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || '不明'}</p>
+          <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group ? getDisplayTerm('group', character.group, currentDisplayLanguage) : '無所属')}</p>
         </div>
         ${hasWeapons ? `
         <div id="weapon-tab" class="tab-content">
@@ -2445,10 +2618,10 @@ function showCharacterDetails(charId, imgIndex = 0) {
               <p><strong>${getTranslatedLabel('race')}:</strong> ${Array.isArray(character.race) ? character.race.map(r => getDisplayTerm('race', r, currentDisplayLanguage)).join(', ') : (character.race ? getDisplayTerm('race', character.race, currentDisplayLanguage) : 'N/A')}</p>
               <p><strong>${getTranslatedLabel('fightingStyle')}:</strong> ${Array.isArray(fightingStyle) ? fightingStyle.map(s => getDisplayTerm('fightingStyle', s, currentDisplayLanguage)).join(', ') : (fightingStyle ? getDisplayTerm('fightingStyle', fightingStyle, currentDisplayLanguage) : 'N/A')}</p>
               <p><strong>${getTranslatedLabel('attribute')}:</strong> ${Array.isArray(attribute) ? attribute.map(a => getDisplayTerm('attribute', a, currentDisplayLanguage)).join(', ') : (attribute ? getDisplayTerm('attribute', attribute, currentDisplayLanguage) : 'N/A')}</p>
-              <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : 'N/A'}</p>
-              ${character.age !== undefined && character.age !== null ? `<p><strong>${getTranslatedLabel('age')}:</strong> ${character.age}</p>` : ''}
-              <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month}${getTranslatedLabel('month')}${character.birthday.day}${getTranslatedLabel('day')}` : 'N/A'}</p>
-              <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || 'N/A'}</p>
+              <p><strong>${getTranslatedLabel('height')}:</strong> ${character.height ? character.height + ' cm' : '不明'}</p>
+              <p><strong>${getTranslatedLabel('age')}:</strong> ${character.age || '不明'}</p>
+              <p><strong>${getTranslatedLabel('birthday')}:</strong> ${character.birthday ? `${convertYearToCalendar(character.birthday.year)}${character.birthday.month !== null ? character.birthday.month + getTranslatedLabel('month') : '不明'}${character.birthday.day !== null ? character.birthday.day + getTranslatedLabel('day') : (character.birthday.month !== null ? '不明' : '')}` : 'N/A'}</p>
+              <p><strong>${getTranslatedLabel('personality')}:</strong> ${character.personality || '不明'}</p>
               <p><strong>${getTranslatedLabel('group')}:</strong> ${Array.isArray(character.group) ? character.group.map(g => getDisplayTerm('group', g, currentDisplayLanguage)).join(', ') : (character.group ? getDisplayTerm('group', character.group, currentDisplayLanguage) : 'N/A')}</p>
             </div>
             ${hasWeapons ? `
@@ -3200,26 +3373,17 @@ function copyCharacterUrl() {
     url += `&img=${imgIndex}`;
   }
   navigator.clipboard.writeText(url).then(() => {
-    showCopyPopup('URLをコピーしました！');
+    addNotification('URLをコピーしました！', 'success');
   });
 }
 
-/**
- * コピー通知ミニポップアップを表示
+/*
+ * 旧コピー通知ミニポップアップ関数（現在はaddNotificationを使用）
+ * 互換性のため残す
  */
 function showCopyPopup(msg) {
-  let popup = document.getElementById('copyPopup');
-  if (!popup) {
-    popup = document.createElement('div');
-    popup.id = 'copyPopup';
-    popup.className = 'copy-popup';
-    document.body.appendChild(popup);
-  }
-  popup.textContent = msg;
-  popup.classList.add('visible');
-  setTimeout(() => {
-    popup.classList.remove('visible');
-  }, 1600);
+  // addNotificationにリダイレクト
+  addNotification(msg, 'success');
 }
 
 // カードホバー時
@@ -3505,9 +3669,11 @@ async function saveNote(charId) {
   try {
     await saveUserNote(charId, note);
     await updateNoteDisplay(charId);
+    addNotification('メモ内容を変更しました', 'success');
     closeNoteEditor();
   } catch (error) {
     console.error('メモ保存処理エラー:', error);
+    addNotification('メモの保存に失敗しました', 'error');
     // エラーが発生してもモーダルは閉じる
     closeNoteEditor();
   }
@@ -4509,7 +4675,7 @@ function applyCustomSort() {
   // 再描画
   filterCharacters();
   
-  alert('並び順を保存しました！');
+  addNotification('移動を適応しました', 'success');
 }
 
 /**
@@ -5189,10 +5355,10 @@ async function copyCharacterLink(charId) {
     currentUrl.searchParams.set('id', charId);
     
     await navigator.clipboard.writeText(currentUrl.toString());
-    showNotification('リンクをクリップボードにコピーしました');
+    addNotification('URLをコピーしました！', 'success');
   } catch (error) {
     console.error('リンクのコピーに失敗:', error);
-    showNotification('リンクのコピーに失敗しました', 'error');
+    addNotification('URLのコピーに失敗しました', 'error');
   }
 }
 
@@ -5672,7 +5838,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 並び順設定を復元
   const savedSortOrder = localStorage.getItem('sortOrder');
-  if (savedSortOrder && ['id', 'name', 'random', 'custom'].includes(savedSortOrder)) {
+  if (savedSortOrder && ['world', 'id', 'name', 'random', 'custom'].includes(savedSortOrder)) {
     currentSortOrder = savedSortOrder;
   }
   
@@ -5779,7 +5945,7 @@ function updateHighlightStatusText() {
  * 並び順を切り替える
  */
 function toggleSortOrder() {
-  const orders = ['id', 'name', 'random', 'custom'];
+  const orders = ['world', 'id', 'name', 'random', 'custom'];
   const currentIndex = orders.indexOf(currentSortOrder);
   currentSortOrder = orders[(currentIndex + 1) % orders.length];
   localStorage.setItem('sortOrder', currentSortOrder);
@@ -5794,12 +5960,13 @@ function updateSortOrderStatusText() {
   const statusElement = document.getElementById('sortOrderStatus');
   if (statusElement) {
     const labels = {
+      'world': '世界線ごと',
       'id': 'ID順',
       'name': '名前順',
       'random': 'ランダム',
       'custom': 'カスタム'
     };
-    statusElement.textContent = labels[currentSortOrder] || 'ID順';
+    statusElement.textContent = labels[currentSortOrder] || '世界線ごと';
   }
 }
 
@@ -5813,6 +5980,14 @@ function applySortOrder(chars, sortOrder) {
   const sorted = [...chars]; // コピーを作成
   
   switch(sortOrder) {
+    case 'world':
+      // 世界線ごとに並び替え（worldの値順）
+      sorted.sort((a, b) => {
+        const worldA = Number(a.world) || 0;
+        const worldB = Number(b.world) || 0;
+        return worldA - worldB;
+      });
+      break;
     case 'name':
       sorted.sort((a, b) => {
         const nameA = Array.isArray(a.name) ? a.name[0] : a.name;
@@ -6230,7 +6405,7 @@ function closeBulkTagEditor() {
   selectedTagElements.forEach(el => el.classList.remove('selected'));
   
   updateApplyBulkTagsButtonState();
-}
+}　
 
 /**
  * 一括タグ選択リストのレンダリング
@@ -6308,8 +6483,9 @@ async function applyBulkTags() {
     // キャラクタータグデータを再読み込み
     characterTags = await characterDB.getAllCharacterTags();
     
-    // 成功メッセージ
-    showCopyPopup(`${selectedCharacters.size}件のキャラクターに${selectedTagKeys.length}個のタグを追加しました`);
+    // 成功通知
+    const tagNames = selectedTagKeys.map(key => customTags[key]?.name || key).join('、');
+    addNotification(`${selectedCharacters.size}人のキャラに${tagNames}のタグを付与しました`, 'success');
     
     // ポップアップを閉じる
     closeBulkTagEditor();
@@ -6324,7 +6500,7 @@ async function applyBulkTags() {
     
   } catch (error) {
     console.error('一括タグ適用エラー:', error);
-    showCopyPopup('タグの追加に失敗しました');
+    addNotification('タグの追加に失敗しました', 'error');
   }
 }
 
@@ -6415,11 +6591,11 @@ async function createBulkTag() {
       }
     }, 100);
     
-    showCopyPopup(`タグ「${name}」を作成しました`);
+    addNotification(`タグ「${name}」を作成しました`, 'success');
     
   } catch (error) {
     console.error('タグ作成エラー:', error);
-    alert('タグの作成に失敗しました');
+    addNotification('タグの作成に失敗しました', 'error');
   }
 }
 

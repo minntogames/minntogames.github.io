@@ -1,0 +1,379 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "oneOf": [
+      {
+        "type": "object",
+        "description": "設定オブジェクト（配列の最初の要素）",
+        "required": ["settings"],
+        "properties": {
+          "settings": {
+            "type": "object",
+            "description": "各カテゴリの設定",
+            "properties": {
+              "race": {
+                "type": "object",
+                "description": "種族の日本語と英語のマッピング"
+              },
+              "fightingStyle": {
+                "type": "object",
+                "description": "戦闘スタイルの日本語と英語のマッピング"
+              },
+              "attribute": {
+                "type": "object",
+                "description": "属性の日本語と英語のマッピング"
+              },
+              "group": {
+                "type": "object",
+                "description": "グループの日本語と英語のマッピング"
+              },
+              "calendar": {
+                "type": "object",
+                "description": "暦の日本語と英語のマッピング"
+              }
+            }
+          },
+          "relation": {
+            "type": "array",
+            "description": "関係性データ",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "関係性の名前"
+                },
+                "characters": {
+                  "type": "array",
+                  "description": "関係するキャラクターIDのリスト",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "object",
+        "description": "キャラクターデータ",
+        "required": ["id", "name", "name_en", "name_Kana", "description", "world"],
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "キャラクターの一意なID"
+          },
+          "name": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "キャラクター名（日本語）"
+              },
+              {
+                "type": "array",
+                "description": "複数の形態がある場合の名前リスト",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "name_en": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "キャラクター名（英語）"
+              },
+              {
+                "type": "array",
+                "description": "複数の形態がある場合の英語名リスト",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "name_Kana": {
+            "type": "string",
+            "description": "キャラクター名（ひらがな）"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "キャラクターの説明"
+              },
+              {
+                "type": "array",
+                "description": "複数の形態がある場合の説明リスト",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "world": {
+            "type": "string",
+            "description": "所属する世界の番号（例: \"1\", \"2\", \"3\"）",
+            "pattern": "^[0-9]+$"
+          },
+          "race": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "単体(別スタイルなし) - 例: \"棒人間\"",
+                "enum": ["Stickman", "Half-Human", "Human", "Beastman", "Demon", "God", "Subhuman", "Devil", "Fairy", "Angel", "Star-Human", "Oni", "Monster", "Other",
+                        "棒人間", "半人間", "人間", "獣人", "魔人", "魔神", "亜人", "悪魔", "妖精", "天使", "星人", "鬼", "魔物", "その他"]
+              },
+              {
+                "type": "array",
+                "description": "複数(別スタイルなし) または 複数(別スタイルあり)",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "複数(別スタイルなし) - 例: [\"人間\", \"鬼\"]"
+                    },
+                    {
+                      "type": "array",
+                      "description": "複数(別スタイルあり) - 例: [[\"棒人間\"], [\"\"]]",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "fightingStyle": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "単体(別スタイルなし) - 例: \"Sword\"",
+                "enum": ["None", "Sword", "Spear", "Axe", "Bow", "Knife", "Naginata", "Gun", "Magic", "Martial Arts", "Hammer", "drill", "claw", "Katana", "Fist", "Scythe", "Telekinesis", "Explosives", "mechanical", "Other",
+                        "なし", "剣", "槍", "斧", "弓", "ナイフ", "薙刀", "銃", "魔法", "格闘技", "ハンマー", "ドリル", "爪", "刀", "拳", "鎌", "念力", "爆破物", "機械兵器", "その他"]
+              },
+              {
+                "type": "array",
+                "description": "複数(別スタイルなし) または 複数(別スタイルあり)",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "複数(別スタイルなし) - 例: [\"Sword\", \"Magic\"]"
+                    },
+                    {
+                      "type": "array",
+                      "description": "複数(別スタイルあり) - 例: [[\"Sword\", \"Magic\"], [\"Magic\"], [\"Sword\", \"Magic\"]]",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "weapon": {
+            "type": "array",
+            "description": "武器のリスト",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "武器名（単一名称）"
+                    },
+                    {
+                      "type": "array",
+                      "description": "武器名（複数言語対応: [日本語, 英語, ひらがな]）",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                },
+                "description": {
+                  "type": "string",
+                  "description": "武器の説明"
+                },
+                "img": {
+                  "type": "string",
+                  "description": "武器画像のパス"
+                }
+              }
+            }
+          },
+          "attribute": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "単体(別スタイルなし) - 例: \"Fire\"",
+                "enum": ["Fire", "Water", "Earth", "Wind", "Nature" ,"Light", "Darkness", "Holy", "Poison", "Electricity", "Ice", "Psychic", "None", "Spirarl", "Star", "Destruction", 
+                        "火属性", "水属性", "土属性", "風属性", "自然属性", "光属性", "闇属性", "聖属性", "毒属性", "電気属性", "氷属性", "サイコ属性", "無属性", "螺旋属性", "星属性", "破壊属性"]
+              },
+              {
+                "type": "array",
+                "description": "複数(別スタイルなし) または 複数(別スタイルあり)",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "複数(別スタイルなし) - 例: [\"Fire\", \"Darkness\"]"
+                    },
+                    {
+                      "type": "array",
+                      "description": "複数(別スタイルあり) - 例: [[\"Electricity\"], [\"Darkness\"], [\"Darkness\", \"Fire\"]]",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "height": {
+            "oneOf": [
+              {
+                "type": "number",
+                "description": "身長（cm）"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "age": {
+            "type": "string",
+            "description": "年齢"
+          },
+          "birthday": {
+            "type": "object",
+            "description": "誕生日",
+            "properties": {
+              "year": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "description": "年（暦付き）"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "month": {
+                "oneOf": [
+                  {
+                    "type": "number",
+                    "description": "月（1-12）",
+                    "minimum": 1,
+                    "maximum": 12
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "day": {
+                "oneOf": [
+                  {
+                    "type": "number",
+                    "description": "日（1-31）",
+                    "minimum": 1,
+                    "maximum": 31
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "personality": {
+            "type": "string",
+            "description": "性格"
+          },
+          "group": {
+            "type": "array",
+            "description": "所属グループ",
+            "items": {
+              "type": "string",
+              "enum": ["ラストライン", "ギャラクティックカンパニー", "メイン組", "宇宙海賊組", "宇宙警察", "亜空間組", "異世界組", "冥界組", "B.comsHACKER's", "ニビル", "株式「黒」", "バルティア.L.C", "帝王", "王", "その他", "Last Line", "Galactic Company", "Main Group", "Space Pirates", "space police", "Subspace", "Otherworld", "Underworld", "Nibiru", "Stock 'Black'", "Baltia.L.C", "Emperor", "King", "Other"]
+            }
+          },
+          "battleBackground": {
+            "type": "string",
+            "description": "戦闘背景",
+            "enum": ["glitch", "crystal", "wave"]
+          },
+          "img": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "画像ファイル名"
+              },
+              {
+                "type": "array",
+                "description": "複数の画像（形態別）",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "imgsize": {
+            "type": "string",
+            "description": "画像サイズ（例: \"300%\"）"
+          },
+          "imgThumbsize": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "description": "サムネイル画像サイズ"
+          },
+          "imageZoomPosition": {
+            "type": "string",
+            "description": "ズーム時の画像位置（例: \"-190px -150px\"）"
+          },
+          "imageThumbPosition": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "description": "サムネイル画像位置"
+          },
+          "imgsize_mobile": {
+            "type": "string",
+            "description": "モバイル用画像サイズ"
+          },
+          "imageZoomPosition_mobile": {
+            "type": "string",
+            "description": "モバイル用ズーム位置"
+          }
+        }
+      }
+    ]
+  }
+}

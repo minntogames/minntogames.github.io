@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Canvas Enchantment Glint</title>
+<style>
+  body {
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  canvas {
+    image-rendering: pixelated;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas" width="200" height="200"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let time = 0;
+
+function drawItem() {
+  // アイテム本体
+  ctx.fillStyle = "#777";
+  ctx.fillRect(20, 20, 160, 160);
+
+  // 枠
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, 160, 160);
+}
+
+function drawGlint() {
+  ctx.save();
+
+  // アイテム範囲にクリップ
+  ctx.beginPath();
+  ctx.rect(20, 20, 160, 160);
+  ctx.clip();
+
+  // グリントの移動量
+  const offset = (time * 2) % 400;
+
+  // 斜めグラデーション
+  const gradient = ctx.createLinearGradient(
+    offset - 200, 0,
+    offset, 200
+  );
+
+  gradient.addColorStop(0.0, "rgba(180, 80, 255, 0)");
+  gradient.addColorStop(0.4, "rgba(180, 80, 255, 0.15)");
+  gradient.addColorStop(0.5, "rgba(255, 200, 255, 0.35)");
+  gradient.addColorStop(0.6, "rgba(180, 80, 255, 0.15)");
+  gradient.addColorStop(1.0, "rgba(180, 80, 255, 0)");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.restore();
+}
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawItem();
+  drawGlint();
+
+  time++;
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>

@@ -199,6 +199,12 @@
             color: #fff;
             border: 1px solid #666;
         }
+        
+        .badge-del {
+            background: #442222;
+            color: #ffaaaa;
+            border: 1px solid #884444;
+        }
     </style>
 </head>
 <body>
@@ -231,13 +237,19 @@
 
         <div class="control-group">
             <h2>操作 (Tools)</h2>
-            <button onclick="undoLastPoint()">１つ戻る (Undo) [Ctrl+Z]</button>
+            <button onclick="deleteSelectedOrLast()">削除 / 1つ戻る (Delete)</button>
             <button class="danger" onclick="clearPoints()">全クリア (Clear)</button>
+            <button onclick="resetView()">ビューをリセット (Reset View)</button>
             <div class="info">
                 <p><strong>ヒント:</strong></p>
                 <ul id="toolHints">
                     <li>クリック: ポイント追加</li>
                     <li><span class="badge badge-shift">Shift</span> + クリック: 垂直/水平スナップ</li>
+                </ul>
+                <p><strong>表示操作:</strong></p>
+                <ul>
+                    <li>マウスホイール: ズーム</li>
+                    <li>右クリック/中クリック + ドラッグ: 移動</li>
                 </ul>
             </div>
         </div>
@@ -276,14 +288,26 @@
         let mapPoints = [];
         let rects = []; // Array of {x, y, width, height}
         
+        // Rect Editor State
+        let selectedRectIndex = -1;
+        let dragAction = null; // 'create', 'move', 'resize-tl', 'resize-tr', 'resize-bl', 'resize-br', 'pan'
+        let dragOffset = { x: 0, y: 0 };
+        let originalRect = null; // Snapshot for resizing
+        
         let mouseX = 0;
         let mouseY = 0;
         let isShiftPressed = false;
         
-        // Dragging state for Rect mode
-        let isDragging = false;
         let dragStartX = 0;
         let dragStartY = 0;
+        
+        // View Transform (Pan & Zoom)
+        let viewX = 0; // Pan offset X
+        let viewY = 0; // Pan offset Y
+        let viewScale = 1.0; // Zoom level
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
 
         // DOM Elements
         const canvas = document.getElementById('editorCanvas');
@@ -341,12 +365,30 @@
         window.addEventListener('resize', resizeCanvasView);
         setTimeout(resizeCanvasView, 100);
 
+        // Coordinate Conversion Functions
+        function screenToWorld(screenX, screenY) {
+            return {
+                x: (screenX - viewX) / viewScale,
+                y: (screenY - viewY) / viewScale
+            };
+        }
+
+        function worldToScreen(worldX, worldY) {
+            return {
+                x: worldX * viewScale + viewX,
+                y: worldY * viewScale + viewY
+            };
+        }
+
         // Event Listeners
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Shift') isShiftPressed = true;
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                deleteSelectedOrLast();
+            }
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 e.preventDefault();
-                undoLastPoint();
+                deleteSelectedOrLast(); // Undo acts as delete last/selected
             }
             draw();
         });
@@ -356,52 +398,161 @@
             draw();
         });
 
+        // Mouse Wheel Zoom
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const mouseCanvasX = (e.clientX - rect.left) * scaleX;
+            const mouseCanvasY = (e.clientY - rect.top) * scaleY;
+            
+            // World coordinates before zoom
+            const worldPos = screenToWorld(mouseCanvasX, mouseCanvasY);
+            
+            // Zoom
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.max(0.1, Math.min(5.0, viewScale * zoomFactor));
+            
+            // Adjust pan to keep mouse position fixed
+            viewX = mouseCanvasX - worldPos.x * newScale;
+            viewY = mouseCanvasY - worldPos.y * newScale;
+            viewScale = newScale;
+            
+            draw();
+        }, { passive: false });
+
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             
-            // Raw coordinates relative to canvas 0,0
-            let rawX = (e.clientX - rect.left) * scaleX;
-            let rawY = (e.clientY - rect.top) * scaleY;
-
-            // Basic Grid Snap (20px resolution for finer control, 40px grid vis)
-            const snap = 50; 
+            // Raw canvas coordinates
+            let canvasX = (e.clientX - rect.left) * scaleX;
+            let canvasY = (e.clientY - rect.top) * scaleY;
             
-            // Offset snap calculation by FIELD_MARGIN to align with the visual grid
-            // (raw - margin) / snap -> round -> * snap + margin
+            // Handle Panning
+            if (isPanning) {
+                viewX = canvasX - panStartX;
+                viewY = canvasY - panStartY;
+                draw();
+                return;
+            }
+            
+            // Convert to world coordinates
+            const worldPos = screenToWorld(canvasX, canvasY);
+            let rawX = worldPos.x;
+            let rawY = worldPos.y;
+
+            // Basic Grid Snap
+            const snap = 50; 
             let targetX = Math.round((rawX - FIELD_MARGIN) / snap) * snap + FIELD_MARGIN;
             let targetY = Math.round((rawY - FIELD_MARGIN) / snap) * snap + FIELD_MARGIN;
 
-            // Ortho Snap (Shift Key) - Only for Path/Map modes, not dragging rect
-            if (isShiftPressed && !isDragging && (mode === 'path' || mode === 'map')) {
+            // Ortho Snap for Path/Map modes (only when not dragging rects)
+            if (isShiftPressed && dragAction === null && (mode === 'path' || mode === 'map')) {
                 const currentPoints = mode === 'path' ? pathPoints : mapPoints;
                 if (currentPoints.length > 0) {
                     const lastPoint = currentPoints[currentPoints.length - 1];
                     const dx = Math.abs(targetX - lastPoint.x);
                     const dy = Math.abs(targetY - lastPoint.y);
                     
-                    // Snap to whichever axis is closer
-                    if (dx < dy) {
-                        targetX = lastPoint.x; // Vertical line
-                    } else {
-                        targetY = lastPoint.y; // Horizontal line
-                    }
+                    if (dx < dy) targetX = lastPoint.x;
+                    else targetY = lastPoint.y;
                 }
             }
 
             mouseX = targetX;
             mouseY = targetY;
 
+            // Handle Rect Dragging/Resizing
+            if (mode === 'rect' && dragAction) {
+                if (dragAction === 'create') {
+                    // Creating new rect logic handled in draw (preview) and mouseup (commit)
+                } else if (dragAction === 'move' && selectedRectIndex !== -1) {
+                    const r = rects[selectedRectIndex];
+                    r.x = mouseX - dragOffset.x;
+                    r.y = mouseY - dragOffset.y;
+                    // Snap rect to grid
+                    r.x = Math.round((r.x - FIELD_MARGIN) / snap) * snap + FIELD_MARGIN;
+                    r.y = Math.round((r.y - FIELD_MARGIN) / snap) * snap + FIELD_MARGIN;
+                    generateCode();
+                } else if (dragAction.startsWith('resize') && selectedRectIndex !== -1) {
+                    handleResize(mouseX, mouseY);
+                    generateCode();
+                }
+            }
+
+            // Update Cursor Style
+            if (mode === 'rect' && !dragAction) {
+                const handle = getRectHandleAt(rawX, rawY); // Use raw coords for handles
+                if (handle) {
+                    canvas.style.cursor = handle.type === 'tl' || handle.type === 'br' ? 'nwse-resize' : 'nesw-resize';
+                } else if (getRectAt(rawX, rawY) !== -1) {
+                    canvas.style.cursor = 'move';
+                } else {
+                    canvas.style.cursor = 'crosshair';
+                }
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+
             coordDisplay.innerText = `X: ${mouseX}, Y: ${mouseY}`;
             draw();
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return; // Only left click
+            if (e.button === 2 || e.button === 1) { // Right or Middle click - Pan
+                e.preventDefault();
+                isPanning = true;
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const canvasX = (e.clientX - rect.left) * scaleX;
+                const canvasY = (e.clientY - rect.top) * scaleY;
+                panStartX = canvasX - viewX;
+                panStartY = canvasY - viewY;
+                canvas.style.cursor = 'grabbing';
+                return;
+            }
+            
+            if (e.button !== 0) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const canvasX = (e.clientX - rect.left) * scaleX;
+            const canvasY = (e.clientY - rect.top) * scaleY;
+            const worldPos = screenToWorld(canvasX, canvasY);
+            const rawX = worldPos.x;
+            const rawY = worldPos.y;
 
             if (mode === 'rect') {
-                isDragging = true;
+                // 1. Check Resize Handles
+                const handle = getRectHandleAt(rawX, rawY);
+                if (handle) {
+                    selectedRectIndex = handle.index;
+                    dragAction = `resize-${handle.type}`;
+                    originalRect = { ...rects[selectedRectIndex] }; // Deep copy
+                    return;
+                }
+
+                // 2. Check Inside Rect (Move)
+                const rectIdx = getRectAt(rawX, rawY);
+                if (rectIdx !== -1) {
+                    selectedRectIndex = rectIdx;
+                    dragAction = 'move';
+                    const r = rects[rectIdx];
+                    dragOffset = { x: mouseX - r.x, y: mouseY - r.y };
+                    draw(); // Redraw to show selection
+                    return;
+                }
+
+                // 3. Create New Rect
+                selectedRectIndex = -1; // Deselect
+                dragAction = 'create';
                 dragStartX = mouseX;
                 dragStartY = mouseY;
             } else if (mode === 'path') {
@@ -415,28 +566,116 @@
         });
 
         window.addEventListener('mouseup', (e) => {
-            if (mode === 'rect' && isDragging) {
-                isDragging = false;
-                
-                // Calculate width and height
-                let width = mouseX - dragStartX;
-                let height = mouseY - dragStartY;
-                
-                // Normalize rect (allow dragging in any direction)
-                let x = dragStartX;
-                let y = dragStartY;
-                
-                if (width < 0) { x = mouseX; width = Math.abs(width); }
-                if (height < 0) { y = mouseY; height = Math.abs(height); }
-                
-                // Only add if size is significant
-                if (width > 5 && height > 5) {
-                    rects.push({ x, y, width, height });
-                    generateCode();
+            if (isPanning) {
+                isPanning = false;
+                canvas.style.cursor = 'crosshair';
+            }
+            
+            if (mode === 'rect' && dragAction) {
+                if (dragAction === 'create') {
+                    // Finalize creation
+                    let width = mouseX - dragStartX;
+                    let height = mouseY - dragStartY;
+                    
+                    let x = dragStartX;
+                    let y = dragStartY;
+                    
+                    if (width < 0) { x = mouseX; width = Math.abs(width); }
+                    if (height < 0) { y = mouseY; height = Math.abs(height); }
+                    
+                    if (width > 5 && height > 5) {
+                        rects.push({ x, y, width, height });
+                        selectedRectIndex = rects.length - 1; // Select new rect
+                        generateCode();
+                    }
                 }
+                dragAction = null;
+                originalRect = null;
                 draw();
             }
         });
+
+        // Disable context menu on canvas
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Helper: Check if mouse is on a resize handle
+        function getRectHandleAt(mx, my) {
+            const handleSize = 8;
+            for (let i = 0; i < rects.length; i++) {
+                // Only check selected rect handles if any is selected, or check all if want to switch fast
+                // Let's only allow resizing the *selected* rect to avoid clutter
+                if (i !== selectedRectIndex) continue;
+
+                const r = rects[i];
+                // tl, tr, bl, br
+                const handles = [
+                    { type: 'tl', x: r.x, y: r.y },
+                    { type: 'tr', x: r.x + r.width, y: r.y },
+                    { type: 'bl', x: r.x, y: r.y + r.height },
+                    { type: 'br', x: r.x + r.width, y: r.y + r.height }
+                ];
+
+                for (let h of handles) {
+                    if (mx >= h.x - handleSize && mx <= h.x + handleSize &&
+                        my >= h.y - handleSize && my <= h.y + handleSize) {
+                        return { index: i, type: h.type };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Helper: Check if mouse is inside a rect
+        function getRectAt(mx, my) {
+            // Check in reverse order (topmost first)
+            for (let i = rects.length - 1; i >= 0; i--) {
+                const r = rects[i];
+                if (mx >= r.x && mx <= r.x + r.width &&
+                    my >= r.y && my <= r.y + r.height) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function handleResize(currX, currY) {
+            const r = rects[selectedRectIndex];
+            const o = originalRect;
+            
+            // Note: currX, currY are already snapped to grid in mousemove
+            
+            if (dragAction === 'resize-br') {
+                r.width = Math.max(20, currX - o.x);
+                r.height = Math.max(20, currY - o.y);
+            } else if (dragAction === 'resize-bl') {
+                const newWidth = o.width + (o.x - currX);
+                if (newWidth >= 20) {
+                    r.x = currX;
+                    r.width = newWidth;
+                }
+                r.height = Math.max(20, currY - o.y);
+            } else if (dragAction === 'resize-tr') {
+                r.width = Math.max(20, currX - o.x);
+                const newHeight = o.height + (o.y - currY);
+                if (newHeight >= 20) {
+                    r.y = currY;
+                    r.height = newHeight;
+                }
+            } else if (dragAction === 'resize-tl') {
+                const newWidth = o.width + (o.x - currX);
+                if (newWidth >= 20) {
+                    r.x = currX;
+                    r.width = newWidth;
+                }
+                const newHeight = o.height + (o.y - currY);
+                if (newHeight >= 20) {
+                    r.y = currY;
+                    r.height = newHeight;
+                }
+            }
+        }
 
         // Functions
         function setMode(newMode) {
@@ -445,6 +684,8 @@
             btnModeRect.className = mode === 'rect' ? 'active' : '';
             btnModeMap.className = mode === 'map' ? 'active' : '';
             
+            selectedRectIndex = -1; // Deselect when switching modes
+
             // Update Info text
             let hintHtml = "";
             if (mode === 'path') {
@@ -454,7 +695,7 @@
             } else if (mode === 'rect') {
                 codeLabel.innerText = "stageFieldShapes 内で使用:";
                 modeInfo.innerText = "stageFieldShapes の customPlayableZones を作成します。";
-                hintHtml = `<li>ドラッグ: 矩形エリアを作成</li>`;
+                hintHtml = `<li>ドラッグ: 新規作成</li><li>クリック: 選択</li><li>選択してドラッグ: 移動/リサイズ</li><li>Delete: 選択削除</li>`;
             } else {
                 codeLabel.innerText = "drawMap() の境界線描画で使用:";
                 modeInfo.innerText = "境界線（枠線）の描画コードを作成します。";
@@ -466,11 +707,16 @@
             draw();
         }
 
-        function undoLastPoint() {
-            if (mode === 'path') {
+        function deleteSelectedOrLast() {
+            if (mode === 'rect') {
+                if (selectedRectIndex !== -1) {
+                    rects.splice(selectedRectIndex, 1);
+                    selectedRectIndex = -1;
+                } else if (rects.length > 0) {
+                    rects.pop();
+                }
+            } else if (mode === 'path') {
                 pathPoints.pop();
-            } else if (mode === 'rect') {
-                rects.pop();
             } else {
                 mapPoints.pop();
             }
@@ -484,6 +730,7 @@
                     pathPoints = [];
                 } else if (mode === 'rect') {
                     rects = [];
+                    selectedRectIndex = -1;
                 } else {
                     mapPoints = [];
                 }
@@ -496,21 +743,18 @@
             let code = "";
 
             if (mode === 'path') {
-                // Generate path array code
                 code = `// generatePath() function inside\npath = [\n`;
                 pathPoints.forEach((p, i) => {
                     code += `    { x: ${p.x}, y: ${p.y} }${i < pathPoints.length - 1 ? ',' : ''}\n`;
                 });
                 code += `];`;
             } else if (mode === 'rect') {
-                // Generate customPlayableZones code
                 code = `// stageFieldShapes definition\ncustomPlayableZones: [\n`;
                 rects.forEach((r, i) => {
                     code += `    { x: ${r.x}, y: ${r.y}, width: ${r.width}, height: ${r.height} }${i < rects.length - 1 ? ',' : ''}\n`;
                 });
                 code += `]`;
             } else {
-                // Generate Canvas drawing commands
                 code = `// drawMap() function inside\nctx.beginPath();\n`;
                 if (mapPoints.length > 0) {
                     code += `ctx.moveTo(${mapPoints[0].x}, ${mapPoints[0].y});\n`;
@@ -525,11 +769,17 @@
             outputArea.value = code;
         }
 
+        function resetView() {
+            viewX = 0;
+            viewY = 0;
+            viewScale = 1.0;
+            draw();
+        }
+
         function copyToClipboard() {
             outputArea.select();
             document.execCommand('copy');
-            // Visual feedback
-            const btn = document.querySelector('#sidebar button:last-child'); // The copy button
+            const btn = document.querySelector('#sidebar button:last-child');
             const originalText = btn.innerText;
             btn.innerText = "コピーしました！";
             setTimeout(() => btn.innerText = originalText, 1500);
@@ -538,26 +788,46 @@
         function draw() {
             // Clear Background
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Apply View Transform
+            ctx.save();
+            ctx.translate(viewX, viewY);
+            ctx.scale(viewScale, viewScale);
 
-            // Draw Margins (Playable Area Boundary)
+            // Draw Margins
             ctx.strokeStyle = '#004444';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             ctx.strokeRect(FIELD_MARGIN, FIELD_MARGIN, FIELD_WIDTH, FIELD_HEIGHT);
             ctx.setLineDash([]);
 
-            // Draw Grid
+            // Draw Grid (Infinite)
+            // Calculate visible world bounds
+            const topLeft = screenToWorld(0, 0);
+            const bottomRight = screenToWorld(canvas.width, canvas.height);
+            
+            // Extend grid beyond visible area
+            const gridStartX = Math.floor(topLeft.x / GRID_SIZE) * GRID_SIZE - GRID_SIZE * 2;
+            const gridEndX = Math.ceil(bottomRight.x / GRID_SIZE) * GRID_SIZE + GRID_SIZE * 2;
+            const gridStartY = Math.floor(topLeft.y / GRID_SIZE) * GRID_SIZE - GRID_SIZE * 2;
+            const gridEndY = Math.ceil(bottomRight.y / GRID_SIZE) * GRID_SIZE + GRID_SIZE * 2;
+            
             ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1 / viewScale; // Keep line width consistent
             ctx.beginPath();
-            for (let x = FIELD_MARGIN; x <= FIELD_WIDTH + FIELD_MARGIN; x += GRID_SIZE) {
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, CANVAS_HEIGHT);
+            
+            // Vertical lines
+            for (let x = gridStartX; x <= gridEndX; x += GRID_SIZE) {
+                ctx.moveTo(x, gridStartY);
+                ctx.lineTo(x, gridEndY);
             }
-            for (let y = FIELD_MARGIN; y <= FIELD_HEIGHT + FIELD_MARGIN; y += GRID_SIZE) {
-                ctx.moveTo(0, y);
-                ctx.lineTo(CANVAS_WIDTH, y);
+            
+            // Horizontal lines
+            for (let y = gridStartY; y <= gridEndY; y += GRID_SIZE) {
+                ctx.moveTo(gridStartX, y);
+                ctx.lineTo(gridEndX, y);
             }
+            
             ctx.stroke();
 
             // Draw Text Indicators
@@ -566,7 +836,7 @@
             ctx.fillText("MARGIN AREA", 10, 30);
             ctx.fillText(`FIELD: ${FIELD_WIDTH}x${FIELD_HEIGHT}`, 10, 50);
             
-            // Draw Ghost Items (Inactive Modes)
+            // Draw Ghost Items
             ctx.globalAlpha = 0.2;
             if (mode !== 'path') drawPathShape();
             if (mode !== 'rect') drawRects();
@@ -592,8 +862,8 @@
                     ctx.stroke();
                     ctx.setLineDash([]);
                 }
-            } else if (mode === 'rect' && isDragging) {
-                // Draw rect being dragged
+            } else if (mode === 'rect' && dragAction === 'create') {
+                // Draw rect being created
                 const w = mouseX - dragStartX;
                 const h = mouseY - dragStartY;
                 ctx.strokeStyle = '#00ff00';
@@ -604,7 +874,6 @@
                 ctx.fillRect(dragStartX, dragStartY, w, h);
                 ctx.setLineDash([]);
                 
-                // Dimensions text
                 ctx.fillStyle = '#fff';
                 ctx.fillText(`${Math.abs(w)} x ${Math.abs(h)}`, mouseX + 10, mouseY + 20);
             }
@@ -615,51 +884,46 @@
             ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
             ctx.fill();
             
-            // Cursor coordinates tooltip
             ctx.fillStyle = '#fff';
             ctx.font = '12px monospace';
             ctx.fillText(`(${mouseX}, ${mouseY})`, mouseX + 10, mouseY - 10);
             
-            // Shift indicator
             if (isShiftPressed && mode !== 'rect') {
                 ctx.fillStyle = '#ffff00';
                 ctx.fillText("SNAP ON", mouseX + 10, mouseY + 20);
             }
+            
+            // Restore Transform
+            ctx.restore();
+            
+            // Draw UI Info (unaffected by transform)
+            ctx.fillStyle = '#4488ff';
+            ctx.font = '14px monospace';
+            ctx.fillText(`Zoom: ${(viewScale * 100).toFixed(0)}%`, 10, canvas.height - 30);
+            ctx.fillText(`Pan: (${viewX.toFixed(0)}, ${viewY.toFixed(0)})`, 10, canvas.height - 10);
         }
 
         function drawPathShape() {
             if (pathPoints.length === 0) return;
-
-            // Draw Line
             ctx.strokeStyle = '#ff3333';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-            for (let i = 1; i < pathPoints.length; i++) {
-                ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
-            }
+            for (let i = 1; i < pathPoints.length; i++) ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
             ctx.stroke();
-
-            // Draw Points
             pathPoints.forEach((p, i) => {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
-                
-                if (i === 0) ctx.fillStyle = '#00ff00'; // Start
-                else if (i === pathPoints.length - 1) ctx.fillStyle = '#ff0000'; // End
+                if (i === 0) ctx.fillStyle = '#00ff00';
+                else if (i === pathPoints.length - 1) ctx.fillStyle = '#ff0000';
                 else ctx.fillStyle = '#ffaaaa';
-                
                 ctx.fill();
-                
-                // Index number
                 ctx.fillStyle = '#fff';
                 ctx.font = '10px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(i, p.x, p.y);
             });
-            
-            // Labels
             if (pathPoints.length > 0) {
                 ctx.fillStyle = '#00ff00';
                 ctx.fillText("START", pathPoints[0].x, pathPoints[0].y - 15);
@@ -670,44 +934,44 @@
 
         function drawRects() {
             rects.forEach((r, i) => {
-                // Draw filled rect
-                ctx.fillStyle = 'rgba(0, 255, 0, 0.15)';
+                const isSelected = (mode === 'rect' && i === selectedRectIndex);
+                
+                ctx.fillStyle = isSelected ? 'rgba(0, 255, 0, 0.3)' : 'rgba(0, 255, 0, 0.15)';
                 ctx.fillRect(r.x, r.y, r.width, r.height);
                 
-                // Draw border
-                ctx.strokeStyle = '#00ff00';
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = isSelected ? '#ffff00' : '#00ff00';
+                ctx.lineWidth = isSelected ? 3 : 2;
                 ctx.strokeRect(r.x, r.y, r.width, r.height);
                 
-                // Draw dimensions center
                 ctx.fillStyle = '#ccffcc';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(`Zone ${i+1}`, r.x + r.width/2, r.y + r.height/2);
+
+                // Draw handles if selected
+                if (isSelected) {
+                    const hSize = 6;
+                    ctx.fillStyle = '#ffff00';
+                    // TL, TR, BL, BR
+                    ctx.fillRect(r.x - hSize, r.y - hSize, hSize*2, hSize*2);
+                    ctx.fillRect(r.x + r.width - hSize, r.y - hSize, hSize*2, hSize*2);
+                    ctx.fillRect(r.x - hSize, r.y + r.height - hSize, hSize*2, hSize*2);
+                    ctx.fillRect(r.x + r.width - hSize, r.y + r.height - hSize, hSize*2, hSize*2);
+                }
             });
         }
 
         function drawMapShape() {
             if (mapPoints.length === 0) return;
-
-            // Draw Polygon
             ctx.strokeStyle = '#00ffff';
             ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
             ctx.lineWidth = 3;
-            
             ctx.beginPath();
             ctx.moveTo(mapPoints[0].x, mapPoints[0].y);
-            for (let i = 1; i < mapPoints.length; i++) {
-                ctx.lineTo(mapPoints[i].x, mapPoints[i].y);
-            }
-            // Close loop visually to see the shape
-            if (mapPoints.length > 2) {
-                ctx.lineTo(mapPoints[0].x, mapPoints[0].y);
-            }
+            for (let i = 1; i < mapPoints.length; i++) ctx.lineTo(mapPoints[i].x, mapPoints[i].y);
+            if (mapPoints.length > 2) ctx.lineTo(mapPoints[0].x, mapPoints[0].y);
             ctx.stroke();
             ctx.fill();
-
-            // Draw Points
             ctx.fillStyle = '#ccffff';
             mapPoints.forEach(p => {
                 ctx.beginPath();

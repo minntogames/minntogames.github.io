@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanilla JS Stack Notification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Lucideアイコンの代わりとなるSVGスタイルとカスタムアニメーション */
+        .notification-item {
+            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        .notification-enter {
+            transform: translate3d(100%, 0, 0);
+            opacity: 0;
+        }
+
+        /* カスタムのスクロールバー非表示など */
+        body {
+            background-color: #020617; /* slate-950 */
+            color: white;
+            overflow: hidden;
+        }
+
+        .glass {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center font-sans">
+
+    <!-- 通知コンテナ -->
+    <div id="notification-container" class="fixed top-8 right-8 z-50 w-80 h-[500px] pointer-events-none"></div>
+
+    <!-- メインパネル -->
+    <div class="w-full max-w-md relative z-10 px-4">
+        <div class="bg-slate-900/80 glass border border-slate-800 rounded-[2.5rem] p-10 shadow-2xl">
+            <div class="flex flex-col items-center text-center mb-10">
+                <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-cyan-400 rounded-3xl flex items-center justify-center shadow-2xl mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                </div>
+                <h1 class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                    Vanilla JS Notification
+                </h1>
+                <p class="text-slate-500 text-xs mt-2 font-medium">React不要、標準JSのみで動くスタック通知</p>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="spawnNotification('成功: データを保存しました', 'success')" class="group flex items-center justify-between px-6 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/10 text-emerald-400 rounded-2xl font-bold transition-all active:scale-95">
+                    <span>成功通知を追加</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </button>
+                
+                <button onclick="spawnNotification('エラー: 接続に失敗しました', 'error')" class="group flex items-center justify-between px-6 py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/10 text-rose-400 rounded-2xl font-bold transition-all active:scale-95">
+                    <span>エラー通知を追加</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </button>
+
+                <button onclick="spawnNotification('Info:うんこ', 'info')" class="group flex items-center justify-between px-6 py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/10 text-rose-400 rounded-2xl font-bold transition-all active:scale-95">
+                    <span>エラー通知を追加</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </button>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-slate-800 text-center text-xs text-slate-500 leading-relaxed">
+                通知を3つ以上出すと、重なり（スタック）が始まります。<br>
+                一番上の通知を消すと、後続がスムーズに詰めます。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let notifications = [];
+        const container = document.getElementById('notification-container');
+        
+        const CONFIG = {
+            success: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', icon: `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>` },
+            error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>` },
+            info: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', icon: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12.01" y2="16"/><line x1="12" y1="8" x2="12" y2="12"/>` }
+        };
+
+        const HEIGHT = 50;
+        const GAP = 12;
+        const BASE_STEP = HEIGHT + GAP;
+
+        function spawnNotification(message, type) {
+            const id = Date.now();
+            const notification = {
+                id,
+                message,
+                type,
+                isExiting: false,
+                element: createNotificationElement(id, message, type)
+            };
+
+            // 配列の先頭に追加（新しいものが上）
+            notifications.unshift(notification);
+            container.appendChild(notification.element);
+
+            // ブラウザの再描画を待ってからアニメーション開始
+            requestAnimationFrame(() => {
+                updatePositions();
+            });
+
+            // 5秒後に自動消去
+            setTimeout(() => {
+                removeNotification(id);
+            }, 50000);
+        }
+
+        function createNotificationElement(id, message, type) {
+            const config = CONFIG[type] || CONFIG.info;
+            const div = document.createElement('div');
+            div.id = `notif-${id}`;
+            div.className = `notification-item notification-enter pointer-events-auto w-80`;
+            
+            div.innerHTML = `
+                <div class="flex items-start p-4 rounded-2xl border shadow-xl ${config.bg} ${config.border} ${config.text} glass h-[50px]">
+                    <div class="flex-shrink-0 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${config.icon}</svg>
+                    </div>
+                    <div class="flex-grow text-xs font-bold pt-0.5 leading-tight overflow-hidden line-clamp-2">
+                        ${message}
+                    </div>
+                    <button onclick="removeNotification(${id})" class="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            `;
+            return div;
+        }
+
+        function removeNotification(id) {
+            const index = notifications.findIndex(n => n.id === id);
+            if (index === -1 || notifications[index].isExiting) return;
+
+            const notif = notifications[index];
+            notif.isExiting = true;
+            
+            // 消去中の見た目
+            notif.element.style.opacity = '0';
+            notif.element.style.transform += ' translate3d(40px, 0, 0) scale(0.95)';
+            notif.element.style.pointerEvents = 'none';
+
+            // 位置計算を即座に更新（下の通知を上に詰める）
+            updatePositions();
+
+            // アニメーション完了後にDOMから削除
+            setTimeout(() => {
+                const finalIndex = notifications.findIndex(n => n.id === id);
+                if (finalIndex !== -1) {
+                    notif.element.remove();
+                    notifications.splice(finalIndex, 1);
+                }
+            }, 500);
+        }
+
+        function updatePositions() {
+            let visualIndex = 0;
+            
+            notifications.forEach((notif) => {
+                if (notif.isExiting) return;
+
+                let translateY = 0;
+                let scale = 1;
+                let opacity = 1;
+                let zIndex = 100 - visualIndex;
+                let blur = '0px';
+
+                if (visualIndex === 0) {
+                    translateY = 0;
+                } else if (visualIndex === 1) {
+                    translateY = BASE_STEP;
+                } else {
+                    const stackDepth = visualIndex - 2;
+                    translateY = (BASE_STEP * 2) + (stackDepth * 8);
+                    scale = Math.max(0.8, 1 - (stackDepth * 0.05));
+                    opacity = Math.max(0, 1 - (stackDepth * 0.2));
+                    blur = stackDepth > 0 ? `${stackDepth * 1}px` : '0px';
+                }
+
+                notif.element.style.zIndex = zIndex;
+                notif.element.style.opacity = opacity;
+                notif.element.style.filter = `blur(${blur})`;
+                notif.element.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
+                
+                visualIndex++;
+            });
+        }
+    </script>
+</body>
+</html>

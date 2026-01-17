@@ -537,6 +537,7 @@ button,
 }
 
 /* 世界線ごとの下端バー */
+.card-world-0::after,
 .card-world-1::after,
 .card-world-2::after,
 .card-world-3::after {
@@ -547,6 +548,7 @@ button,
   height: 8px;
   border-radius: 0 0 8px 8px;
 }
+.card-world-0::after { background: linear-gradient(90deg, #666666, #999999); }
 .card-world-1::after { background: linear-gradient(90deg, #00c3ff, #ffff1c); }
 .card-world-2::after { background: linear-gradient(90deg, #ff7e5f, #feb47b); }
 .card-world-3::after { background: linear-gradient(90deg, #43e97b, #38f9d7); }
@@ -1320,6 +1322,7 @@ body.theme-dark .card {
 body.theme-dark .card h2 {
   color: #e9eaf6;
 }
+body.theme-dark .card-world-0::after { background: linear-gradient(90deg, #4a4a4a, #6a6a6a); }
 body.theme-dark .card-world-1::after { background: linear-gradient(90deg, #1e3a5c, #3a86ff); }
 body.theme-dark .card-world-2::after { background: linear-gradient(90deg, #2d3142, #ef476f); }
 body.theme-dark .card-world-3::after { background: linear-gradient(90deg, #20639b, #00b4d8); }
@@ -1653,6 +1656,7 @@ body.theme-modern .card {
 body.theme-modern .card h2 {
   color: #156acc;
 }
+body.theme-modern .card-world-0::after { background: linear-gradient(90deg, #888888, #b0b0b0); }
 body.theme-modern .card-world-1::after { background: linear-gradient(90deg, #00c3ff, #b2eaff); }
 body.theme-modern .card-world-2::after { background: linear-gradient(90deg, #00ffa6, #b2eaff); }
 body.theme-modern .card-world-3::after { background: linear-gradient(90deg, #43e97b, #b2eaff); }
@@ -2278,6 +2282,10 @@ body.theme-aquamarine .card {
 
 body.theme-aquamarine .card h2 {
   color: #000000;
+}
+
+body.theme-aquamarine .card-world-0::after { 
+  background: linear-gradient(90deg, #777777, #aaaaaa); 
 }
 
 body.theme-aquamarine .card-world-1::after { 

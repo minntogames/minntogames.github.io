@@ -105,9 +105,35 @@ if ($characterId) {
   <!-- 通常のメタタグ -->
   <meta name="description" content="<?php echo $ogDescription; ?>" />
   
-  <link rel="stylesheet" href="style.css">
+  <?php
+  // CSSのバージョン（更新時刻をバージョンとして使用）
+  $styleVersion = filemtime(__DIR__ . '/style.css');
+  ?>
+  <link rel="stylesheet" href="style.css?v=<?php echo $styleVersion; ?>">
+  <style>
+    /* 通知システムのスタイル */
+    .notification-item {
+      transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+    
+    .notification-enter {
+      transform: translate3d(100%, 0, 0);
+      opacity: 0;
+    }
+    
+    .glass {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
 </head>
 <body>
+  <!-- 通知コンテナ -->
+  <div id="notification-container" class="fixed top-8 right-8 z-50 w-80 h-[500px] pointer-events-none" style="position: fixed; top: 32px; right: 32px; z-index: 9999; width: 320px; height: 500px; pointer-events: none;"></div>
+  
   <!-- ▼ハンバーガーメニュー追加 -->
   <div id="hamburgerMenu" class="hamburger-menu">
     <button id="hamburgerBtn" class="hamburger-btn" aria-label="メニュー" onclick="toggleHamburgerMenu()">
@@ -261,6 +287,12 @@ if ($characterId) {
         </svg>
         カードビュー
       </button>
+
+      <!-- バージョン情報表示 -->
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0e0; text-align: center; font-size: 12px; color: #999;">
+        <div id="versionDisplay">Version: <span id="versionNumber">読み込み中...</span></div>
+        <div id="versionTimestamp" style="font-size: 10px; color: #bbb; margin-top: 4px;"></div>
+      </div>
 
       <br><br><br><br>
     </div>
@@ -681,6 +713,12 @@ if ($characterId) {
   </script>
   <?php endif; ?>
 
-  <script src="main.js"></script>
+  <?php
+  // main.jsのバージョン（更新時刻をバージョンとして使用）
+  $mainJsVersion = filemtime(__DIR__ . '/main.js');
+  $versionCheckJsVersion = filemtime(__DIR__ . '/version-check.js');
+  ?>
+  <script src="version-check.js?v=<?php echo $versionCheckJsVersion; ?>"></script>
+  <script src="main.js?v=<?php echo $mainJsVersion; ?>"></script>
 </body>
 </html>

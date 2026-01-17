@@ -235,7 +235,7 @@ const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera
                        (navigator.maxTouchPoints > 0);
 
 // Custom field shapes for each stage
-// NOTE test
+// NOTE: ゲーム中プレイ可能領域
 const stageFieldShapes = {
     1: null, // Default rectangular field
     2: {
@@ -250,17 +250,6 @@ const stageFieldShapes = {
             { x: 50, y: FIELD_HEIGHT + FIELD_MARGIN - 200, width: FIELD_MARGIN * 5 - 10, height: FIELD_MARGIN * 4 }
         ]
     },
-    3: {
-        // L-shape with bottom-left protrusion
-        excludeZones: [
-            // Bottom-left cutout (the protruding area is playable, so we cut out the area that would normally be there)
-        ],
-        customPlayableZones: [
-            { x: 0, y: 0, width: 550, height: 350 },
-            { x: 550, y: 250, width: 300, height: 350 },
-            { x: 0, y: 550, width: 550, height: 350 }
-        ]
-    }
 };
 
 // Boss appearance animation
@@ -834,7 +823,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'quadruple-turret',
         special: 'machine-gun',
         requiredSkill: 'ultimate_power'
@@ -865,7 +853,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'bugle-turret',
         special: 'super-spread', // さらに散弾数が増加
         requiredSkill: 'ultimate_power'
@@ -896,7 +883,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'giga-turret',
         special: 'knockback-splash', // 被弾した敵を押し戻す
         requiredSkill: 'ultimate_power'
@@ -913,7 +899,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'giga-turret',
         special: 'peta-splash', // giga-turretの上位互換
         requiredSkill: 'ultimate_power'
@@ -943,7 +928,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'sniper-mr3',
         special: 'laser', // 敵を一網打尽
         requiredSkill: 'ultimate_power'
@@ -974,7 +958,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'giga-sniper',
         special: 'laceration', // 裂傷状態
         requiredSkill: 'ultimate_power'
@@ -1005,7 +988,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'blast-blaster',
         special: 'mega-chain-burn', // 死亡時の爆破範囲が増加
         requiredSkill: 'ultimate_power'
@@ -1036,7 +1018,6 @@ const TOWER_TYPES = {
         isEvolution: true,
         isSecondEvolution: true,
         isThirdEvolution: true,
-        isFourthEvolution: true,
         evolvesFrom: 'blizzard-blaster',
         special: 'stack-freeze', // 凍結が重複
         requiredSkill: 'ultimate_power'
@@ -1175,6 +1156,7 @@ function resizeCanvas() {
 
 window.addEventListener('resize', resizeCanvas);
 
+// NOTE: 敵の軌道
 function generatePath() {
     // Generate path based on current stage
     if (currentStage === 2) {
@@ -1189,8 +1171,6 @@ function generatePath() {
             {x: FIELD_WIDTH * 0.3 + FIELD_MARGIN, y: FIELD_HEIGHT * 0.2 + FIELD_MARGIN },
             {x: FIELD_MARGIN + 130, y: FIELD_HEIGHT * 0.2 + FIELD_MARGIN }, 
             {x: FIELD_MARGIN + 130, y: FIELD_HEIGHT + FIELD_MARGIN }, // goal (bottom-left)
-
-            
         ];
     } else {
         // Stage 1 (default): Original winding path
@@ -1976,10 +1956,11 @@ let stageMapDragStartY = 0;
 let stageMapLastTouchX = 0;
 let stageMapLastTouchY = 0;
 
+// NOTE: ステージ一覧
 const stages = [
     { id: 1, name: 'STAGE 1', x: 1, y: 6, unlocked: true, description: '初期ステージ' },
     { id: 2, name: 'STAGE 2', x: 5, y: 5, unlocked: false, description: 'なんかのステージ' },
-    // { id: 3, name: 'STAGE 3', x: 9, y: 4, unlocked: false, description: '上級ステージ' },
+    // { id: 3, name: 'STAGE 3', x: 9, y: 4, unlocked: true, description: 'TEST' },
     // { id: 4, name: 'STAGE 4', x: 13, y: 3, unlocked: false, description: 'エキスパート' },
     // { id: 5, name: 'STAGE 5', x: 17, y: 2, unlocked: false, description: '最終ステージ' },
 ];
@@ -4953,6 +4934,7 @@ function drawMap(ctx) {
         ctx.lineDashOffset = -dashOffset; // Animate the dash
         
         // Draw custom field shape or default rectangle
+        // NOTE: 赤破線枠
         if (stageShape && stageShape.customPlayableZones) {
             // Draw as a connected path for Stage 2 (L-shape)
             if (currentStage === 2) {

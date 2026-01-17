@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Gacha Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #1a1a2e;
+            color: white;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Animation Keyframes */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse-glow-silver {
+            0%, 100% { box-shadow: 0 0 20px 5px rgba(192, 192, 192, 0.5); }
+            50% { box-shadow: 0 0 40px 10px rgba(192, 192, 192, 0.8); }
+        }
+
+        @keyframes pulse-glow-gold {
+            0%, 100% { box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 50px 15px rgba(255, 215, 0, 0.8); }
+        }
+
+        @keyframes pulse-glow-rainbow {
+            0% { box-shadow: 0 0 20px 5px rgba(255, 0, 0, 0.5); border-color: #ff0000; }
+            20% { box-shadow: 0 0 30px 10px rgba(255, 165, 0, 0.6); border-color: #ffa500; }
+            40% { box-shadow: 0 0 40px 15px rgba(255, 255, 0, 0.7); border-color: #ffff00; }
+            60% { box-shadow: 0 0 40px 15px rgba(0, 128, 0, 0.7); border-color: #008000; }
+            80% { box-shadow: 0 0 30px 10px rgba(0, 0, 255, 0.6); border-color: #0000ff; }
+            100% { box-shadow: 0 0 20px 5px rgba(238, 130, 238, 0.5); border-color: #ee82ee; }
+        }
+
+        @keyframes rainbow-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        @keyframes flash-white {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        /* New: Rays Animation */
+        @keyframes rays-rotate {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.5); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(180deg) scale(2.5); opacity: 0; }
+        }
+
+        @keyframes card-appear {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .orb-float { animation: float 3s ease-in-out infinite; }
+        .orb-silver { animation: pulse-glow-silver 2s infinite; background: radial-gradient(circle at 30% 30%, #e0e0e0, #a0a0a0, #404040); }
+        .orb-gold { animation: pulse-glow-gold 1.5s infinite; background: radial-gradient(circle at 30% 30%, #ffd700, #daa520, #8b6508); }
+        .orb-rainbow { 
+            animation: pulse-glow-rainbow 0.5s infinite linear; 
+            background: radial-gradient(circle at 30% 30%, #ffffff, #ffccff, #a020f0);
+        }
+        
+        .rainbow-text {
+            background: linear-gradient(90deg, #ff0000, #ffa500, #ffff00, #008000, #0000ff, #4b0082, #ee82ee);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbow-bg 3s ease infinite;
+        }
+
+        .shake-anim { animation: shake 0.5s; }
+        .flash-anim { animation: flash-white 0.5s ease-out forwards; }
+        .card-pop { animation: card-appear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* Rays effect class */
+        .ray-burst {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            z-index: -1;
+            pointer-events: none;
+            animation: rays-rotate 1.2s ease-out forwards;
+            /* Conic gradient for rays */
+            background: repeating-conic-gradient(
+                from 0deg,
+                rgba(255, 255, 255, 0) 0deg,
+                rgba(255, 255, 255, 0) 15deg,
+                var(--burst-color, rgba(255, 255, 255, 0.5)) 20deg,
+                rgba(255, 255, 255, 0) 25deg
+            );
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Icon Components (Inline SVGs to replace Lucide dependency) ---
+        const IconWrapper = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Sparkles = (props) => (
+            <IconWrapper {...props}>
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                <path d="M5 3v4" />
+                <path d="M9 5H5" />
+                <path d="M19 19v-4" />
+                <path d="M15 17h4" />
+            </IconWrapper>
+        );
+
+        const Archive = (props) => (
+            <IconWrapper {...props}>
+                <rect width="20" height="5" x="2" y="3" rx="1" />
+                <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+                <path d="M10 12h4" />
+            </IconWrapper>
+        );
+
+        const RotateCcw = (props) => (
+            <IconWrapper {...props}>
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+            </IconWrapper>
+        );
+
+        const Star = ({ fill = "none", ...props }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={props.size || 24} 
+                height={props.size || 24} 
+                viewBox="0 0 24 24" 
+                fill={fill}
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={props.className || ""}
+            >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+        );
+
+        const ArrowRight = (props) => (
+            <IconWrapper {...props}>
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+            </IconWrapper>
+        );
+
+        // --- Data Definitions ---
+
+        const RARITY = {
+            R: { color: 'text-gray-300', bg: 'bg-gray-700', border: 'border-gray-500', name: 'R', rate: 80, stars: 1 },
+            SR: { color: 'text-yellow-400', bg: 'bg-yellow-900', border: 'border-yellow-500', name: 'SR', rate: 15, stars: 2 },
+            SSR: { color: 'text-purple-400', bg: 'bg-indigo-900', border: 'border-purple-400', name: 'SSR', rate: 5, stars: 3 },
+        };
+
+        const CHARACTERS = [
+            // R Characters
+            { id: 'r1', name: '村人A', rarity: 'R', type: '戦士' },
+            { id: 'r2', name: 'スライム', rarity: 'R', type: '魔物' },
+            { id: 'r3', name: '見習い魔法使い', rarity: 'R', type: '魔法' },
+            { id: 'r4', name: '錆びた剣', rarity: 'R', type: '武器' },
+            { id: 'r5', name: '薬草', rarity: 'R', type: '道具' },
+            // SR Characters
+            { id: 'sr1', name: '王国騎士', rarity: 'SR', type: '戦士' },
+            { id: 'sr2', name: 'エルフの射手', rarity: 'SR', type: '弓手' },
+            { id: 'sr3', name: 'バトルゴーレム', rarity: 'SR', type: '魔物' },
+            { id: 'sr4', name: 'ミスリルソード', rarity: 'SR', type: '武器' },
+            { id: 'sr5', name: '熟練剣士', rarity: 'SR', type: '戦士' },
+            // SSR Characters
+            { id: 'ssr1', name: '勇者アルス', rarity: 'SSR', type: '英雄' },
+            { id: 'ssr2', name: '魔王の娘', rarity: 'SSR', type: '魔族' },
+            { id: 'ssr3', name: '聖女セレス', rarity: 'SSR', type: '聖職' },
+            { id: 'ssr4', name: '床屋のおっさん', rarity: 'SSR', type: '床屋' },
+        ];
+
+        // --- Components ---
+
+        const RarityBadge = ({ rarity }) => {
+            const config = RARITY[rarity];
+            return (
+                <span className={`px-2 py-0.5 rounded text-xs font-bold border ${config.border} ${config.color} bg-opacity-20 bg-black`}>
+                    {config.name}
+                </span>
+            );
+        };
+
+        const Card = ({ character, isNew, delay = 0 }) => {
+            const config = RARITY[character.rarity];
+            const isSSR = character.rarity === 'SSR';
+            
+            return (
+                <div 
+                    className={`card-pop relative flex flex-col items-center p-2 rounded-lg border-2 ${config.border} ${config.bg} shadow-lg`}
+                    style={{ animationDelay: `${delay}ms` }}
+                >
+                    {isNew && (
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold animate-bounce">
+                            NEW!
+                        </span>
+                    )}
+                    <div className={`w-12 h-12 rounded-full mb-1.5 flex items-center justify-center text-xl bg-black bg-opacity-30 border-2 ${config.border}`}>
+                        {isSSR ? '👑' : character.rarity === 'SR' ? '⚔️' : '🛡️'}
+                    </div>
+                    <div className="text-center">
+                        <div className={`font-bold text-xs ${isSSR ? 'rainbow-text' : 'text-white'}`}>{character.name}</div>
+                        <div className="flex justify-center mt-0.5">
+                            {[...Array(config.stars)].map((_, i) => (
+                                <Star key={i} size={8} className={`${config.color}`} fill="currentColor" />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Orb = ({ phase, onClick, isShaking, isUpgrading }) => {
+            let orbClass = "orb-silver";
+            if (phase === 'gold') orbClass = "orb-gold";
+            if (phase === 'rainbow') orbClass = "orb-rainbow";
+            
+            // Determine ray burst color based on target phase
+            const burstColor = phase === 'rainbow' ? 'rgba(255, 0, 255, 0.6)' : 'rgba(255, 215, 0, 0.6)';
+
+            return (
+                <div className="relative w-64 h-64 flex items-center justify-center cursor-pointer" onClick={onClick}>
+                    {/* Ray Burst Effect - Shows only during upgrade */}
+                    {isUpgrading && (
+                        <div 
+                            className="ray-burst" 
+                            style={{ '--burst-color': burstColor }}
+                        ></div>
+                    )}
+
+                    <div 
+                        className={`w-48 h-48 rounded-full transition-all duration-500 ${orbClass} orb-float ${isShaking ? 'shake-anim' : ''} shadow-2xl relative z-10`}
+                    >
+                         {/* Core shine */}
+                         <div className="absolute top-8 left-8 w-12 h-12 rounded-full bg-white opacity-40 filter blur-sm"></div>
+                    </div>
+                    
+                    {/* Outer Glow Rings for High Rarity */}
+                    {phase === 'rainbow' && (
+                        <div className="absolute inset-0 border-4 border-white rounded-full animate-ping opacity-20"></div>
+                    )}
+                </div>
+            );
+        };
+
+        const GachaButton = ({ label, cost, onClick, color = "blue", disabled = false }) => {
+            const colors = {
+                blue: "bg-blue-600 hover:bg-blue-500 border-blue-400",
+                pink: "bg-pink-600 hover:bg-pink-500 border-pink-400",
+                green: "bg-green-600 hover:bg-green-500 border-green-400",
+            };
+            return (
+                <button 
+                    onClick={onClick}
+                    disabled={disabled}
+                    className={`w-full py-4 px-6 rounded-xl border-b-4 active:border-b-0 active:translate-y-1 transition-all font-bold text-lg shadow-lg flex flex-col items-center justify-center ${colors[color]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                    <span>{label}</span>
+                    <span className="text-xs opacity-80 mt-1 font-normal bg-black bg-opacity-20 px-2 rounded-full">{cost}</span>
+                </button>
+            );
+        };
+
+        // --- Main App ---
+
+        const App = () => {
+            const [view, setView] = useState('home'); // home, animation, result, inventory
+            const [banner, setBanner] = useState('normal'); // normal, pickup
+            const [inventory, setInventory] = useState({});
+            const [pullResults, setPullResults] = useState([]);
+            
+            // Animation States
+            const [animPhase, setAnimPhase] = useState('silver'); // silver, gold, rainbow
+            const [isShaking, setIsShaking] = useState(false);
+            const [showFlash, setShowFlash] = useState(false);
+            const [isUpgrading, setIsUpgrading] = useState(false); // New state for ray burst
+            const [message, setMessage] = useState("");
+            const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+
+            // Load inventory on mount
+            useEffect(() => {
+                try {
+                    const saved = localStorage.getItem('gacha_inventory');
+                    if (saved) {
+                        setInventory(JSON.parse(saved));
+                    }
+                } catch (e) {
+                    console.error("Failed to load inventory", e);
+                }
+            }, []);
+
+            // Save inventory on change
+            useEffect(() => {
+                try {
+                    localStorage.setItem('gacha_inventory', JSON.stringify(inventory));
+                } catch (e) {
+                    console.error("Failed to save inventory", e);
+                }
+            }, [inventory]);
+
+            const getDropRates = () => {
+                if (banner === 'pickup') {
+                    // Slight boost for demo purposes
+                    return { r: 70, sr: 20, ssr: 10 }; 
+                }
+                return { r: 80, sr: 15, ssr: 5 };
+            };
+
+            const drawOne = () => {
+                const rand = Math.random() * 100;
+                const rates = getDropRates();
+                let rarity = 'R';
+                if (rand < rates.ssr) rarity = 'SSR';
+                else if (rand < rates.ssr + rates.sr) rarity = 'SR';
+
+                // Pick random char from rarity pool
+                const pool = CHARACTERS.filter(c => c.rarity === rarity);
+                const char = pool[Math.floor(Math.random() * pool.length)];
+                return char;
+            };
+
+            const startGacha = (count) => {
+                const results = [];
+                for (let i = 0; i < count; i++) {
+                    results.push(drawOne());
+                }
+                setPullResults(results);
+                
+                // Determine max rarity for animation sequence
+                const maxRarity = results.reduce((max, char) => {
+                    const val = { 'R': 1, 'SR': 2, 'SSR': 3 }[char.rarity];
+                    return val > max ? val : max;
+                }, 0);
+
+                // Reset animation state
+                setAnimPhase('silver');
+                setIsAutoPlaying(false);
+                setIsUpgrading(false);
+                setMessage("タップして力を込める...");
+                setView('animation');
+            };
+
+            // Helper to wait
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            const playAnimationSequence = async (startPhase) => {
+                const maxRarityValue = pullResults.reduce((max, char) => {
+                    const val = { 'R': 1, 'SR': 2, 'SSR': 3 }[char.rarity];
+                    return val > max ? val : max;
+                }, 0);
+
+                let currentPhase = startPhase;
+                
+                // 1. Initial Shake
+                setIsShaking(true);
+                setMessage("解放中...");
+                await wait(800); // Shaking duration
+                setIsShaking(false);
+
+                // 2. Check for Gold Upgrade
+                if (currentPhase === 'silver' && maxRarityValue >= 2) {
+                    await wait(200);
+                    
+                    // Trigger Upgrade Effects
+                    setIsUpgrading(true); // Rays appear
+                    setShowFlash(true);   // White flash
+                    
+                    await wait(100); // Flash starts
+                    
+                    setAnimPhase('gold');
+                    currentPhase = 'gold';
+                    setMessage("色が変化した！");
+                    
+                    await wait(400); // Flash fade out
+                    setShowFlash(false);
+                    setIsUpgrading(false); // Rays fade (handled by css animation mostly, but safe to reset)
+                    
+                    await wait(600); // Pause before next shake
+                    
+                    // Shake again for Gold phase
+                    setIsShaking(true);
+                    await wait(800);
+                    setIsShaking(false);
+                }
+
+                // 3. Check for Rainbow Upgrade
+                if (currentPhase === 'gold' && maxRarityValue === 3) {
+                    await wait(200);
+
+                    // Trigger Upgrade Effects
+                    setIsUpgrading(true);
+                    setShowFlash(true);
+                    
+                    await wait(100);
+                    
+                    setAnimPhase('rainbow');
+                    currentPhase = 'rainbow';
+                    setMessage("光が溢れ出す…！");
+                    
+                    await wait(400);
+                    setShowFlash(false);
+                    setIsUpgrading(false);
+                    
+                    await wait(600);
+                    
+                    // Shake again for Rainbow phase
+                    setIsShaking(true);
+                    await wait(800);
+                    setIsShaking(false);
+                }
+
+                // 4. Finish
+                await wait(300);
+                finishAnimation();
+            };
+
+            const handleOrbClick = () => {
+                if (isAutoPlaying || isShaking) return;
+                setIsAutoPlaying(true);
+                playAnimationSequence(animPhase);
+            };
+
+            const finishAnimation = () => {
+                setShowFlash(true);
+                setTimeout(() => {
+                    setShowFlash(false);
+                    // Add to inventory
+                    const newInventory = { ...inventory };
+                    pullResults.forEach(char => {
+                        newInventory[char.id] = (newInventory[char.id] || 0) + 1;
+                    });
+                    setInventory(newInventory);
+                    setView('result');
+                    setIsAutoPlaying(false);
+                }, 400);
+            };
+
+            const reset = () => {
+                setView('home');
+                setPullResults([]);
+            };
+
+            // --- Views ---
+
+            const renderHome = () => (
+                <div className="flex flex-col h-full max-w-md mx-auto p-4 animate-fade-in">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-6 bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="text-yellow-400" />
+                            <h1 className="text-xl font-bold bg-gradient-to-r from-yellow-200 to-amber-500 bg-clip-text text-transparent">
+                                伝説の召喚
+                            </h1>
+                        </div>
+                        <div className="flex gap-2">
+                             <button onClick={() => setView('inventory')} className="p-2 bg-slate-700 rounded-full hover:bg-slate-600 transition">
+                                <Archive size={20} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Banner Image Area */}
+                    <div className="relative aspect-video bg-gradient-to-br from-indigo-900 to-slate-900 rounded-xl mb-6 shadow-2xl border-4 border-slate-700 overflow-hidden group">
+                        <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+                        
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+                            {banner === 'normal' ? (
+                                <>
+                                    <h2 className="text-3xl font-black text-white drop-shadow-lg mb-2">常設ガチャ</h2>
+                                    <p className="text-sm text-gray-300 bg-black bg-opacity-50 px-3 py-1 rounded">バランスの良いラインナップ！</p>
+                                    <div className="mt-4 flex gap-2">
+                                        <RarityBadge rarity="SSR" /> <span className="text-xs">5%</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <h2 className="text-3xl font-black text-yellow-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] mb-2 animate-pulse">英雄祭</h2>
+                                    <p className="text-sm text-white bg-red-600 px-3 py-1 rounded shadow-lg transform -rotate-2">SSR確率2倍UP中！</p>
+                                    <div className="mt-4 flex gap-2">
+                                        <RarityBadge rarity="SSR" /> <span className="text-xs font-bold text-yellow-300">10%</span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Particles effect (simple css) */}
+                        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                            <div className="w-2 h-2 bg-white rounded-full absolute top-10 left-10 opacity-50 animate-ping"></div>
+                            <div className="w-1 h-1 bg-yellow-300 rounded-full absolute bottom-10 right-20 opacity-70 animate-bounce"></div>
+                        </div>
+                    </div>
+
+                    {/* Banner Tabs */}
+                    <div className="flex gap-2 mb-6">
+                        <button 
+                            onClick={() => setBanner('normal')}
+                            className={`flex-1 py-2 text-sm font-bold rounded-t-lg transition-colors ${banner === 'normal' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}
+                        >
+                            ノーマル
+                        </button>
+                        <button 
+                            onClick={() => setBanner('pickup')}
+                            className={`flex-1 py-2 text-sm font-bold rounded-t-lg transition-colors ${banner === 'pickup' ? 'bg-pink-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}
+                        >
+                            ピックアップ
+                        </button>
+                    </div>
+
+                    {/* Gacha Buttons */}
+                    <div className="grid grid-cols-2 gap-4 mt-auto">
+                        <GachaButton 
+                            label="1回召喚" 
+                            cost="💎 100" 
+                            color={banner === 'pickup' ? 'pink' : 'blue'} 
+                            onClick={() => startGacha(1)} 
+                        />
+                        <GachaButton 
+                            label="10回召喚" 
+                            cost="💎 1000" 
+                            color="green" 
+                            onClick={() => startGacha(10)} 
+                        />
+                    </div>
+                    
+                    <div className="mt-4 text-center text-xs text-gray-500">
+                        ※これはシミュレーターです。実際の課金は発生しません。
+                    </div>
+                </div>
+            );
+
+            const renderAnimation = () => (
+                <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4">
+                    {showFlash && <div className="absolute inset-0 bg-white z-[60] flash-anim pointer-events-none"></div>}
+                    
+                    <div className="mb-8 text-xl font-bold animate-pulse text-center h-8">
+                        {message}
+                    </div>
+
+                    <Orb 
+                        phase={animPhase} 
+                        isShaking={isShaking} 
+                        isUpgrading={isUpgrading}
+                        onClick={handleOrbClick} 
+                    />
+
+                    <div className={`mt-12 text-gray-400 text-sm ${!isAutoPlaying ? 'animate-bounce' : 'opacity-50'}`}>
+                        {isAutoPlaying ? '解放中...' : '画面（オーブ）をタップ！'}
+                    </div>
+                </div>
+            );
+
+            const renderResult = () => {
+                const isTenPull = pullResults.length > 1;
+                return (
+                    <div className="flex flex-col h-full p-4 overflow-y-auto max-w-md mx-auto">
+                        <h2 className="text-2xl font-bold text-center mb-6 text-white drop-shadow-md">召喚結果</h2>
+                        
+                        <div className={`grid ${isTenPull ? 'grid-cols-2' : 'grid-cols-1 max-w-[200px] mx-auto'} gap-4 mb-8`}>
+                            {pullResults.map((char, index) => {
+                                return (
+                                    <Card 
+                                        key={index} 
+                                        character={char} 
+                                        isNew={false} // Would need complex state tracking for accurate "New" badge
+                                        delay={index * 100}
+                                    />
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-auto flex flex-col gap-3 sticky bottom-4">
+                            <button 
+                                onClick={reset}
+                                className="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold text-white shadow-lg transition flex items-center justify-center gap-2"
+                            >
+                                <ArrowRight size={20} />
+                                戻る
+                            </button>
+                            <button 
+                                onClick={() => startGacha(pullResults.length)}
+                                className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-white shadow-lg transition flex items-center justify-center gap-2"
+                            >
+                                <RotateCcw size={20} />
+                                もう一度引く
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderInventory = () => {
+                // Flatten inventory to list
+                const list = Object.entries(inventory).map(([id, count]) => {
+                    const char = CHARACTERS.find(c => c.id === id);
+                    return { ...char, count };
+                }).sort((a, b) => {
+                    const rarityVal = { SSR: 3, SR: 2, R: 1 };
+                    return rarityVal[b.rarity] - rarityVal[a.rarity]; // Sort by rarity desc
+                });
+
+                return (
+                    <div className="flex flex-col h-full p-4 max-w-md mx-auto">
+                        <div className="flex items-center gap-2 mb-6">
+                            <button onClick={() => setView('home')} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700">
+                                <ArrowRight className="transform rotate-180" />
+                            </button>
+                            <h2 className="text-xl font-bold">所持キャラクター一覧</h2>
+                        </div>
+
+                        {list.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 gap-4">
+                                <Archive size={48} />
+                                <p>まだキャラクターがいません。</p>
+                                <button onClick={() => setView('home')} className="text-blue-400 hover:underline">ガチャを引く</button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-3 overflow-y-auto pb-4">
+                                {list.map(char => (
+                                    <div key={char.id} className="flex items-center bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl bg-black bg-opacity-30 mr-4 border ${RARITY[char.rarity].border}`}>
+                                            {char.rarity === 'SSR' ? '👑' : char.rarity === 'SR' ? '⚔️' : '🛡️'}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-bold px-1.5 rounded border ${RARITY[char.rarity].color} border-current`}>{char.rarity}</span>
+                                                <span className="font-bold">{char.name}</span>
+                                            </div>
+                                            <div className="text-xs text-gray-400 mt-1">{char.type}</div>
+                                        </div>
+                                        <div className="font-mono font-bold text-lg text-slate-400">
+                                            x{char.count}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="bg-slate-900 min-h-screen text-slate-100 font-sans">
+                    {view === 'home' && renderHome()}
+                    {view === 'animation' && renderAnimation()}
+                    {view === 'result' && renderResult()}
+                    {view === 'inventory' && renderInventory()}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

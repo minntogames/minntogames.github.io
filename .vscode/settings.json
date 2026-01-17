@@ -1,2 +1,8 @@
 {
+  "json.schemas": [
+    {
+      "fileMatch": ["**/character/cha.json"],
+      "url": "./.vscode/cha-schema.json"
+    }
+  ]
 }
