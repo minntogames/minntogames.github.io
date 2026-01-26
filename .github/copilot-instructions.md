@@ -41,6 +41,18 @@
       - burn-lightning [4]
   - warp-rod [2]
   - necromancer [2]
+- sweeper [1]
+  - big-sweeper [2]
+    - spike-sweeper [3]
+    - incendiary-sweeper [3]
+- gear [1]
+  - gear-second [2]
+    - gear-third [3]
+
+### 進化作る際の命令(自分用)
+タワーの一定進化を追加できますか
+<タワー名>は
+・<能力><新タワー名><レベル>
 
 ## キャラ図鑑
 

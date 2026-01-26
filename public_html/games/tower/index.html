@@ -603,6 +603,7 @@
         .skill-back-btn {
             position: absolute;
             bottom: 30px;
+            left: 30px;
             background: rgba(100, 100, 120, 0.9);
             color: white;
             padding: 15px 50px;
@@ -618,6 +619,28 @@
         .skill-back-btn:hover {
             background: rgba(150, 150, 170, 1);
             box-shadow: 0 0 20px rgba(200, 200, 200, 0.5);
+            transform: scale(1.05);
+        }
+
+        .skill-unlocked-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 200, 200, 0.9);
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .skill-unlocked-btn:hover {
+            background: rgba(0, 255, 255, 1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
             transform: scale(1.05);
         }
 
@@ -667,6 +690,55 @@
 
         .hidden {
             display: none !important;
+        }
+        
+        /* Popup Overlay */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .popup-content {
+            background: linear-gradient(135deg, #0a0a15, #1a1a30);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            color: white;
+        }
+        
+        .popup-close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 0, 0, 0.3);
+            color: white;
+            border: 2px solid #ff0000;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .popup-close-button:hover {
+            background: rgba(255, 0, 0, 0.6);
+            transform: scale(1.1);
         }
         
         /* Confirmation Dialog */
@@ -745,7 +817,99 @@
             background: linear-gradient(45deg, #666666, #444444);
             box-shadow: 0 0 15px rgba(100, 100, 100, 0.5);
         }
-        
+
+        /* Help Screen Styles */
+        .help-tab {
+            background: rgba(0, 200, 200, 0.3);
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .help-tab:hover {
+            background: rgba(0, 200, 200, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .help-tab.active {
+            background: #00ffff;
+            color: #001a4d;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        /* Commander Card Styles */
+        .commander-card {
+            background: linear-gradient(135deg, rgba(0, 20, 50, 0.9) 0%, rgba(0, 40, 80, 0.9) 100%);
+            border: 2px solid #00aaaa;
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .commander-card:hover {
+            border-color: #00ffff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .commander-card.selected {
+            border-color: #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.7);
+        }
+
+        .commander-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .commander-card.locked:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .commander-card-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .commander-card-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .commander-card-status {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #aaffff;
+        }
+
+        .commander-unlock-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 200, 0, 0.9);
+            color: #000;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
         /* Tutorial Screen Styles */
         .tutorial-screen {
             position: fixed;
@@ -908,10 +1072,49 @@
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
     
+    <!-- Debug Info (object counts) -->
+    <div id="debug-info" style="position: fixed; bottom: 140px; right: 10px; background: rgba(0, 0, 0, 0.3); color: rgba(255, 255, 0, 0.5); padding: 8px 12px; font-family: monospace; font-size: 14px; border: 1px solid rgba(255, 255, 0, 0.3); border-radius: 4px; z-index: 10000; display: none; pointer-events: none;">DEBUG</div>
+    
     <!-- FPS Counter (front layer) -->
     <div id="fps-counter" style="position: fixed; bottom: 100px; right: 10px; background: rgba(0, 0, 0, 0.3); color: rgba(0, 255, 0, 0.3); padding: 8px 12px; font-family: monospace; font-size: 16px; border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 4px; z-index: 10000; display: none; pointer-events: none;">FPS 60</div>
 
     <div class="ui-panel" id="uiLayer">
+        <!-- Commander Active Skill Button (Top Right) -->
+        <div id="active-skill-container" style="position: absolute; top: 80px; right: 20px; z-index: 10000; pointer-events: none;">
+            <div id="active-skill-button" style="position: relative; width: 60px; height: 60px; cursor: pointer; display: none; user-select: none; pointer-events: auto;">
+                <!-- Skill Icon -->
+                <div id="skill-icon-display" style="width: 100%; height: 100%; border-radius: 50%; border: 3px solid #00ffff; background: rgba(0, 20, 50, 0.9); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); transition: all 0.3s;">
+                </div>
+                <!-- Cooldown Overlay (Circular Progress) -->
+                <svg id="skill-cooldown-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; display: none; border-radius: 50%; overflow: hidden;">
+                    <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(0, 0, 0, 0.7)" stroke-width="6" />
+                    <circle id="skill-cooldown-circle" cx="30" cy="30" r="26" fill="none" stroke="#00ffff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.1s linear;" />
+                </svg>
+                <!-- Active Effect Overlay -->
+                <svg id="skill-active-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; display: none; border-radius: 50%; overflow: hidden;">
+                    <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255, 215, 0, 0.3)" stroke-width="6" />
+                    <circle id="skill-active-circle" cx="30" cy="30" r="26" fill="none" stroke="#ffd700" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.1s linear;" />
+                </svg>
+                <!-- Countdown Text -->
+                <div id="skill-countdown-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: #ffffff; text-shadow: 0 0 4px rgba(0, 0, 0, 0.8); font-family: 'Orbitron', sans-serif; pointer-events: none; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Cutin Animation (Bottom Right) -->
+        <div id="cutin-animation" style="position: absolute; bottom: 100px; right: -350px; width: 300px; height: 400px; z-index: 200; transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);">
+            <!-- Character Image Container -->
+            <div style="position: relative; width: 100%; height: 100%;">
+                <!-- Character Image -->
+                <img id="cutin-character-img" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                
+                <!-- Skill Name Banner (overlaid at bottom) -->
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.8) 70%, transparent 100%); padding: 15px 10px 10px; border-top: 2px solid #00ffff; box-shadow: 0 -5px 30px rgba(0, 255, 255, 0.6);">
+                    <div id="cutin-skill-name" style="font-size: 1.6rem; font-weight: bold; color: #00ffff; text-shadow: 0 0 15px rgba(0, 255, 255, 1), 0 2px 5px rgba(0, 0, 0, 0.8); font-family: 'Orbitron', sans-serif; text-align: center; letter-spacing: 2px; margin-bottom: 5px;"></div>
+                    <div id="cutin-commander-name" style="font-size: 0.85rem; color: #ffffff; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);"></div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Top Stats Bar -->
         <div class="top-section">
             <div class="top-bar">
@@ -954,7 +1157,16 @@
             <h3 class="text-cyan-400 font-bold" id="upgTitle">Tower Lv.1</h3>
             <div class="text-xs text-gray-300 mb-2">
                 DMG: <span id="upgDmg" class="text-white"></span> <span class="text-green-400">→ <span id="upgNextDmg"></span></span><br>
-                RNG: <span id="upgRng" class="text-white"></span> <span class="text-green-400">→ <span id="upgNextRng"></span></span>
+                RNG: <span id="upgRng" class="text-white"></span> <span class="text-green-400">→ <span id="upgNextRng"></span></span><br>
+                <span id="upgChainInfo" class="hidden">CHAIN: <span id="upgChain" class="text-yellow-400"></span></span>
+                <div id="upgOverclockGauge" class="hidden" style="margin-top: 6px;">
+                    <div style="font-size: 10px; color: #ffff00; margin-bottom: 2px;">
+                        <span id="upgOverclockStatus">OVERCLOCK</span>: <span id="upgOverclockValue">0</span>%
+                    </div>
+                    <div style="width: 100%; height: 8px; background: #333; border: 1px solid #666; border-radius: 4px; overflow: hidden;">
+                        <div id="upgOverclockBar" style="height: 100%; background: linear-gradient(90deg, #ffaa00, #ffff00); width: 0%; transition: width 0.2s;"></div>
+                    </div>
+                </div>
             </div>
             <button id="btnUpgrade" class="upgrade-btn" onmousedown="startUpgradeHold()" onmouseup="stopUpgradeHold()" onmouseleave="stopUpgradeHold()" ontouchstart="startUpgradeHold()" ontouchend="stopUpgradeHold()">
                 UPGRADE ($<span id="upgCost">0</span>)
@@ -990,16 +1202,26 @@
                 <span>BLASTER</span>
                 <span style="color:#ffff00; font-size:9px;">$200</span>
             </div>
+            <div class="tower-btn" id="btn-sweeper" onclick="selectTowerToBuild('sweeper')">
+                <div class="tower-icon" style="background: #ffcc00; clip-path: polygon(50% 0%, 95% 35%, 80% 100%, 20% 100%, 5% 35%);"></div>
+                <span>SWEEPER</span>
+                <span style="color:#ffff00; font-size:9px;">$150</span>
+            </div>
             <div class="tower-btn" id="btn-rod" onclick="selectTowerToBuild('rod')">
                 <div class="tower-icon" style="background: linear-gradient(180deg, #ffff00 0%, #888800 100%); width: 8px; height: 20px; border-radius: 2px;"></div>
                 <span>ROD</span>
                 <span style="color:#ffff00; font-size:9px;">$80</span>
             </div>
+            <div class="tower-btn" id="btn-gear" onclick="selectTowerToBuild('gear')">
+                <div class="tower-icon" style="background: #888888; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);"></div>
+                <span>GEAR</span>
+                <span id="gear-cost" style="color:#ffff00; font-size:9px;">$100</span>
+            </div>
         </div>
     </div>
 
     <!-- Title Screen -->
-    <div id="title-screen" class="title-screen">
+    <div id="title-screen" class="title-screen" style="display: none;">
         <canvas id="title-canvas"></canvas>
         <div class="neon-title">
             NEON<br>DEFENCE
@@ -1008,8 +1230,29 @@
             Click to Start
         </div>
         <div class="creator-credit">created by Minntelia</div>
-        <div class="version-label">Version 0.1</div>
+        <div class="version-label">Version 0.3</div>
     </div>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0a0a1a 0%, #000510 100%); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+        <div style="text-align: center; max-width: 500px; padding: 2rem;">
+            <div style="font-size: 3rem; font-weight: bold; color: #00ffff; text-shadow: 0 0 20px rgba(0, 255, 255, 0.8); font-family: 'Orbitron', sans-serif; margin-bottom: 2rem; animation: pulse 2s ease-in-out infinite;">
+                NEON<br>DEFENCE
+            </div>
+            <div style="font-size: 1.2rem; color: #ffffff; margin-bottom: 1rem;">Loading...</div>
+            <div style="width: 100%; height: 30px; background: rgba(0, 0, 0, 0.5); border: 2px solid #00ffff; border-radius: 15px; overflow: hidden; box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);">
+                <div id="loading-progress-bar" style="height: 100%; background: linear-gradient(90deg, #00ffff, #00aaff); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);"></div>
+            </div>
+            <div id="loading-percent" style="font-size: 1.5rem; color: #00ffff; margin-top: 1rem; font-family: 'Orbitron', sans-serif; font-weight: bold;">0%</div>
+            <div id="loading-status" style="font-size: 0.9rem; color: #aaaaaa; margin-top: 0.5rem; min-height: 1.5rem;">Initializing...</div>
+        </div>
+    </div>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+    </style>
 
     <!-- Menu Screen -->
     <div id="menu-screen" class="menu-screen hidden">
@@ -1021,10 +1264,13 @@
                 <button class="menu-button" onclick="startEndlessMode()" style="margin-bottom: 1rem; background: linear-gradient(135deg, #ff0066 0%, #6600ff 100%);">ENDLESS MODE</button>
             </div>
             <div style="position: relative; max-width: 400px;">
+                <button class="menu-button" onclick="showCommanderScreen()" style="margin-bottom: 1rem;">指揮官編成</button>
+            </div>
+            <div style="position: relative; max-width: 400px;">
                 <button class="menu-button" onclick="showSkillTree()" style="margin-bottom: 1rem;">スキルツリー</button>
             </div>
             <div style="position: relative; max-width: 400px;">
-                <button class="menu-button" onclick="alert('準備中')" style="margin-bottom: 1rem;">？？？</button>
+                <button class="menu-button" onclick="showHelp()" style="margin-bottom: 1rem;">ヘルプ</button>
             </div>
             <div style="position: relative; max-width: 400px;">
                 <button class="menu-button" onclick="showOptions()">設定</button>
@@ -1055,6 +1301,29 @@
         </div>
     </div>
 
+    <!-- Help Screen -->
+    <div id="help-screen" class="menu-screen hidden" style="background: linear-gradient(135deg, #1a0040 0%, #000520 100%); overflow-y: auto;">
+        <div style="max-width: 900px; margin: 0 auto; padding: 2rem;">
+            <h1 style="text-align: center; color: #00ffff; font-size: 2.5rem; margin-bottom: 1rem; font-family: 'Orbitron', sans-serif;">ヘルプ</h1>
+            
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; justify-content: center;">
+                <button class="help-tab active" onclick="switchHelpTab('how-to-play')">プレイ方法</button>
+                <button class="help-tab" onclick="switchHelpTab('enemies')">敵の種類</button>
+                <button class="help-tab" onclick="switchHelpTab('towers')">タワーの種類</button>
+                <button class="help-tab" onclick="switchHelpTab('debuffs')">デバフ</button>
+            </div>
+            
+            <!-- Help Content -->
+            <div id="help-content" style="background: rgba(0, 20, 50, 0.8); padding: 2rem; border-radius: 10px; color: #ffffff; min-height: 400px;">
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="menu-button" onclick="backToMenuFromHelp()" style="background: rgba(200, 220, 255, 0.95);">メニューに戻る</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Stage Map Screen -->
     <div id="stage-map-screen" class="stage-map-screen hidden">
         <div class="stage-map-header">
@@ -1079,6 +1348,48 @@
             <canvas id="skill-canvas"></canvas>
         </div>
         <button class="skill-back-btn" onclick="backToMenuFromSkillTree()">戻る</button>
+        <button class="skill-unlocked-btn" onclick="showUnlockedSkillsPopup()">解放済みスキル</button>
+    </div>
+
+    <!-- Unlocked Skills Popup -->
+    <div id="unlocked-skills-popup" class="popup-overlay hidden" onclick="hideUnlockedSkillsPopup()">
+        <div class="popup-content" onclick="event.stopPropagation()" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <button class="popup-close-button" onclick="hideUnlockedSkillsPopup()">×</button>
+            <h2 style="color: #00ffff; text-align: center; margin-bottom: 20px; font-size: 1.5rem;">解放済みスキル</h2>
+            <div id="unlocked-skills-content" style="font-size: 0.9rem; line-height: 1.8;"></div>
+        </div>
+    </div>
+
+    <!-- Commander Selection Screen -->
+    <div id="commander-screen" class="menu-screen hidden" style="background: linear-gradient(135deg, #1a0040 0%, #000520 100%);">
+        <div style="max-width: 1000px; margin: 0 auto; padding: 2rem;">
+            <h1 style="text-align: center; color: #00ffff; font-size: 2.5rem; margin-bottom: 1rem; font-family: 'Orbitron', sans-serif;">指揮官編成</h1>
+            
+            <!-- Current Commander Display -->
+            <div id="current-commander-display" style="background: rgba(0, 20, 50, 0.8); padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border: 2px solid #00ffff;">
+                <h2 style="color: #00ffff; margin-bottom: 1rem; font-size: 1.3rem;">現在の指揮官</h2>
+                <div id="current-commander-info" style="text-align: center; color: #ffffff;">
+                    <p style="color: #999;">指揮官が選択されていません</p>
+                </div>
+            </div>
+            
+            <!-- Commander Cards -->
+            <div id="commander-cards-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Commander cards will be generated here -->
+            </div>
+            
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="menu-button" onclick="backToMenuFromCommander()" style="background: rgba(200, 220, 255, 0.95); cursor: pointer;">メニューに戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commander Detail Popup -->
+    <div id="commander-detail-popup" class="popup-overlay hidden" onclick="hideCommanderDetail()">
+        <div class="popup-content" onclick="event.stopPropagation()" style="max-width: 500px;">
+            <button class="popup-close-button" onclick="hideCommanderDetail()">×</button>
+            <div id="commander-detail-content"></div>
+        </div>
     </div>
 
     <!-- Options Screen -->

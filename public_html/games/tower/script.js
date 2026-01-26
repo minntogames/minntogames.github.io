@@ -13,6 +13,12 @@ let lastTime = 0;
 let animationFrameId = null;
 let debugMode = false; // Debug mode toggle
 const showDebugUI = true; // Set to false to hide debug button
+
+// DPS Tracking
+let totalDamageDealt = 0; // Total damage dealt in current second
+let lastDPSUpdateTime = 0; // Timestamp of last DPS calculation
+let currentDPS = 0; // Current DPS value
+
 let money = 150;
 let lives = 20;
 let wave = 1;
@@ -131,12 +137,15 @@ let stunZones = [];
 let lightningStrikes = [];
 let zombies = []; // ネクロマンサーによって生成されたゾンビ
 let warpEffects = []; // ワープエフェクト
+let mines = []; // Sweeperタワーによって設置された地雷
+let solarFlares = []; // Sol-Blasterによって放出されたフレア
 
 // Sound Effects
 const sounds = {
     select: new Audio('src/se/select.wav'),
     enemyDestroy: new Audio('src/se/enemyDestroy.wav'),
-    ice: new Audio('src/se/ice.mp3')
+    ice: new Audio('src/se/ice.mp3'),
+    warp: new Audio('src/se/warp.mp3')
 };
 
 // BGM
@@ -144,12 +153,144 @@ const bgm = new Audio('src/bgm/SuperBall.mp3');
 bgm.volume = 0.25; // 75% volume
 bgm.loop = true; // Loop playback
 
+// Preload assets
+const assetsToLoad = {
+    images: [
+        'img/chara/cha1-0.png',
+        'img/chara/cha1-1.png',
+        'img/chara/cha1-2.png',
+        'img/chara/skill/cha1.png',
+        'img/chara/skill/cha2.png',
+        'img/chara/skill/cha3.png',
+        'img/chara/navi_normal.PNG',
+        'img/tree/base.PNG',
+        'img/tree/base2.PNG',
+        'img/tree/base3.PNG',
+        'img/tree/base4.PNG',
+        'img/tree/turret.PNG',
+        'img/tree/sniper.PNG',
+        'img/tree/blaster.PNG',
+        'img/tree/rod.PNG',
+        'img/tree/credit.PNG',
+        'img/tree/chip.PNG',
+        'img/tree/damage.PNG',
+        'img/tree/freeze.PNG',
+        'img/tree/burn.PNG',
+        'img/tree/sweeper.PNG',
+        'img/tree/gear.PNG'
+    ],
+    audio: [
+        'src/se/select.wav',
+        'src/se/enemyDestroy.wav',
+        'src/se/ice.mp3',
+        'src/se/warp.mp3',
+        'src/bgm/SuperBall.mp3'
+    ]
+};
+
+let loadedAssets = 0;
+let totalAssets = assetsToLoad.images.length + assetsToLoad.audio.length;
+let isAssetsLoaded = false;
+
+function updateLoadingProgress(current, total, status = '') {
+    const percent = Math.floor((current / total) * 100);
+    const progressBar = document.getElementById('loading-progress-bar');
+    const percentText = document.getElementById('loading-percent');
+    const statusText = document.getElementById('loading-status');
+    
+    if (progressBar) progressBar.style.width = percent + '%';
+    if (percentText) percentText.textContent = percent + '%';
+    if (statusText && status) statusText.textContent = status;
+}
+
+function preloadAssets() {
+    return new Promise((resolve) => {
+        let loaded = 0;
+        const incrementLoaded = () => {
+            loaded++;
+            if (loaded === totalAssets) {
+                resolve();
+            }
+        };
+        
+        // Preload images
+        assetsToLoad.images.forEach((src, index) => {
+            const img = new Image();
+            img.onload = () => {
+                updateLoadingProgress(loaded + 1, totalAssets, `Loading images (${index + 1}/${assetsToLoad.images.length})`);
+                incrementLoaded();
+            };
+            img.onerror = () => {
+                console.warn(`Failed to load image: ${src}`);
+                updateLoadingProgress(loaded + 1, totalAssets, `Loading images (${index + 1}/${assetsToLoad.images.length})`);
+                incrementLoaded();
+            };
+            img.src = src;
+        });
+        
+        // Preload audio - use simpler approach
+        assetsToLoad.audio.forEach((src, index) => {
+            const audio = new Audio();
+            
+            // Use a timeout as fallback
+            const timeout = setTimeout(() => {
+                updateLoadingProgress(loaded + 1, totalAssets, `Loading audio (${index + 1}/${assetsToLoad.audio.length})`);
+                incrementLoaded();
+            }, 2000);
+            
+            audio.onloadeddata = () => {
+                clearTimeout(timeout);
+                updateLoadingProgress(loaded + 1, totalAssets, `Loading audio (${index + 1}/${assetsToLoad.audio.length})`);
+                incrementLoaded();
+            };
+            audio.onerror = () => {
+                clearTimeout(timeout);
+                console.warn(`Failed to load audio: ${src}`);
+                updateLoadingProgress(loaded + 1, totalAssets, `Loading audio (${index + 1}/${assetsToLoad.audio.length})`);
+                incrementLoaded();
+            };
+            audio.src = src;
+            audio.load();
+        });
+    });
+}
+
+// Initialize loading on page load
+window.addEventListener('load', async () => {
+    updateLoadingProgress(0, totalAssets, 'Initializing...');
+    
+    await preloadAssets();
+    
+    updateLoadingProgress(totalAssets, totalAssets, 'Complete!');
+    isAssetsLoaded = true;
+    
+    // Fade out loading screen and show title screen
+    setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        const titleScreen = document.getElementById('title-screen');
+        
+        if (loadingScreen) {
+            loadingScreen.style.transition = 'opacity 0.5s ease';
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+                if (titleScreen) {
+                    titleScreen.style.display = 'flex';
+                }
+            }, 500);
+        }
+    }, 500);
+});
+
 // Set volume levels
 sounds.enemyDestroy.volume = 0.75; // 50% volume
 
 // Play sound function with error handling (supports simultaneous playback)
 function playSound(soundName) {
     try {
+        // Don't play sound if SE volume is 0
+        if (qualitySettings.seVolume === 0) return;
+        
         const originalSound = sounds[soundName];
         if (originalSound) {
             // Clone the audio to allow simultaneous playback
@@ -171,6 +312,8 @@ let path = [];
 // Interaction
 let selectedTowerType = null; // For building
 let selectedTowerInstance = null; // For upgrading
+let copiedTowerData = null; // For copy & paste (debug feature)
+let commandInputActive = false; // Debug command input
 let mouseX = 0;
 let mouseY = 0;
 
@@ -207,6 +350,8 @@ let dashOffset = 0; // For animated dashed border
 // Grid snap settings
 let gridSnapEnabled = false;
 const GRID_SIZE = 40; // Grid cell size in pixels
+let showGridWhilePasting = false; // Shift+スペースキー押下時の一時的なグリッド表示
+let showPreviewWithShift = false; // Shiftキー押下中のプレビュー表示
 
 // Performance and Quality Settings
 let qualitySettings = {
@@ -250,6 +395,13 @@ const stageFieldShapes = {
             { x: 50, y: FIELD_HEIGHT + FIELD_MARGIN - 200, width: FIELD_MARGIN * 5 - 10, height: FIELD_MARGIN * 4 }
         ]
     },
+    3: {
+        // Custom shape for stage 3
+        excludeZones: [],
+        customPlayableZones: [
+            { x: 50, y: 50, width: 1200, height: 800 }
+        ]
+    }
 };
 
 // Boss appearance animation
@@ -264,6 +416,72 @@ let baseDestroyed = false; // Hide base when destroyed
 
 // Skill Tree System
 let unlockedSkills = [];
+
+// Commander System
+let unlockedCommanders = ['eiko']; // Initial commander unlocked
+let selectedCommander = null; // Currently equipped commander
+let activeSkillCooldown = 0; // Cooldown timer in frames
+let activeSkillDuration = 0; // Active skill effect duration in frames
+let activeSkillActive = false; // Is active skill currently active
+let cutinAnimationActive = false; // Cutin animation flag
+let cutinAnimationProgress = 0; // Animation progress (0-1)
+
+const commanders = {
+    'eiko': {
+        id: 'eiko',
+        name: 'エイコ',
+        image: 'img/chara/skill/cha1.png',
+        unlockCost: 0, // Free (initial commander)
+        activeSkill: {
+            name: 'クイックファスト',
+            description: '全タワーの攻撃速度+100%',
+            duration: 1800, // 30s * 60fps
+            cooldown: 3600, // 60s * 60fps
+            icon: '⚡'
+        },
+        passiveSkill: {
+            name: '効率的な生産',
+            description: 'タワーのLvupコスト-10%',
+            icon: '💰'
+        }
+    },
+    'reika': {
+        id: 'reika',
+        name: 'レイカ',
+        image: 'img/chara/skill/cha2.png',
+        unlockCost: 100, // Electronic chips
+        activeSkill: {
+            name: 'ホワイトアウト',
+            description: 'フィールド全体「猛吹雪」(スロー+継続ダメージ)',
+            duration: 600, // 10s * 60fps
+            cooldown: 3600, // 60s * 60fps
+            icon: '❄️'
+        },
+        passiveSkill: {
+            name: 'しもやけ',
+            description: '凍結、スロー付与された敵に追加ダメージを与える',
+            icon: '🧊'
+        }
+    },
+    'benix': {
+        id: 'benix',
+        name: 'べニックス',
+        image: 'img/chara/skill/cha3.png',
+        unlockCost: 150, // Electronic chips
+        activeSkill: {
+            name: '鼓舞！鼓舞！',
+            description: 'クリティカル率+10%、クリティカルダメージ+100%',
+            duration: 1800, // 30s * 60fps
+            cooldown: 3600, // 60s * 60fps
+            icon: '🔥'
+        },
+        passiveSkill: {
+            name: '追い詰める',
+            description: 'デバフの継続時間+3s',
+            icon: '⏱️'
+        }
+    }
+};
 const skillTree = {
     'base_upgrade2': {
         id: 'base_upgrade2',
@@ -271,7 +489,7 @@ const skillTree = {
         description: '初期ライフ+5',
         cost: 25,
         icon: '🏯',
-        image: 'img/tree/base.PNG',
+        image: 'img/tree/base2.PNG',
         requires: ['unlock_rod', 'enemy_credits', 'all_tower_damage'],
         unlocks: [/* cross_specialization, initial_credits4 */ 'weak_point_analysis', 'terraforming'],
         special: true, // Mark as special/important skill
@@ -508,7 +726,7 @@ const skillTree = {
         icon: '🔥',
         image: 'img/tree/burn.PNG',
         requires: ['blaster_range'],
-        unlocks: [/* cross_specialization */],
+        unlocks: [/* cross_specialization */ 'inferno'],
         effect: () => { /* Applied to burn damage */ }
     },
     'cross_specialization': {
@@ -567,7 +785,7 @@ const skillTree = {
         icon: '🎯',
         image: 'img/tree/damage.PNG',
         requires: ['terraforming'],
-        unlocks: [],
+        unlocks: ['ai_analysis'],
         better: true,
         effect: () => { /* +1% crit rate */ }
     },
@@ -579,7 +797,7 @@ const skillTree = {
         icon: '🔫',
         image: 'img/tree/turret.PNG',
         requires: ['terraforming'],
-        unlocks: [],
+        unlocks: ['bullet_hardening'],
         better: true,
         effect: () => { /* +5% turret fire rate */ }
     },
@@ -591,7 +809,7 @@ const skillTree = {
         icon: '💪',
         image: 'img/tree/sniper.PNG',
         requires: ['terraforming'],
-        unlocks: [],
+        unlocks: ['sharpness_or_hardness'],
         better: true,
         effect: () => { /* +5% sniper damage */ }
     },
@@ -603,7 +821,7 @@ const skillTree = {
         icon: '🔧',
         image: 'img/tree/blaster.PNG',
         requires: ['terraforming'],
-        unlocks: [],
+        unlocks: ['bang'],
         better: true,
         effect: () => { /* +5% blaster range */ }
     },
@@ -635,12 +853,156 @@ const skillTree = {
         description: 'Life+5',
         cost: 500,
         icon: '🏔️',
-        image: 'img/tree/base.PNG',
+        image: 'img/tree/base3.PNG',
         requires: ['base_upgrade2'],
-        unlocks: ['ultimate_power'],
+        unlocks: ['ultimate_power', 'minesweeper', 'terraforming2'],
         epic: true,
         special: true,
         effect: () => { /* +5 life */ }
+    },
+    'minesweeper': {
+        id: 'minesweeper',
+        name: 'マインスイーパー',
+        description: 'Sweeperタワーを解放',
+        cost: 100,
+        icon: '💣',
+        image: 'img/tree/sweeper.PNG',
+        requires: ['terraforming'],
+        unlocks: [],
+        better: true,
+        effect: () => { /* Unlocks Sweeper tower */ }
+    },
+    'terraforming2': {
+        id: 'terraforming2',
+        name: 'テラフォーミングII',
+        description: 'Life+5',
+        cost: 700,
+        icon: '🏔️',
+        image: 'img/tree/base4.PNG',
+        requires: ['terraforming'],
+        unlocks: ['self_generation'],
+        special: true,
+        effect: () => { /* +5 life */ }
+    },
+    'bullet_hardening': {
+        id: 'bullet_hardening',
+        name: '弾丸硬化',
+        description: 'TURRETのダメージ+10%',
+        cost: 300,
+        icon: '🔫',
+        image: 'img/tree/turret.PNG',
+        requires: ['terraforming2', 'quantity_over_quality'],
+        unlocks: ['rapid_fire'],
+        better: true,
+        effect: () => { /* +10% turret damage */ }
+    },
+    'rapid_fire': {
+        id: 'rapid_fire',
+        name: '叩いて、叩いて、叩いて',
+        description: 'TURRETの連射速度+5%',
+        cost: 300,
+        icon: '🔫',
+        image: 'img/tree/turret.PNG',
+        requires: ['bullet_hardening'],
+        unlocks: ['ultimate_power2'],
+        better: true,
+        effect: () => { /* +5% turret fire rate */ }
+    },
+    'sharpness_or_hardness': {
+        id: 'sharpness_or_hardness',
+        name: '鋭さが先か、硬さが先か',
+        description: 'SNIPERのダメージ+10%',
+        cost: 300,
+        icon: '🎯',
+        image: 'img/tree/sniper.PNG',
+        requires: ['terraforming2', 'mass'],
+        unlocks: ['tile_break'],
+        better: true,
+        effect: () => { /* +10% sniper damage */ }
+    },
+    'bang': {
+        id: 'bang',
+        name: 'BANG',
+        description: 'BLASTERのダメージ+10%',
+        cost: 300,
+        icon: '💥',
+        image: 'img/tree/blaster.PNG',
+        requires: ['terraforming2', 'hotfix'],
+        unlocks: [],
+        better: true,
+        effect: () => { /* +10% blaster damage */ }
+    },
+    'inferno': {
+        id: 'inferno',
+        name: '業火',
+        description: '延焼状態の与ダメージ+100%',
+        cost: 300,
+        icon: '🔥',
+        image: 'img/tree/burn.PNG',
+        requires: ['terraforming2', 'burn_damage'],
+        unlocks: [],
+        better: true,
+        effect: () => { /* +100% burn damage */ }
+    },
+    'self_generation': {
+        id: 'self_generation',
+        name: '自家発電',
+        description: 'Gearタワー解放',
+        cost: 300,
+        icon: '⚙️',
+        image: 'img/tree/gear.PNG',
+        requires: ['terraforming2'],
+        unlocks: ['durability_improvement'],
+        epic: true,
+        effect: () => { /* Unlocks Gear tower */ }
+    },
+    'durability_improvement': {
+        id: 'durability_improvement',
+        name: '耐久性向上',
+        description: 'Gear(第一形態)の連鎖上限+5',
+        cost: 300,
+        icon: '⚙️',
+        image: 'img/tree/gear.PNG',
+        requires: ['self_generation'],
+        unlocks: [],
+        better: true,
+        effect: () => { /* +5 chain limit for Gear */ }
+    },
+    'ai_analysis': {
+        id: 'ai_analysis',
+        name: 'AI解析',
+        description: 'クリティカル率+1%',
+        cost: 300,
+        icon: '🤖',
+        image: 'img/tree/damage.PNG',
+        requires: ['terraforming2'],
+        unlocks: [],
+        better: true,
+        effect: () => { /* +1% crit rate */ }
+    },
+    'tile_break': {
+        id: 'tile_break',
+        name: '瓦割り',
+        description: '裂傷の割合増加',
+        cost: 300,
+        icon: '💢',
+        image: 'img/tree/damage.PNG',
+        requires: ['terraforming2'],
+        unlocks: ['ultimate_power2'],
+        better: true,
+        effect: () => { /* Laceration percentage increase */ }
+    },
+    'ultimate_power2': {
+        id: 'ultimate_power2',
+        name: 'アルティメットパワー',
+        description: '全タワーダメージ+10%',
+        cost: 500,
+        icon: '⭐',
+        image: 'img/tree/damage.PNG',
+        requires: ['tile_break','rapid_fire'],
+        unlocks: [],
+        epic: true,
+        effect: () => { /* +10% all tower damage */ }
     }
 };
 
@@ -649,12 +1011,16 @@ function getSkillBonus(type, towerBaseType = null) {
     let bonus = 1.0;
     if (type === 'damage') {
         if (towerBaseType === 'turret' && unlockedSkills.includes('turret_damage')) bonus *= 1.05;
+        if (towerBaseType === 'turret' && unlockedSkills.includes('bullet_hardening')) bonus *= 1.10; // +10% turret damage
         if (towerBaseType === 'sniper' && unlockedSkills.includes('sniper_damage')) bonus *= 1.05;
         if (towerBaseType === 'sniper' && unlockedSkills.includes('mass')) bonus *= 1.05; // +5% sniper damage
+        if (towerBaseType === 'sniper' && unlockedSkills.includes('sharpness_or_hardness')) bonus *= 1.10; // +10% sniper damage
         if (towerBaseType === 'blaster' && unlockedSkills.includes('blaster_damage')) bonus *= 1.05;
+        if (towerBaseType === 'blaster' && unlockedSkills.includes('bang')) bonus *= 1.10; // +10% blaster damage
         if (towerBaseType === 'rod' && unlockedSkills.includes('rod_damage')) bonus *= 1.05;
         // All tower damage bonus (applies to all types)
         if (unlockedSkills.includes('all_tower_damage')) bonus *= 1.10;
+        if (unlockedSkills.includes('ultimate_power2')) bonus *= 1.10; // +10% all tower damage
     } else if (type === 'range') {
         if (towerBaseType === 'turret' && unlockedSkills.includes('turret_range')) bonus *= 1.01;
         if (towerBaseType === 'sniper' && unlockedSkills.includes('sniper_range')) bonus *= 1.01;
@@ -670,10 +1036,12 @@ function getSkillBonus(type, towerBaseType = null) {
         if (unlockedSkills.includes('freeze_duration')) bonus *= 1.50; // +50% freeze duration
     } else if (type === 'burn_damage') {
         if (unlockedSkills.includes('burn_damage')) bonus *= 1.50; // +50% burn damage
+        if (unlockedSkills.includes('inferno')) bonus *= 2.00; // +100% burn damage
     } else if (type === 'crit_rate') {
         let critRate = 0.0; // Base 0%
         if (unlockedSkills.includes('weak_point_analysis')) critRate += 0.01; // +1%
         if (unlockedSkills.includes('vulnerability')) critRate += 0.01; // +1%
+        if (unlockedSkills.includes('ai_analysis')) critRate += 0.01; // +1%
         return critRate;
     } else if (type === 'surge_chance') {
         let surgeChance = 0.0; // Base 0%
@@ -685,7 +1053,12 @@ function getSkillBonus(type, towerBaseType = null) {
         return warpChance;
     } else if (type === 'cooldown_reduction') {
         if (towerBaseType === 'turret' && unlockedSkills.includes('quantity_over_quality')) bonus *= 0.95; // -5% cooldown = +5% fire rate
+        if (towerBaseType === 'turret' && unlockedSkills.includes('rapid_fire')) bonus *= 0.95; // -5% cooldown = +5% fire rate
         return bonus;
+    } else if (type === 'gear_chain_limit') {
+        let chainLimit = 0;
+        if (unlockedSkills.includes('durability_improvement')) chainLimit += 5; // +5 chain limit
+        return chainLimit;
     }
     return bonus;
 }
@@ -721,6 +1094,59 @@ const TOWER_TYPES = {
         color: '#ff8800',
         shape: 'triangle',
         baseType: 'blaster'
+    },
+    'sweeper': {
+        name: 'Sweeper',
+        cost: 150,
+        range: 150, // 地雷設置範囲
+        damage: 50, // 地雷の爆発ダメージ
+        cooldown: 3000, // 地雷設置間隔
+        color: '#ffcc00',
+        shape: 'pentagon',
+        baseType: 'sweeper',
+        special: 'mine-layer', // 地雷設置
+        requiredSkill: 'minesweeper'
+    },
+    // Sweeper Evolutions
+    'big-sweeper': {
+        name: 'Big-Sweeper',
+        cost: 0,
+        range: 180, // 地雷設置範囲増加
+        damage: 80, // 地雷の爆発ダメージ増加
+        cooldown: 2800,
+        color: '#ffbb00',
+        shape: 'pentagon',
+        baseType: 'sweeper',
+        isEvolution: true,
+        special: 'big-mine-layer' // より強力な地雷
+    },
+    'spike-sweeper': {
+        name: 'Spike-Sweeper',
+        cost: 0,
+        range: 210, // 地雷設置範囲さらに増加
+        damage: 120, // 地雷の爆発ダメージさらに増加
+        cooldown: 2600,
+        color: '#ff9900',
+        shape: 'pentagon',
+        baseType: 'sweeper',
+        isEvolution: true,
+        isSecondEvolution: true,
+        evolvesFrom: 'big-sweeper',
+        special: 'spike-mine-layer' // とげをまき散らす地雷
+    },
+    'incendiary-sweeper': {
+        name: 'Incendiary-Sweeper',
+        cost: 0,
+        range: 210, // 地雷設置範囲さらに増加
+        damage: 100, // 地雷の爆発ダメージ増加
+        cooldown: 2600,
+        color: '#ff4400',
+        shape: 'pentagon',
+        baseType: 'sweeper',
+        isEvolution: true,
+        isSecondEvolution: true,
+        evolvesFrom: 'big-sweeper',
+        special: 'incendiary-mine-layer' // 延焼状態にする地雷
     },
     // Turret Evolutions
     'dual-turret': {
@@ -992,6 +1418,23 @@ const TOWER_TYPES = {
         special: 'mega-chain-burn', // 死亡時の爆破範囲が増加
         requiredSkill: 'ultimate_power'
     },
+    'sol-blaster': {
+        name: 'Sol-Blaster',
+        cost: 0,
+        range: 120,
+        damage: 25,
+        cooldown: 150,
+        color: '#ffaa00',
+        shape: 'triangle',
+        baseType: 'blaster',
+        isEvolution: true,
+        isSecondEvolution: true,
+        isThirdEvolution: true,
+        isFourthEvolution: true,
+        evolvesFrom: 'explosion-blaster',
+        special: 'solar-flare', // フレア発射 + 強化された延焼
+        requiredSkill: null
+    },
     'blizzard-blaster': {
         name: 'Blizzard-Blaster',
         cost: 0,
@@ -1137,6 +1580,43 @@ const TOWER_TYPES = {
         evolvesFrom: 'lightning-rod-ii',
         special: 'burn-lightning', // Lightning with burn + stun chance
         requiredSkill: 'cross_specialization' // Requires cross_specialization skill
+    },
+    'gear': {
+        name: 'Gear',
+        cost: 100,
+        range: 100,
+        damage: 15,
+        cooldown: 800,
+        color: '#888888',
+        shape: 'gear',
+        baseType: 'gear',
+        special: 'chain' // 連鎖システム
+    },
+    'gear-second': {
+        name: 'Gear-Second',
+        cost: 150,
+        range: 120,
+        damage: 20,
+        cooldown: 750,
+        color: '#aaaaaa',
+        shape: 'gear',
+        baseType: 'gear',
+        special: 'chain',
+        isEvolution: true
+    },
+    'gear-third': {
+        name: 'Gear-Third',
+        cost: 200,
+        range: 140,
+        damage: 30,
+        cooldown: 700,
+        color: '#cccccc',
+        shape: 'gear',
+        baseType: 'gear',
+        special: 'chain',
+        isEvolution: true,
+        isSecondEvolution: true,
+        evolvesFrom: 'gear-second'
     }
 };
 
@@ -1159,7 +1639,18 @@ window.addEventListener('resize', resizeCanvas);
 // NOTE: 敵の軌道
 function generatePath() {
     // Generate path based on current stage
-    if (currentStage === 2) {
+    if (currentStage === 3) {
+        path = [
+            { x: 50, y: 100 },
+            { x: 300, y: 100 },
+            { x: 300, y: 800 },
+            { x: 1200, y: 800 },
+            { x: 1200, y: 100 },
+            { x: 750, y: 100 },
+            { x: 750, y: 450 }
+        ];
+    }
+    else if (currentStage === 2) {
         // Stage 2: Start from bottom-left, go up, then right to top-right
         path = [
             {x: FIELD_WIDTH * 0.9 + FIELD_MARGIN, y: FIELD_MARGIN}, // start (top-right)
@@ -1208,6 +1699,642 @@ function showMenu() {
         console.log('Tutorial already seen, showing menu');
         // Show menu directly
         document.getElementById('menu-screen').classList.remove('hidden');
+    }
+}
+
+// Show Help Screen
+function showHelp() {
+    document.getElementById('menu-screen').classList.add('hidden');
+    document.getElementById('help-screen').classList.remove('hidden');
+    switchHelpTab('how-to-play'); // デフォルトでプレイ方法を表示
+}
+
+function backToMenuFromHelp() {
+    document.getElementById('help-screen').classList.add('hidden');
+    document.getElementById('menu-screen').classList.remove('hidden');
+}
+
+// Commander System Functions
+function showCommanderScreen() {
+    document.getElementById('menu-screen').classList.add('hidden');
+    document.getElementById('commander-screen').classList.remove('hidden');
+    renderCommanderCards();
+    updateCurrentCommanderDisplay();
+}
+
+function backToMenuFromCommander() {
+    document.getElementById('commander-screen').classList.add('hidden');
+    document.getElementById('menu-screen').classList.remove('hidden');
+}
+
+function renderCommanderCards() {
+    const container = document.getElementById('commander-cards-container');
+    container.innerHTML = '';
+    
+    for (let commanderId in commanders) {
+        const commander = commanders[commanderId];
+        const isUnlocked = unlockedCommanders.includes(commanderId);
+        const isSelected = selectedCommander === commanderId;
+        
+        const card = document.createElement('div');
+        card.className = `commander-card ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+        card.onclick = () => isUnlocked ? showCommanderDetail(commanderId) : unlockCommander(commanderId);
+        
+        card.innerHTML = `
+            ${!isUnlocked ? `<div class="commander-unlock-badge">💎 ${commander.unlockCost}</div>` : ''}
+            <img src="${commander.image}" class="commander-card-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23334%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23fff%22 font-size=%2220%22%3E${commander.name}%3C/text%3E%3C/svg%3E'">
+            <div class="commander-card-name">${commander.name}</div>
+            <div class="commander-card-status">
+                ${isUnlocked ? (isSelected ? '✅ 編成中' : 'クリックで詳細') : '🔒 ロック中'}
+            </div>
+        `;
+        
+        container.appendChild(card);
+    }
+}
+
+function updateCurrentCommanderDisplay() {
+    const display = document.getElementById('current-commander-info');
+    
+    if (!selectedCommander) {
+        display.innerHTML = '<p style="color: #999;">指揮官が選択されていません</p>';
+        return;
+    }
+    
+    const commander = commanders[selectedCommander];
+    display.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <img src="${commander.image}" style="width: 100px; height: 100px; border-radius: 8px; border: 2px solid #00ffff; object-fit: cover;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23334%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23fff%22 font-size=%2214%22%3E${commander.name}%3C/text%3E%3C/svg%3E'">
+            <div style="flex: 1; text-align: left;">
+                <h3 style="color: #00ffff; font-size: 1.5rem; margin-bottom: 0.5rem;">${commander.name}</h3>
+                <div style="color: #aaffff; margin-bottom: 0.3rem;">
+                    <strong>${commander.activeSkill.icon} ${commander.activeSkill.name}:</strong> ${commander.activeSkill.description}
+                </div>
+                <div style="color: #aaffff;">
+                    <strong>${commander.passiveSkill.icon} ${commander.passiveSkill.name}:</strong> ${commander.passiveSkill.description}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showCommanderDetail(commanderId) {
+    const commander = commanders[commanderId];
+    const isSelected = selectedCommander === commanderId;
+    
+    const popup = document.getElementById('commander-detail-popup');
+    const content = document.getElementById('commander-detail-content');
+    
+    content.innerHTML = `
+        <div style="text-align: center;">
+            <img src="${commander.image}" style="width: 200px; height: 200px; border-radius: 12px; border: 3px solid #00ffff; margin-bottom: 1rem; object-fit: cover;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23334%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23fff%22 font-size=%2224%22%3E${commander.name}%3C/text%3E%3C/svg%3E'">
+            <h2 style="color: #00ffff; font-size: 2rem; margin-bottom: 1.5rem; font-family: 'Orbitron', sans-serif;">${commander.name}</h2>
+            
+            <div style="background: rgba(0, 100, 200, 0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: left;">
+                <h3 style="color: #ffaa00; margin-bottom: 0.5rem;">${commander.activeSkill.icon} アクティブスキル: ${commander.activeSkill.name}</h3>
+                <p style="color: #ffffff; margin-bottom: 0.5rem;">${commander.activeSkill.description}</p>
+                <p style="color: #aaffff; font-size: 0.9rem;">効果時間: ${Math.floor(commander.activeSkill.duration / 60)}秒 / クールダウン: ${Math.floor(commander.activeSkill.cooldown / 60)}秒</p>
+            </div>
+            
+            <div style="background: rgba(100, 200, 0, 0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: left;">
+                <h3 style="color: #00ff88; margin-bottom: 0.5rem;">${commander.passiveSkill.icon} パッシブスキル: ${commander.passiveSkill.name}</h3>
+                <p style="color: #ffffff;">${commander.passiveSkill.description}</p>
+            </div>
+            
+            ${isSelected 
+                ? '<button class="menu-button" onclick="unselectCommander()" style="background: rgba(200, 100, 100, 0.8);">編成解除</button>'
+                : '<button class="menu-button" onclick="selectCommander(\'' + commanderId + '\')">編成する</button>'
+            }
+        </div>
+    `;
+    
+    popup.classList.remove('hidden');
+}
+
+function hideCommanderDetail() {
+    document.getElementById('commander-detail-popup').classList.add('hidden');
+}
+
+function selectCommander(commanderId) {
+    selectedCommander = commanderId;
+    saveCommanderData();
+    hideCommanderDetail();
+    renderCommanderCards();
+    updateCurrentCommanderDisplay();
+    playSound('select');
+}
+
+function unselectCommander() {
+    selectedCommander = null;
+    saveCommanderData();
+    hideCommanderDetail();
+    renderCommanderCards();
+    updateCurrentCommanderDisplay();
+}
+
+function unlockCommander(commanderId) {
+    const commander = commanders[commanderId];
+    
+    if (electronicChips >= commander.unlockCost) {
+        if (confirm(`${commander.name}を${commander.unlockCost}💎で解放しますか？`)) {
+            electronicChips -= commander.unlockCost;
+            unlockedCommanders.push(commanderId);
+            saveCommanderData();
+            saveSkillTree(); // Save electronic chips
+            renderCommanderCards();
+            playSound('select');
+        }
+    } else {
+        alert(`電子チップが不足しています。必要: ${commander.unlockCost}💎`);
+    }
+}
+
+function saveCommanderData() {
+    const data = {
+        unlockedCommanders: unlockedCommanders,
+        selectedCommander: selectedCommander
+    };
+    localStorage.setItem('neonDefenseCommanders', JSON.stringify(data));
+}
+
+function loadCommanderData() {
+    try {
+        const saved = localStorage.getItem('neonDefenseCommanders');
+        if (saved) {
+            const data = JSON.parse(saved);
+            unlockedCommanders = data.unlockedCommanders || ['eiko'];
+            selectedCommander = data.selectedCommander || null;
+        }
+    } catch (e) {
+        console.error('Failed to load commander data:', e);
+    }
+}
+
+// Commander Active Skill Functions
+function setupCommanderUI() {
+    
+    const skillButton = document.getElementById('active-skill-button');
+    const skillIcon = document.getElementById('skill-icon-display');
+    
+    if (selectedCommander) {
+        const commander = commanders[selectedCommander];
+        skillIcon.textContent = commander.activeSkill.icon;
+        skillButton.style.display = 'block';
+        skillButton.style.pointerEvents = 'auto'; // 明示的に有効化
+        
+        // Remove old event listeners and add new one
+        const newButton = skillButton.cloneNode(true);
+        skillButton.parentNode.replaceChild(newButton, skillButton);
+        
+        // Add click event listener
+        newButton.addEventListener('click', function(e) {
+            activateCommanderSkill();
+        });
+        
+        // Also add mousedown for testing
+        newButton.addEventListener('mousedown', function(e) {
+            console.log('Button mousedown detected');
+        });
+        
+        // Reset skill states
+        activeSkillCooldown = 0;
+        activeSkillDuration = 0;
+        activeSkillActive = false;
+        updateSkillButtonDisplay();
+        
+    } else {
+        console.log('No commander selected, hiding button');
+        skillButton.style.display = 'none';
+    }
+}
+
+function activateCommanderSkill() {
+    if (!selectedCommander) {
+        console.log('No commander selected');
+        return;
+    }
+    
+    if (!gameActive) {
+        console.log('Game not active');
+        return;
+    }
+    
+    if (gamePaused) {
+        console.log('Game paused');
+        return;
+    }
+    
+    // Check if on cooldown
+    if (activeSkillCooldown > 0) {
+        console.log('Skill on cooldown');
+        return; // Still on cooldown
+    }
+    
+    // Check if already active
+    if (activeSkillActive) {
+        console.log('Skill already active');
+        return; // Already active
+    }
+    
+    const commander = commanders[selectedCommander];
+    console.log('Activating skill for commander:', commander.name);
+    
+    // Activate skill
+    activeSkillActive = true;
+    activeSkillDuration = commander.activeSkill.duration;
+    // Don't start cooldown yet - it starts after effect ends
+    
+    // Play cutin animation
+    playCutinAnimation(selectedCommander);
+    
+    // Play sound
+    playSound('select');
+    
+    // Apply skill effects immediately
+    applyCommanderActiveSkill(selectedCommander);
+    
+    updateSkillButtonDisplay();
+}
+
+function playCutinAnimation(commanderId) {
+    const commander = commanders[commanderId];
+    const cutinEl = document.getElementById('cutin-animation');
+    const characterImg = document.getElementById('cutin-character-img');
+    const skillName = document.getElementById('cutin-skill-name');
+    const commanderName = document.getElementById('cutin-commander-name');
+    
+    // Set content
+    characterImg.src = commander.image;
+    skillName.textContent = commander.activeSkill.name;
+    commanderName.textContent = commander.name;
+    
+    // Slide in
+    cutinEl.style.right = '20px';
+    
+    // Slide out after 2 seconds
+    setTimeout(() => {
+        cutinEl.style.right = '-350px';
+    }, 2000);
+}
+
+function applyCommanderActiveSkill(commanderId) {
+    // Skill effects are applied each frame in the game loop
+    // This function can be used for one-time effects if needed
+    
+    if (commanderId === 'reika') {
+        // Reika's Whiteout: Apply slow and damage to all enemies immediately
+        for (let enemy of enemies) {
+            if (enemy.active) {
+                enemy.slowAmount = 0.5; // 50% slow
+                enemy.slowDuration = Math.max(enemy.slowDuration, 600); // 10 seconds
+            }
+        }
+    }
+}
+
+function updateSkillButtonDisplay() {
+    if (!selectedCommander) return;
+    
+    const commander = commanders[selectedCommander];
+    const skillButton = document.getElementById('skill-icon-display');
+    const cooldownOverlay = document.getElementById('skill-cooldown-overlay');
+    const cooldownCircle = document.getElementById('skill-cooldown-circle');
+    const activeOverlay = document.getElementById('skill-active-overlay');
+    const activeCircle = document.getElementById('skill-active-circle');
+    const countdownText = document.getElementById('skill-countdown-text');
+    
+    const circumference = 2 * Math.PI * 26; // r=26
+    
+    if (activeSkillActive && activeSkillDuration > 0) {
+        // Show active effect
+        activeOverlay.style.display = 'block';
+        cooldownOverlay.style.display = 'none';
+        
+        const progress = activeSkillDuration / commander.activeSkill.duration;
+        const offset = circumference * (1 - progress);
+        activeCircle.style.strokeDashoffset = offset;
+        
+        // Show countdown
+        const secondsLeft = Math.ceil(activeSkillDuration / 60);
+        countdownText.textContent = secondsLeft;
+        countdownText.style.display = 'block';
+        countdownText.style.color = '#ffd700';
+        
+        skillButton.style.borderColor = '#ffd700';
+        skillButton.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.8)';
+        skillButton.style.cursor = 'default';
+    } else if (activeSkillCooldown > 0) {
+        // Show cooldown
+        activeOverlay.style.display = 'none';
+        cooldownOverlay.style.display = 'block';
+        
+        const progress = activeSkillCooldown / commander.activeSkill.cooldown;
+        const offset = circumference * (1 - progress);
+        cooldownCircle.style.strokeDashoffset = offset;
+        
+        // Show countdown
+        const secondsLeft = Math.ceil(activeSkillCooldown / 60);
+        countdownText.textContent = secondsLeft;
+        countdownText.style.display = 'block';
+        countdownText.style.color = '#00ffff';
+        
+        skillButton.style.borderColor = '#666';
+        skillButton.style.boxShadow = 'none';
+        skillButton.style.cursor = 'not-allowed';
+        skillButton.style.opacity = '0.5';
+    } else {
+        // Ready to use
+        activeOverlay.style.display = 'none';
+        cooldownOverlay.style.display = 'none';
+        countdownText.style.display = 'none';
+        
+        skillButton.style.borderColor = '#00ffff';
+        skillButton.style.boxShadow = '0 0 20px rgba(0, 255, 255, 0.5)';
+        skillButton.style.cursor = 'pointer';
+        skillButton.style.opacity = '1';
+    }
+}
+
+function applyCommanderActiveSkillEffects() {
+    if (!activeSkillActive || !selectedCommander) return;
+    
+    if (selectedCommander === 'reika') {
+        // Reika's Whiteout: Continuous slow and damage to all enemies
+        const showDamage = Math.floor(activeSkillDuration) % 30 === 0; // Show damage every 30 frames (0.5s)
+        
+        for (let enemy of enemies) {
+            if (enemy.active) {
+                // Apply slow if not already at max
+                if (enemy.slowDuration < 60) {
+                    enemy.slowAmount = 0.5;
+                    enemy.slowDuration = 60;
+                }
+                
+                // Increase whiteout time (cumulative exposure)
+                enemy.whiteoutTime += dt;
+                
+                // Calculate damage multiplier based on exposure time
+                // Starts at 2 damage/frame, increases by 50% every 3 seconds (180 frames)
+                const timeInSeconds = enemy.whiteoutTime / 60;
+                const damageMultiplier = 1 + Math.floor(timeInSeconds / 3) * 0.5; // +50% every 3s
+                
+                // Apply continuous damage with increasing intensity
+                const baseDamage = 2 * dt / TARGET_FPS; // 2 damage per frame at 60fps
+                const damageAmount = baseDamage * damageMultiplier;
+                enemy.takeDamage(damageAmount, null, false); // Don't show damage every frame
+                
+                // Show damage text every 30 frames (accumulated damage)
+                if (showDamage) {
+                    const accumulatedDamage = 2 * 30 / 60 * damageMultiplier; // 30 frames worth of damage
+                    createDamageText(enemy.x, enemy.y - enemy.radius - 10, accumulatedDamage, false, false, false, null, true);
+                    createExplosion(enemy.x, enemy.y, '#aaffff', 8);
+                }
+            }
+        }
+    }
+}
+
+// Get commander passive bonus multipliers
+function getCommanderBonus(type) {
+    if (!selectedCommander) return 1;
+    
+    const commanderId = selectedCommander;
+    
+    // Eiko's passive: Tower level up cost -10%
+    if (commanderId === 'eiko' && type === 'upgrade_cost') {
+        return 0.9; // 10% discount
+    }
+    
+    // Reika's passive: Additional damage to slowed/frozen enemies
+    if (commanderId === 'reika' && type === 'slow_bonus_damage') {
+        return 1.2; // 20% bonus damage
+    }
+    
+    // Benix's passive: Debuff duration +3s
+    if (commanderId === 'benix' && type === 'debuff_duration') {
+        return 180; // +3s = +180 frames
+    }
+    
+    // Default values
+    if (type === 'upgrade_cost') return 1; // No discount
+    if (type === 'slow_bonus_damage') return 1; // No bonus damage
+    if (type === 'debuff_duration') return 0; // No additional duration
+    
+    return 0;
+}
+
+// Get active skill bonuses
+function getActiveSkillBonus(type) {
+    if (!activeSkillActive || !selectedCommander) return 0;
+    
+    const commanderId = selectedCommander;
+    
+    // Eiko's active: Attack speed +100%
+    if (commanderId === 'eiko' && type === 'attack_speed') {
+        return 1.0; // 100% bonus (2x speed)
+    }
+    
+    // Benix's active: Crit rate +10%, Crit damage +100%
+    if (commanderId === 'benix') {
+        if (type === 'crit_rate') return 0.1;
+        if (type === 'crit_damage') return 1.0;
+    }
+    
+    return 0;
+}
+
+function switchHelpTab(tabName) {
+    // タブのアクティブ状態を切り替え
+    const tabs = document.querySelectorAll('.help-tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const content = document.getElementById('help-content');
+    
+    if (tabName === 'how-to-play') {
+        content.innerHTML = `
+            <h2 style="color: #00ffff; margin-bottom: 1rem;">プレイ方法</h2>
+            <div style="line-height: 1.8;">
+                <h3 style="color: #aaffff; margin-top: 1.5rem;">基本操作</h3>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li>🎯 <strong>タワーの配置:</strong> 画面下部のタワーアイコンをクリックし、マップ上の灰色のマスをクリックして配置</li>
+                    <li>💰 <strong>お金:</strong> タワーの配置やアップグレードにはお金が必要。敵を倒すと獲得できます</li>
+                    <li>⬆️ <strong>アップグレード:</strong> タワーをクリックして選択し、「UPGRADE」ボタンでレベルアップ</li>
+                    <li>🔄 <strong>進化:</strong> 一定レベルに達したタワーは進化可能。「EVOLVE」ボタンで進化</li>
+                    <li>❤️ <strong>ライフ:</strong> 敵が基地に到達するとライフが減少。0になるとゲームオーバー</li>
+                </ul>
+                
+                <h3 style="color: #aaffff; margin-top: 1.5rem;">ゲームの流れ</h3>
+                <ol style="padding-left: 1.5rem;">
+                    <li>ステージを選択してゲーム開始</li>
+                    <li>敵が出現する前にタワーを配置</li>
+                    <li>ウェーブごとに敵が出現。タワーで迎撃</li>
+                    <li>敵を倒してお金を稼ぎ、タワーを強化</li>
+                    <li>全20ウェーブをクリアするとステージクリア</li>
+                </ol>
+                
+                <h3 style="color: #aaffff; margin-top: 1.5rem;">電子チップとスキルツリー</h3>
+                <p>敵を倒すと一定確率で<span style="color: #ffff00;">電子チップ</span>がドロップします。</p>
+                <p>電子チップはメニューの「スキルツリー」で永続的な強化に使用できます。</p>
+            </div>
+        `;
+    } else if (tabName === 'enemies') {
+        content.innerHTML = `
+            <h2 style="color: #00ffff; margin-bottom: 1rem;">敵の種類</h2>
+            <div style="line-height: 1.8;">
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 51, 51, 0.2); border-left: 4px solid #ff3333; border-radius: 4px;">
+                    <h3 style="color: #ff3333; margin-bottom: 0.5rem;">🔴 通常敵 (Normal)</h3>
+                    <p style="margin: 0;">最も基本的な敵。特殊能力はないが、ウェーブが進むごとに強化される。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 255, 0, 0.2); border-left: 4px solid #ffff00; border-radius: 4px;">
+                    <h3 style="color: #ffff00; margin-bottom: 0.5rem;">🟡 高速敵 (Fast)</h3>
+                    <p style="margin: 0;">移動速度が速いが、HPは低い。Wave 2から出現。素早く倒さないと基地に到達してしまう。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(153, 0, 255, 0.2); border-left: 4px solid #9900ff; border-radius: 4px;">
+                    <h3 style="color: #9900ff; margin-bottom: 0.5rem;">🟣 タンク敵 (Tank)</h3>
+                    <p style="margin: 0;">非常に高いHPを持つが移動は遅い。Wave 4から出現。倒すのに時間がかかるが、報酬も高い。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(136, 136, 136, 0.2); border-left: 4px solid #888888; border-radius: 4px;">
+                    <h3 style="color: #888888; margin-bottom: 0.5rem;">⬡ シールダー (Shielder)</h3>
+                    <p style="margin: 0;">シールドを持つ敵。シールドがある間はダメージが1/3に軽減される。エンドレスモードWave 50から出現。スポーン枠を10個消費。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 102, 0, 0.2); border-left: 4px solid #ff6600; border-radius: 4px;">
+                    <h3 style="color: #ff6600; margin-bottom: 0.5rem;">🔶 ランページ (Rampage)</h3>
+                    <p style="margin: 0;">通常の5倍のHPを持つ強敵。エンドレスモードWave 100から出現。ランダムな形状で出現する。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 0, 0, 0.3); border-left: 4px solid #ff0000; border-radius: 4px;">
+                    <h3 style="color: #ff0000; margin-bottom: 0.5rem;">👑 ボス (Boss)</h3>
+                    <p style="margin: 0;">Wave 10と20に出現する強力な敵。通常の15倍のHPを持つ。倒すとライフが5回復する。画面上部にHPバーが表示される。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(136, 0, 0, 0.3); border-left: 4px solid #880000; border-radius: 4px;">
+                    <h3 style="color: #880000; margin-bottom: 0.5rem;">⬢ フォートレス (Fortress)</h3>
+                    <p style="margin: 0;">エンドレスモードで50ウェーブごとに出現する超強力なボス。通常ボスの10倍のHPを持つ六角形の要塞。</p>
+                </div>
+            </div>
+        `;
+    } else if (tabName === 'towers') {
+        content.innerHTML = `
+            <h2 style="color: #00ffff; margin-bottom: 1rem;">タワーの種類</h2>
+            <div style="line-height: 1.8;">
+                <p style="margin-bottom: 1.5rem;">タワーは4つの基本タイプがあり、レベルアップで進化します。各タワーは独自の特性と進化ツリーを持ちます。</p>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(0, 255, 255, 0.2); border-left: 4px solid #00ffff; border-radius: 4px;">
+                    <h3 style="color: #00ffff; margin-bottom: 0.5rem;">🔫 Turret (タレット)</h3>
+                    <p style="margin-bottom: 0.5rem;"><strong>コスト:</strong> 50 | <strong>射程:</strong> 中 | <strong>攻撃速度:</strong> 速い</p>
+                    <p style="margin: 0;">バランスの取れた万能タワー。進化により連射力や範囲攻撃が可能に。</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #aaffff;">
+                        進化: Dual-Turret → Quadruple-Turret → Machine-TURRET<br>
+                        別系統: Big-Turret → Giga-Turret → Auger-TURRET / Peta-TURRET
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 255, 0, 0.2); border-left: 4px solid #ffaa00; border-radius: 4px;">
+                    <h3 style="color: #ffaa00; margin-bottom: 0.5rem;">🎯 Sniper (スナイパー)</h3>
+                    <p style="margin-bottom: 0.5rem;"><strong>コスト:</strong> 120 | <strong>射程:</strong> 超長 | <strong>攻撃速度:</strong> 遅い</p>
+                    <p style="margin: 0;">高威力・長射程のタワー。単体の敵に大ダメージを与える。進化で貫通やレーザー攻撃が可能に。</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #aaffff;">
+                        進化: Sniper-MR2 → Sniper-MR3 → Laser<br>
+                        別系統: Large-Sniper → Giga-Sniper → Missile-SNIPPER
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 136, 0, 0.2); border-left: 4px solid #ff8800; border-radius: 4px;">
+                    <h3 style="color: #ff8800; margin-bottom: 0.5rem;">🔥 Blaster (ブラスター)</h3>
+                    <p style="margin-bottom: 0.5rem;"><strong>コスト:</strong> 70 | <strong>射程:</strong> 短 | <strong>攻撃速度:</strong> 普通</p>
+                    <p style="margin: 0;">属性攻撃が得意なタワー。炎系統は延焼、氷系統はスロー・凍結効果を付与。</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #aaffff;">
+                        炎系統: Flame-Blaster → Blast-Blaster → Explosion-Blaster → Sol-Blaster<br>
+                        氷系統: Frost-Blaster → Blizzard-Blaster → IceAge-Blaster
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 238, 0, 0.2); border-left: 4px solid #ffee00; border-radius: 4px;">
+                    <h3 style="color: #ffee00; margin-bottom: 0.5rem;">⚡ Rod (ロッド)</h3>
+                    <p style="margin-bottom: 0.5rem;"><strong>コスト:</strong> 80 | <strong>進化必須:</strong> Lv5</p>
+                    <p style="margin: 0;">初期状態では攻撃不可。進化すると強力な特殊攻撃が可能に。雷撃、ワープ、ネクロマンシーなど。</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #aaffff;">
+                        雷系統: Lightning-Rod → Lightning-Rod-II → Lightning-Spark → Chain-Spark<br>
+                        特殊系統: Warp-Rod (要スキル), Necromancer (要スキル)
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 204, 0, 0.2); border-left: 4px solid #ffcc00; border-radius: 4px;">
+                    <h3 style="color: #ffcc00; margin-bottom: 0.5rem;">💣 Sweeper (スイーパー)</h3>
+                    <p style="margin-bottom: 0.5rem;"><strong>コスト:</strong> 150 | <strong>要スキル:</strong> 「掃討屋」</p>
+                    <p style="margin: 0;">敵の進路上に地雷を設置するタワー。敵が踏むと爆発してダメージ。</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #aaffff;">
+                        進化: Big-Sweeper → Spike-Sweeper / Incendiary-Sweeper
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(170, 0, 255, 0.2); border-left: 4px solid #aa00ff; border-radius: 4px;">
+                    <h3 style="color: #aa00ff; margin-bottom: 0.5rem;">⚙️ Gear (ギア)</h3>
+                    <p style="margin-bottom: 0.5rem;"><strong>コスト:</strong> 動的 | <strong>要スキル:</strong> 「自家発電」</p>
+                    <p style="margin: 0;">他のGearタワーと連鎖してダメージと攻撃速度がアップ。連鎖がないと攻撃不可。設置数が増えるごとにコストが上昇。</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #aaffff;">
+                        進化: Gear (Lv10) → Gear-Second (Lv100) → Gear-Third (オーバークロックシステム)
+                    </p>
+                </div>
+                
+                <p style="margin-top: 1.5rem; color: #aaffff; font-size: 0.95rem;">
+                    💡 <strong>ヒント:</strong> タワーの進化レベルは基本的にLv10→Lv25→Lv70→Lv200です。<br>
+                    一部のタワーは第3・第4進化に特定のスキルが必要です。
+                </p>
+            </div>
+        `;
+    } else if (tabName === 'debuffs') {
+        content.innerHTML = `
+            <h2 style="color: #00ffff; margin-bottom: 1rem;">デバフの説明</h2>
+            <div style="line-height: 1.8;">
+                <p style="margin-bottom: 1.5rem;">タワーの攻撃により、敵に様々なデバフ効果を与えることができます。</p>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 68, 0, 0.2); border-left: 4px solid #ff4400; border-radius: 4px;">
+                    <h3 style="color: #ff4400; margin-bottom: 0.5rem;">🔥 延焼 (Burn)</h3>
+                    <p style="margin: 0;">炎系統のタワーが付与。継続ダメージを与える。Chain-Burn効果を持つタワーは、延焼中の敵が倒されると周囲の敵に延焼が広がる。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 0, 0, 0.2); border-left: 4px solid #ff0000; border-radius: 4px;">
+                    <h3 style="color: #ff0000; margin-bottom: 0.5rem;">🔥🔥 延延焼 (Double Burn)</h3>
+                    <p style="margin: 0;"><strong>延焼の上位互換デバフ。</strong>Sol-Blasterの広がる円攻撃が付与。通常の延焼より高い継続ダメージを与え、<span style="color: #ffff00;">死ぬまで永続的に継続</span>する。非常に強力なデバフ効果。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(68, 170, 255, 0.2); border-left: 4px solid #44aaff; border-radius: 4px;">
+                    <h3 style="color: #44aaff; margin-bottom: 0.5rem;">❄️ スロー (Slow)</h3>
+                    <p style="margin: 0;">氷系統のタワーが付与。敵の移動速度を低下させる。効果時間中は敵が青く表示される。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(100, 200, 255, 0.2); border-left: 4px solid #64c8ff; border-radius: 4px;">
+                    <h3 style="color: #64c8ff; margin-bottom: 0.5rem;">🧊 凍結 (Freeze)</h3>
+                    <p style="margin: 0;">Blizzard-Blaster以降の氷系統タワーが付与。凍結スタックが3つ溜まると敵が完全に凍結し、一定時間動けなくなる。IceAge-Blasterは凍結が重複する。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 255, 0, 0.2); border-left: 4px solid #ffff00; border-radius: 4px;">
+                    <h3 style="color: #ffff00; margin-bottom: 0.5rem;">⚡ スタン (Stun)</h3>
+                    <p style="margin: 0;">雷系統のタワーが一定確率で付与。スタン中の敵は移動不可。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 100, 100, 0.2); border-left: 4px solid #ff6464; border-radius: 4px;">
+                    <h3 style="color: #ff6464; margin-bottom: 0.5rem;">🩸 裂傷 (Laceration)</h3>
+                    <p style="margin: 0;">Missile-SNIPPERが付与。シールドの防御効果を軽減し、シールドを貫通しHPにダメージを与える。裂傷スタック数に応じて効果が増加。</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(0, 255, 255, 0.2); border-left: 4px solid #00ffff; border-radius: 4px;">
+                    <h3 style="color: #00ffff; margin-bottom: 0.5rem;">↩️ ノックバック (Knockback)</h3>
+                    <p style="margin: 0;">Auger-TURRETとPeta-TURRETが付与。敵を後方に押し戻す効果。経路を逆戻りさせることで、敵の到達時間を遅らせる。</p>
+                </div>
+                
+                <p style="margin-top: 1.5rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); border-radius: 4px;">
+                    💡 <strong>重要:</strong> 複数のデバフは同時に付与可能です。デバフアイコンは敵のHPバー下に表示されます。<br>
+                    ボス敵のデバフ状態は画面上部のHPバー横に表示されます。
+                </p>
+            </div>
+        `;
     }
 }
 
@@ -1593,8 +2720,10 @@ function togglePause() {
         document.getElementById('uiLayer').classList.add('active');
         // Hide pause screen
         document.getElementById('pause-screen').classList.add('hidden');
-        // Resume BGM
-        bgm.play().catch(e => console.log('BGM play failed:', e));
+        // Resume BGM (only if volume is not 0)
+        if (qualitySettings.bgmVolume > 0) {
+            bgm.play().catch(e => console.log('BGM play failed:', e));
+        }
     }
 }
 
@@ -1681,6 +2810,12 @@ function confirmAction() {
 }
 
 function startGame() {
+    // Setup command input system (once)
+    if (!window.commandSystemInitialized) {
+        setupCommandInput();
+        window.commandSystemInitialized = true;
+    }
+    
     // Cancel any existing animation loop
     if (animationFrameId !== null) {
         cancelAnimationFrame(animationFrameId);
@@ -1705,6 +2840,9 @@ function startGame() {
         document.getElementById('endlessScoreBox').style.display = 'none';
     }
     
+    // Setup commander active skill UI
+    setupCommanderUI();
+    
     resetGameVars();
     generatePath(); // Generate fixed path once at game start
     resizeCanvas();
@@ -1712,9 +2850,11 @@ function startGame() {
     lastTime = 0; // Reset animation timestamp
     updateUI();
     
-    // Start BGM
+    // Start BGM (only if volume is not 0)
     bgm.currentTime = 0;
-    bgm.play().catch(e => console.log('BGM play failed:', e));
+    if (qualitySettings.bgmVolume > 0) {
+        bgm.play().catch(e => console.log('BGM play failed:', e));
+    }
     
     animationFrameId = requestAnimationFrame(gameLoop);
 }
@@ -1728,6 +2868,7 @@ function startEndlessMode() {
     startGame();
 }
 
+// NOTE: ゲーム変数のリセット
 function resetGameVars() {
     // Apply skill bonuses
     let startMoney = 150;　//default 150
@@ -1740,12 +2881,21 @@ function resetGameVars() {
     if (unlockedSkills.includes('initial_credits3')) {
         startMoney += 100;
     }
+    if (unlockedSkills.includes('initial_credits4')) {
+        startMoney += 100;
+    }
     
     let startLives = 20;
     if (unlockedSkills.includes('base_upgrade')) {
         startLives += 5;
     }
     if (unlockedSkills.includes('base_upgrade2')) {
+        startLives += 5;
+    }
+    if (unlockedSkills.includes('terraforming')) {
+        startLives += 5;
+    }
+    if (unlockedSkills.includes('terraforming2')) {
         startLives += 5;
     }
     
@@ -1762,7 +2912,8 @@ function resetGameVars() {
     lightningStrikes = [];
     zombies = [];
     warpEffects = [];
-    lightningStrikes = [];
+    mines = [];
+    solarFlares = [];
     waveActive = false;
     bossSpawned = false;
     baseDestroyed = false; // Reset base destroyed flag
@@ -1808,7 +2959,8 @@ function saveSkillTree() {
 function saveStageProgress() {
     const stageData = {
         currentStage: currentStage,
-        unlockedStages: stages.filter(s => s.unlocked).map(s => s.id)
+        unlockedStages: stages.filter(s => s.unlocked).map(s => s.id),
+        clearedStages: stages.filter(s => s.cleared).map(s => s.id)
     };
     localStorage.setItem('neonDefenseStages', JSON.stringify(stageData));
 }
@@ -1822,6 +2974,11 @@ function loadStageProgress() {
             if (stageData.unlockedStages) {
                 stages.forEach(stage => {
                     stage.unlocked = stageData.unlockedStages.includes(stage.id);
+                });
+            }
+            if (stageData.clearedStages) {
+                stages.forEach(stage => {
+                    stage.cleared = stageData.clearedStages.includes(stage.id);
                 });
             }
         }
@@ -1856,8 +3013,18 @@ function unlockSkill(skillId) {
         updateTowerButtons();
     }
     
+    // If Gear was unlocked (unlock_gear or self_generation), update tower buttons
+    if (skillId === 'unlock_gear' || skillId === 'self_generation') {
+        updateTowerButtons();
+    }
+    
     // If Terraforming was unlocked, add +5 life
     if (skillId === 'terraforming') {
+        playerLife += 5;
+    }
+    
+    // If Terraforming II was unlocked, add +5 life
+    if (skillId === 'terraforming2') {
         playerLife += 5;
     }
     
@@ -1940,6 +3107,354 @@ function backToMenuFromSkillTree() {
     updateTowerButtons();
 }
 
+// Show unlocked skills popup
+function showUnlockedSkillsPopup() {
+    const popup = document.getElementById('unlocked-skills-popup');
+    const content = document.getElementById('unlocked-skills-content');
+    
+    // Track cumulative effects
+    const effects = {
+        'BASE': {
+            '初期クレジット': 0,
+            '電子チップドロップ率': 0,
+            '敵からのクレジット': 0,
+            '基地HP': 0,
+            'クリティカル率': 0
+        },
+        'TURRET': {
+            'ダメージ': 0,
+            '射程': 0,
+            '連射速度': 0,
+            '解放': false
+        },
+        'SNIPER': {
+            'ダメージ': 0,
+            '射程': 0,
+            '解放': false
+        },
+        'BLASTER': {
+            'ダメージ': 0,
+            '射程': 0,
+            '氷結持続時間': 0,
+            '延焼ダメージ': 0,
+            '解放': false
+        },
+        'ROD': {
+            'ダメージ': 0,
+            '射程': 0,
+            'サージ発動率': 0,
+            'ワープ成功率': 0,
+            '解放': false,
+            '進化': []
+        },
+        'SWEEPER': {
+            '解放': false,
+            '地雷設置': false
+        },
+        'GEAR': {
+            '解放': false
+        },
+        'その他': []
+    };
+    
+    // Check if all_tower_damage is unlocked
+    const hasAllTowerDamage = unlockedSkills.includes('all_tower_damage');
+    
+    // Process each unlocked skill
+    // NOTE: スキル総数
+    for (const skillId of unlockedSkills) {
+        switch(skillId) {
+            // BASE
+            case 'initial_credits':
+                effects.BASE['初期クレジット'] += 50;
+                break;
+            case 'initial_credits2':
+                effects.BASE['初期クレジット'] += 50;
+                break;
+            case 'initial_credits3':
+                effects.BASE['初期クレジット'] += 100;
+                break;
+            case 'initial_credits4':
+                effects.BASE['初期クレジット'] += 100;
+                break;
+            case 'chip_rate':
+                effects.BASE['電子チップドロップ率'] += 10;
+                break;
+            case 'enemy_credits':
+                effects.BASE['敵からのクレジット'] += 20;
+                break;
+            case 'economics':
+                effects.BASE['敵からのクレジット'] += 20;
+                break;
+            case 'base_upgrade':
+                effects.BASE['基地HP'] += 10;
+                break;
+            case 'base_upgrade2':
+                effects.BASE['基地HP'] += 10;
+                break;
+            case 'weak_point_analysis':
+                effects.BASE['クリティカル率'] += 1;
+                break;
+            case 'vulnerability':
+                effects.BASE['クリティカル率'] += 1;
+                break;
+            case 'terraforming':
+                effects.BASE['基地HP'] += 5;
+                break;
+            case 'terraforming2':
+                effects.BASE['基地HP'] += 5;
+                break;
+            case 'ai_analysis':
+                effects.BASE['クリティカル率'] += 1;
+                break;
+            
+            // TURRET
+            case 'turret_damage':
+                effects.TURRET['ダメージ'] += 5;
+                effects.TURRET['解放'] = true;
+                break;
+            case 'turret_range':
+                effects.TURRET['射程'] += 1;
+                effects.TURRET['解放'] = true;
+                break;
+            case 'quantity_over_quality':
+                effects.TURRET['連射速度'] += 5;
+                effects.TURRET['解放'] = true;
+                break;
+            case 'bullet_hardening':
+                effects.TURRET['ダメージ'] += 10;
+                effects.TURRET['解放'] = true;
+                break;
+            case 'rapid_fire':
+                effects.TURRET['連射速度'] += 5;
+                effects.TURRET['解放'] = true;
+                break;
+            
+            // SNIPER
+            case 'sniper_damage':
+                effects.SNIPER['ダメージ'] += 5;
+                effects.SNIPER['解放'] = true;
+                break;
+            case 'sniper_range':
+                effects.SNIPER['射程'] += 1;
+                effects.SNIPER['解放'] = true;
+                break;
+            case 'mass':
+                effects.SNIPER['ダメージ'] += 5;
+                effects.SNIPER['解放'] = true;
+                break;
+            case 'sharpness_or_hardness':
+                effects.SNIPER['ダメージ'] += 10;
+                effects.SNIPER['解放'] = true;
+                break;
+            
+            // BLASTER
+            case 'blaster_damage':
+                effects.BLASTER['ダメージ'] += 5;
+                effects.BLASTER['解放'] = true;
+                break;
+            case 'blaster_range':
+                effects.BLASTER['射程'] += 1;
+                effects.BLASTER['解放'] = true;
+                break;
+            case 'hotfix':
+                effects.BLASTER['射程'] += 5;
+                effects.BLASTER['解放'] = true;
+                break;
+            case 'freeze_duration':
+                effects.BLASTER['氷結持続時間'] += 50;
+                effects.BLASTER['解放'] = true;
+                break;
+            case 'burn_damage':
+                effects.BLASTER['延焼ダメージ'] += 50;
+                effects.BLASTER['解放'] = true;
+                break;
+            case 'bang':
+                effects.BLASTER['ダメージ'] += 10;
+                effects.BLASTER['解放'] = true;
+                break;
+            case 'inferno':
+                effects.BLASTER['延焼ダメージ'] += 100;
+                effects.BLASTER['解放'] = true;
+                break;
+            
+            // ROD
+            case 'unlock_rod':
+                effects.ROD['解放'] = true;
+                break;
+            case 'rod_damage':
+                effects.ROD['ダメージ'] += 5;
+                break;
+            case 'rod_range':
+                effects.ROD['射程'] += 1;
+                break;
+            case 'voltage_transformer':
+                effects.ROD['サージ発動率'] += 10;
+                break;
+            case 'quantum_transfer':
+                effects.ROD['ワープ成功率'] += 5;
+                break;
+            case 'cross_specialization':
+                effects.ROD['進化'].push('Burn-Lightning');
+                break;
+            case 'obey':
+                effects.ROD['進化'].push('Necromancer');
+                break;
+            case 'magician':
+                effects.ROD['進化'].push('Warp-Rod');
+                break;
+            
+            // SWEEPER
+            case 'unlock_sweeper':
+                effects.SWEEPER['解放'] = true;
+                break;
+            case 'minesweeper':
+                effects.SWEEPER['地雷設置'] = true;
+                break;
+            
+            // GEAR
+            case 'unlock_gear':
+                effects.GEAR['解放'] = true;
+                break;
+            case 'self_generation':
+                effects.GEAR['解放'] = true;
+                break;
+            case 'durability_improvement':
+                if (!effects.GEAR['連鎖上限']) effects.GEAR['連鎖上限'] = 0;
+                effects.GEAR['連鎖上限'] += 5;
+                effects.GEAR['解放'] = true;
+                break;
+            
+            // その他
+            case 'tile_break':
+                effects['その他'].push('裂傷の割合増加');
+                break;
+            case 'ultimate_power':
+                effects['その他'].push('Lv70進化すべて解放');
+                break;
+        }
+    }
+    
+    // Add all_tower_damage to unlocked tower categories
+    if (hasAllTowerDamage) {
+        if (effects.TURRET['解放']) effects.TURRET['ダメージ'] += 10;
+        if (effects.SNIPER['解放']) effects.SNIPER['ダメージ'] += 10;
+        if (effects.BLASTER['解放']) effects.BLASTER['ダメージ'] += 10;
+        if (effects.ROD['解放']) effects.ROD['ダメージ'] += 10;
+        if (effects.SWEEPER['解放']) effects.SWEEPER['ダメージ'] = (effects.SWEEPER['ダメージ'] || 0) + 10;
+        if (effects.GEAR['解放']) effects.GEAR['ダメージ'] = (effects.GEAR['ダメージ'] || 0) + 10;
+    }
+    
+    // Add ultimate_power2 to unlocked tower categories
+    if (unlockedSkills.includes('ultimate_power2')) {
+        if (effects.TURRET['解放']) effects.TURRET['ダメージ'] += 10;
+        if (effects.SNIPER['解放']) effects.SNIPER['ダメージ'] += 10;
+        if (effects.BLASTER['解放']) effects.BLASTER['ダメージ'] += 10;
+        if (effects.ROD['解放']) effects.ROD['ダメージ'] += 10;
+        if (effects.SWEEPER['解放']) effects.SWEEPER['ダメージ'] = (effects.SWEEPER['ダメージ'] || 0) + 10;
+        if (effects.GEAR['解放']) effects.GEAR['ダメージ'] = (effects.GEAR['ダメージ'] || 0) + 10;
+    }
+    
+    // Build HTML
+    let html = '';
+    
+    // BASE
+    if (Object.values(effects.BASE).some(v => v > 0)) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【BASE】</div>`;
+        if (effects.BASE['初期クレジット'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 初期クレジット+${effects.BASE['初期クレジット']}</div>`;
+        if (effects.BASE['電子チップドロップ率'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 電子チップドロップ率+${effects.BASE['電子チップドロップ率']}%</div>`;
+        if (effects.BASE['敵からのクレジット'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 敵からのクレジット+${effects.BASE['敵からのクレジット']}%</div>`;
+        if (effects.BASE['基地HP'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 基地HP+${effects.BASE['基地HP']}</div>`;
+        if (effects.BASE['クリティカル率'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• クリティカル率+${effects.BASE['クリティカル率']}%</div>`;
+        html += `</div>`;
+    }
+    
+    // TURRET
+    if (effects.TURRET['解放']) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【TURRET】</div>`;
+        if (effects.TURRET['ダメージ'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ダメージ+${effects.TURRET['ダメージ']}%</div>`;
+        if (effects.TURRET['射程'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 射程+${effects.TURRET['射程']}%</div>`;
+        if (effects.TURRET['連射速度'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 連射速度+${effects.TURRET['連射速度']}%</div>`;
+        html += `</div>`;
+    }
+    
+    // SNIPER
+    if (effects.SNIPER['解放']) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【SNIPER】</div>`;
+        if (effects.SNIPER['ダメージ'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ダメージ+${effects.SNIPER['ダメージ']}%</div>`;
+        if (effects.SNIPER['射程'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 射程+${effects.SNIPER['射程']}%</div>`;
+        html += `</div>`;
+    }
+    
+    // BLASTER
+    if (effects.BLASTER['解放']) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【BLASTER】</div>`;
+        if (effects.BLASTER['ダメージ'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ダメージ+${effects.BLASTER['ダメージ']}%</div>`;
+        if (effects.BLASTER['射程'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 射程+${effects.BLASTER['射程']}%</div>`;
+        if (effects.BLASTER['氷結持続時間'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 氷結持続時間+${effects.BLASTER['氷結持続時間']}%</div>`;
+        if (effects.BLASTER['延焼ダメージ'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 延焼ダメージ+${effects.BLASTER['延焼ダメージ']}%</div>`;
+        html += `</div>`;
+    }
+    
+    // ROD
+    if (effects.ROD['解放']) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【ROD】</div>`;
+        html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• RODタワー解放</div>`;
+        if (effects.ROD['ダメージ'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ダメージ+${effects.ROD['ダメージ']}%</div>`;
+        if (effects.ROD['射程'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 射程+${effects.ROD['射程']}%</div>`;
+        if (effects.ROD['サージ発動率'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• サージ発動率+${effects.ROD['サージ発動率']}%</div>`;
+        if (effects.ROD['ワープ成功率'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ワープ成功率+${effects.ROD['ワープ成功率']}%</div>`;
+        if (effects.ROD['進化'].length > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 進化解放: ${effects.ROD['進化'].join(', ')}</div>`;
+        html += `</div>`;
+    }
+    
+    // SWEEPER
+    if (effects.SWEEPER['解放']) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【SWEEPER】</div>`;
+        html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• Sweeperタワー解放</div>`;
+        if (effects.SWEEPER['地雷設置']) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• 地雷設置タワー解放</div>`;
+        if (effects.SWEEPER['ダメージ'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ダメージ+${effects.SWEEPER['ダメージ']}%</div>`;
+        html += `</div>`;
+    }
+    
+    // GEAR
+    if (effects.GEAR['解放']) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【GEAR】</div>`;
+        html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• Gearタワー解放</div>`;
+        if (effects.GEAR['ダメージ'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ダメージ+${effects.GEAR['ダメージ']}%</div>`;
+        if (effects.GEAR['連鎖上限'] > 0) html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• Gear連鎖上限+${effects.GEAR['連鎖上限']}</div>`;
+        html += `</div>`;
+    }
+    
+    // その他
+    if (effects['その他'].length > 0) {
+        html += `<div style="margin-bottom: 20px;">`;
+        html += `<div style="color: #ffaa00; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ffaa00; padding-bottom: 4px;">【その他】</div>`;
+        for (const effect of effects['その他']) {
+            html += `<div style="color: #ffffff; margin-left: 10px; margin-bottom: 4px;">• ${effect}</div>`;
+        }
+        html += `</div>`;
+    }
+    
+    if (html === '') {
+        html = '<div style="color: #aaaaaa; text-align: center; padding: 40px;">まだスキルが解放されていません</div>';
+    }
+    
+    content.innerHTML = html;
+    popup.classList.remove('hidden');
+}
+
+function hideUnlockedSkillsPopup() {
+    document.getElementById('unlocked-skills-popup').classList.add('hidden');
+}
+
 // Stage Map System
 let stageMapCanvas = null;
 let stageMapCtx = null;
@@ -1958,11 +3473,11 @@ let stageMapLastTouchY = 0;
 
 // NOTE: ステージ一覧
 const stages = [
-    { id: 1, name: 'STAGE 1', x: 1, y: 6, unlocked: true, description: '初期ステージ' },
-    { id: 2, name: 'STAGE 2', x: 5, y: 5, unlocked: false, description: 'なんかのステージ' },
-    // { id: 3, name: 'STAGE 3', x: 9, y: 4, unlocked: true, description: 'TEST' },
-    // { id: 4, name: 'STAGE 4', x: 13, y: 3, unlocked: false, description: 'エキスパート' },
-    // { id: 5, name: 'STAGE 5', x: 17, y: 2, unlocked: false, description: '最終ステージ' },
+    { id: 1, name: 'STAGE 1', x: 1, y: 6, unlocked: true, cleared: false, description: '初期ステージ' },
+    { id: 2, name: 'STAGE 2', x: 5, y: 5, unlocked: false, cleared: false, description: 'なんかのステージ' },
+    { id: 3, name: 'STAGE 3', x: 9, y: 4, unlocked: false, cleared: false, description: 'TEST' },
+    // { id: 4, name: 'STAGE 4', x: 13, y: 3, unlocked: false, cleared: false, description: 'エキスパート' },
+    // { id: 5, name: 'STAGE 5', x: 17, y: 2, unlocked: false, cleared: false, description: '最終ステージ' },
 ];
 
 function showStageMap() {
@@ -2130,7 +3645,20 @@ function drawStageMap() {
         
         // Style based on state
         if (stage.unlocked) {
-            if (selectedStage === stage.id) {
+            if (stage.cleared) {
+                // Cleared
+                if (selectedStage === stage.id) {
+                    ctx.fillStyle = 'rgba(0, 255, 100, 0.9)';
+                    ctx.strokeStyle = '#00ff66';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#00ff66';
+                } else {
+                    ctx.fillStyle = 'rgba(0, 200, 100, 0.7)';
+                    ctx.strokeStyle = '#00dd66';
+                    ctx.shadowBlur = 15 * pulse;
+                    ctx.shadowColor = '#00ff66';
+                }
+            } else if (selectedStage === stage.id) {
                 // Selected
                 ctx.fillStyle = 'rgba(0, 255, 255, 0.9)';
                 ctx.strokeStyle = '#00ffff';
@@ -2168,6 +3696,13 @@ function drawStageMap() {
         ctx.font = '14px Orbitron';
         ctx.fillStyle = stage.unlocked ? '#aaffff' : '#666666';
         ctx.fillText(stage.description, x + stageWidth / 2, y + stageHeight / 2 + 15);
+        
+        // Draw "cleared" text for cleared stages
+        if (stage.cleared) {
+            ctx.font = 'bold 12px Orbitron';
+            ctx.fillStyle = '#00ff88';
+            ctx.fillText('CLEARED', x + stageWidth / 2, y + stageHeight / 2 + 35);
+        }
         
         // Draw lock icon if locked
         if (!stage.unlocked) {
@@ -2207,6 +3742,10 @@ function startGameWithStage(stageId) {
     // Hide stage map
     document.getElementById('stage-map-screen').classList.add('hidden');
     stopStageMapAnimation();
+    
+    // Reset endless mode (ステージモードではエンドレスモードをオフ)
+    endlessMode = false;
+    endlessScore = 0;
     
     // Set current stage
     currentStage = stageId;
@@ -2372,6 +3911,8 @@ class Enemy {
         this.type = type;
         this.burnDamage = 0;
         this.burnDuration = 0;
+        this.doubleBurnDamage = 0; // 延延焼のダメージ（死ぬまで継続）
+        this.doubleBurnTickCounter = 0; // 延延焼のダメージ表示用カウンター
         this.slowAmount = 0;
         this.slowDuration = 0;
         this.stunDuration = 0; // Stun effect
@@ -2379,6 +3920,12 @@ class Enemy {
         this.chainBurn = false;
         this.lacerationStacks = 0; // 裂傷状態のスタック数
         this.freezeStacks = 0; // 凍結のスタック数（3回まで）
+        this.whiteoutTime = 0; // 猛吹雪を食らっている累積時間（フレーム数）
+        
+        // Shield properties (for shielder type)
+        this.shield = 0;
+        this.maxShield = 0;
+        this.hasShield = false;
         
         // Knockback animation
         this.knockbackActive = false;
@@ -2435,6 +3982,24 @@ class Enemy {
             this.radius = 16;
             this.color = '#9900ff';
             this.reward = Math.floor(baseReward * 2.0);
+        } else if (this.type === 'shielder') {
+            this.hp = baseHp * 2.5; // Moderate HP
+            this.speed = baseSpeed * 0.7; // Slower than normal
+            this.radius = 14;
+            this.color = '#888888'; // Gray when shielded
+            this.reward = Math.floor(baseReward * 2.5);
+            // Initialize shield
+            this.hasShield = true;
+            this.shield = this.hp * 0.5; // Shield is 50% of HP
+            this.maxShield = this.shield;
+        } else if (this.type === 'decoy') {
+            // Decoy - stationary, invincible (but takes damage), command-only
+            this.hp = baseHp * 999; // Extremely high HP to appear invincible
+            this.speed = 0; // Doesn't move
+            this.radius = 15;
+            this.color = '#00ffcc'; // Cyan color
+            this.reward = 0; // No reward
+            this.isDecoy = true; // Flag for special handling
         } else {
             this.hp = baseHp;
             this.speed = baseSpeed;
@@ -2495,10 +4060,20 @@ class Enemy {
         if (this.burnDuration > 0) {
             this.burnDuration -= dt;
             if (this.burnDuration <= 0) this.burnDuration = 0;
-            this.takeDamage(this.burnDamage * (dt / TARGET_FPS));
+            this.takeDamage(this.burnDamage * (dt / TARGET_FPS), null, false); // Don't show damage text here
             // Show burn damage text
             if (Math.floor(this.burnDuration) % 15 === 0) { // Show every 15 frames to avoid spam
                 createDamageText(this.x, this.y - this.radius - 10, this.burnDamage, true);
+            }
+        }
+        
+        // Apply double burn damage (永続、死ぬまで継続)
+        if (this.doubleBurnDamage > 0) {
+            this.takeDamage(this.doubleBurnDamage * (dt / TARGET_FPS), null, false);
+            this.doubleBurnTickCounter += dt;
+            // Show double burn damage text
+            if (Math.floor(this.doubleBurnTickCounter) % 15 === 0) { // Show every 15 frames to avoid spam
+                createDamageText(this.x, this.y - this.radius - 10, this.doubleBurnDamage, true);
             }
         }
 
@@ -2547,6 +4122,11 @@ class Enemy {
             ctx.fillStyle = '#ffff00';
             ctx.shadowBlur = 20;
             ctx.shadowColor = '#ffff00';
+        } else if (this.doubleBurnDamage > 0) {
+            // Visual effect for double burn (延延焼 - より強い赤色)
+            ctx.fillStyle = '#ff0000';
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = '#ff0000';
         } else if (this.burnDuration > 0) {
             // Visual effect for burn
             ctx.fillStyle = '#ff4400';
@@ -2577,7 +4157,7 @@ class Enemy {
             ctx.translate(this.x, this.y);
             ctx.rotate(this.rotation);
             
-            // Main hexagon
+            // Draw hexagon
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
                 const angle = (Math.PI / 3) * i;
@@ -2597,7 +4177,9 @@ class Enemy {
                 
                 ctx.save();
                 ctx.rotate(angle);
-                ctx.fillRect(-armWidth / 2, this.radius * 0.6, armWidth, armLength - this.radius * 0.6);
+                ctx.beginPath();
+                ctx.rect(-armWidth / 2, this.radius * 0.6, armWidth, armLength - this.radius * 0.6);
+                ctx.fill();
                 ctx.beginPath();
                 ctx.arc(0, armLength, armWidth / 2, 0, Math.PI * 2);
                 ctx.fill();
@@ -2605,6 +4187,10 @@ class Enemy {
             }
             
             ctx.restore();
+            
+            // Reset shadow and fill style after fortress drawing
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
         } else if (this.type === 'rampage') {
             // Draw base shape based on rampageShape
             if (this.rampageShape === 0) {
@@ -2637,6 +4223,16 @@ class Enemy {
             drawRegularPolygon(ctx, this.x, this.y, 3, this.radius);
         } else if (this.type === 'tank') {
             drawRegularPolygon(ctx, this.x, this.y, 5, this.radius);
+        } else if (this.type === 'shielder') {
+            // Update color based on shield status
+            if (this.hasShield && this.shield > 0) {
+                ctx.fillStyle = '#888888'; // Gray with shield
+                this.color = '#888888';
+            } else {
+                ctx.fillStyle = '#00ff00'; // Green without shield
+                this.color = '#00ff00';
+            }
+            drawRegularPolygon(ctx, this.x, this.y, 6, this.radius); // Hexagon
         } else {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -2672,17 +4268,25 @@ class Enemy {
         }
 
         // Don't draw HP bar for boss here (drawn at top of screen)
-        // Only show HP bar if enemy has taken damage
-        if (!this.isBoss && this.hp < this.maxHp) {
+        // Only show HP bar if enemy has taken damage or has shield
+        if (!this.isBoss && (this.hp < this.maxHp || this.hasShield)) {
             const hpPct = Math.max(0, this.hp / this.maxHp);
             ctx.fillStyle = '#333';
             ctx.fillRect(this.x - 12, this.y - this.radius - 8, 24, 4);
             ctx.fillStyle = this.getHpColor(hpPct);
             ctx.fillRect(this.x - 12, this.y - this.radius - 8, 24 * hpPct, 4);
             
+            // Draw shield gauge on top of HP bar (semi-transparent white)
+            if (this.hasShield && this.maxShield > 0) {
+                const shieldPct = Math.max(0, this.shield / this.maxShield);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; // Semi-transparent white
+                ctx.fillRect(this.x - 12, this.y - this.radius - 8, 24 * shieldPct, 4);
+            }
+            
             // Collect active debuff icons
             const debuffIcons = [];
-            if (this.burnDuration > 0) debuffIcons.push({ emoji: '🔥', color: '#ff4400' });
+            if (this.doubleBurnDamage > 0) debuffIcons.push({ emoji: '🔥🔥', color: '#ff0000' }); // 延延焼
+            else if (this.burnDuration > 0) debuffIcons.push({ emoji: '🔥', color: '#ff4400' }); // 通常の延焼
             if (this.slowDuration > 0) debuffIcons.push({ emoji: '❄', color: '#44aaff' });
             if (this.stunDuration > 0) debuffIcons.push({ emoji: '⚡', color: '#ffff00' });
             
@@ -2711,8 +4315,62 @@ class Enemy {
         return '#f00';
     }
 
-    takeDamage(amt) {
-        this.hp -= amt;
+    takeDamage(amt, sourceSpecial = null, showDamageText = true, isCrit = false, hasLaceration = false) {
+        let actualDamage = amt;
+        let shieldDamage = 0;
+        let hpDamage = 0;
+        
+        // Check if enemy is frozen/slowed (for frost damage display)
+        const isFrostDamage = (this.slowDuration > 0 || this.freezeStacks > 0) && getCommanderBonus('slow_bonus_damage') > 1;
+        
+        // Shielder logic
+        if (this.hasShield && this.shield > 0) {
+            // Shield is active - reduce damage
+            let damageReduction = 3; // Normal: damage / 3
+            
+            // Laceration bypasses some shield and damages HP
+            if (this.lacerationStacks > 0) {
+                damageReduction = 4; // Laceration: damage / 4 to shield
+                hpDamage = amt * 0.1; // 10% of damage to HP
+                this.hp -= hpDamage;
+                
+                // Show HP damage (red)
+                if (showDamageText) {
+                    createDamageText(this.x, this.y - this.radius - 15, Math.floor(hpDamage), false, false, false, '#ff0000', false);
+                }
+            }
+            
+            shieldDamage = amt / damageReduction;
+            this.shield -= shieldDamage;
+            
+            // Shield broken
+            if (this.shield <= 0) {
+                this.shield = 0;
+                this.hasShield = false;
+                // Visual feedback
+                createExplosion(this.x, this.y, '#ffffff', 15);
+            }
+            
+            // Show shield damage (gray) - use crit/laceration/frost effects if applicable
+            if (showDamageText) {
+                createDamageText(this.x, this.y - this.radius - 10, Math.floor(shieldDamage), false, isCrit, hasLaceration, '#888888', isFrostDamage);
+            }
+        } else {
+            // No shield - take full damage
+            this.hp -= amt;
+            hpDamage = amt;
+            
+            // Show normal damage text with frost effect if applicable
+            if (showDamageText) {
+                createDamageText(this.x, this.y - this.radius - 10, Math.floor(amt), false, isCrit, hasLaceration, null, isFrostDamage);
+            }
+        }
+        
+        // Decoy never dies
+        if (this.type === 'decoy') {
+            return;
+        }
+        
         if (this.hp <= 0) {
             this.die();
         }
@@ -2867,11 +4525,38 @@ class Tower {
 
         this.lastShot = 0;
         this.angle = 0;
+        this.placedMines = []; // Sweeperタワーが設置した地雷を追跡
+        
+        // Sol-Blaster specific properties
+        if (this.type === 'sol-blaster') {
+            this.flareTimer = 0; // フレア発射タイマー
+            this.flareInterval = 180; // フレア発射間隔（約3秒）
+            this.flareCount = 8; // 一度に発射するフレアの数
+            this.expandingCircles = []; // 広がる円アニメーション
+        }
+        
+        // Gear specific properties
+        this.chainCount = 0; // 連鎖数
+        this.rotationAngle = 0; // 歯車の回転角度
+        this.rotationSpeed = 0; // 回転速度
+        this.rotationDirection = 1; // 回転方向（1: 正回転, -1: 逆回転）
+        
+        // Gear-Third overclock/overheat system
+        if (this.type === 'gear-third') {
+            this.overclockGauge = 0; // 0-100
+            this.overclockActive = false;
+            this.overclockDuration = 0;
+            this.overheatActive = false;
+            this.overheatDuration = 0;
+        }
     }
 
     getUpgradeCost() {
         // Cost increases with level
-        return Math.floor(this.baseCost * (0.8 + (this.level * 0.5)));
+        const baseCost = Math.floor(this.baseCost * (0.8 + (this.level * 0.5)));
+        // Apply Eiko's passive bonus
+        const commanderBonus = getCommanderBonus('upgrade_cost');
+        return Math.floor(baseCost * commanderBonus);
     }
 
     getSellPrice() {
@@ -2887,10 +4572,55 @@ class Tower {
         // Range capped at level 10, then skill bonus applied
         const nextRangeLevelCap = Math.min(this.level + 1, 10);
         const rangeBonus = getSkillBonus('range', this.baseTypeOriginal);
+        const damageBonus = getSkillBonus('damage', this.baseTypeOriginal);
+        
+        let nextDamage = Math.floor(this.baseDamage * (1 + (this.level + 1) * 0.5) * damageBonus);
+        
+        // Gearタワーの場合、連鎖ボーナスを適用
+        if (this.type === 'gear' || this.type === 'gear-second' || this.type === 'gear-third') {
+            const chainDamageBonus = this.type === 'gear-third' ? 0.5 : (this.type === 'gear-second' ? 0.4 : 0.3);
+            nextDamage = Math.floor(this.baseDamage * (1 + (this.level + 1) * 0.5) * damageBonus * (1 + this.chainCount * chainDamageBonus));
+        }
+        
         return {
-            damage: Math.floor(this.baseDamage * (1 + (this.level + 1) * 0.5)),
+            damage: nextDamage,
             range: Math.floor(this.baseRange * (1 + nextRangeLevelCap * 0.15) * rangeBonus)
         };
+    }
+    
+    updateChainCount() {
+        // Gearタワーの回転方向を決定（連鎖数はcalculateGearChainGroups()で計算済み）
+        if (this.type !== 'gear' && this.type !== 'gear-second' && this.type !== 'gear-third') return;
+        
+        const minChainDist = 25;
+        const maxChainDist = 45;
+        
+        // 最も近い連鎖相手を見つける（回転方向決定のため）
+        let nearestChainedGear = null;
+        let nearestDist = Infinity;
+        
+        for (let other of towers) {
+            if (other === this || (other.type !== 'gear' && other.type !== 'gear-second' && other.type !== 'gear-third')) continue;
+            
+            const dx = other.x - this.x;
+            const dy = other.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist >= minChainDist && dist <= maxChainDist) {
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestChainedGear = other;
+                }
+            }
+        }
+        
+        // 回転方向を決定：最も近い連鎖相手と逆回転
+        if (nearestChainedGear) {
+            this.rotationDirection = -nearestChainedGear.rotationDirection;
+        } else {
+            // 連鎖がない場合は正回転
+            this.rotationDirection = 1;
+        }
     }
 
     upgrade() {
@@ -2906,6 +4636,17 @@ class Tower {
         // Cooldown: -5% per level (capped at 50%)
         let cdReduc = Math.min(0.5, this.level * 0.05);
         this.cooldown = this.baseCooldown * (1 - cdReduc);
+        
+        // Gearタワーの場合、レベルアップ時に連鎖判定を更新してから連鎖ボーナスを適用
+        if (this.type === 'gear' || this.type === 'gear-second' || this.type === 'gear-third') {
+            calculateGearChainGroups();
+            // 連鎖ボーナスを適用
+            const chainDamageBonus = this.type === 'gear-third' ? 0.5 : (this.type === 'gear-second' ? 0.4 : 0.3);
+            this.damage = Math.floor(this.baseDamage * (1 + this.level * 0.5) * damageBonus * (1 + this.chainCount * chainDamageBonus));
+            
+            const cooldownReduction = Math.min(this.chainCount * 0.1, 0.6);
+            this.cooldown = this.baseCooldown * (1 - cdReduc) * (1 - cooldownReduction);
+        }
         
         createExplosion(this.x, this.y, '#00ff00', 15);
     }
@@ -2931,8 +4672,19 @@ class Tower {
             if (this.level >= 70 && currentType.isThirdEvolution && !currentType.isFourthEvolution) {
                 return true;
             }
+        }
+        // Gear tower special evolution levels (10, 100)
+        else if (this.baseTypeOriginal === 'gear') {
+            // First evolution at level 10 (gear -> gear-second)
+            if (this.level >= 10 && !this.evolved && !currentType.isEvolution) {
+                return true;
+            }
+            // Second evolution at level 100 (gear-second -> gear-third)
+            if (this.level >= 100 && currentType.isEvolution && !currentType.isSecondEvolution) {
+                return true;
+            }
         } else {
-            // Standard tower evolution levels (10, 25, 70)
+            // Standard tower evolution levels (10, 25, 70, 200)
             // First evolution at level 10
             if (this.level >= 10 && !this.evolved && !currentType.isEvolution) {
                 return true;
@@ -2943,6 +4695,10 @@ class Tower {
             }
             // Third evolution at level 70
             if (this.level >= 70 && currentType.isSecondEvolution && !currentType.isThirdEvolution) {
+                return true;
+            }
+            // Fourth evolution at level 200
+            if (this.level >= 200 && currentType.isThirdEvolution && !currentType.isFourthEvolution) {
                 return true;
             }
         }
@@ -3059,6 +4815,23 @@ class Tower {
         this.name = newDef.name;
         this.special = newDef.special;
         
+        // Initialize Gear-Third overclock system when evolving to gear-third
+        if (this.type === 'gear-third' && !this.overclockGauge) {
+            this.overclockGauge = 0;
+            this.overclockActive = false;
+            this.overclockDuration = 0;
+            this.overheatActive = false;
+            this.overheatDuration = 0;
+        }
+        
+        // Initialize Sol-Blaster flare system when evolving to sol-blaster
+        if (this.type === 'sol-blaster' && !this.flareTimer) {
+            this.flareTimer = 0;
+            this.flareInterval = 180;
+            this.flareCount = 8;
+            this.expandingCircles = [];
+        }
+        
         // Recalculate stats at current level with skill bonuses
         let damageBonus = getSkillBonus('damage', this.baseTypeOriginal);
         this.damage = Math.floor(this.baseDamage * (1 + this.level * 0.5) * damageBonus);
@@ -3072,8 +4845,132 @@ class Tower {
         createExplosion(this.x, this.y, this.color, 30);
     }
 
-    update(time) {
-        if (time - this.lastShot < this.cooldown) return;
+    update(time, attackSpeedBonus = 1) {
+        // Sol-Blaster: 広がる円の発射機能
+        if (this.type === 'sol-blaster') {
+            this.flareTimer += attackSpeedBonus; // Apply attack speed bonus
+            if (this.flareTimer >= this.flareInterval) {
+                this.flareTimer = 0;
+                
+                // 広がる円アニメーションを追加
+                this.expandingCircles.push({
+                    radius: 0,
+                    opacity: 1,
+                    maxRadius: 300,
+                    x: this.x,
+                    y: this.y,
+                    damage: this.damage * 0.7,
+                    hitEnemies: new Set() // 既にダメージを与えた敵を追跡
+                });
+                
+                // エフェクト
+                createExplosion(this.x, this.y, '#ffaa00', 20);
+            }
+            
+            // 広がる円の更新と当たり判定
+            this.expandingCircles = this.expandingCircles.filter(circle => {
+                circle.radius += 0.67; // 6倍遅く
+                circle.opacity -= 0.005; // opacityの減少も遅く（約10秒で消える）
+                
+                // 円と敵の当たり判定
+                for (let enemy of enemies) {
+                    if (!enemy.active || circle.hitEnemies.has(enemy)) continue;
+                    
+                    const dx = circle.x - enemy.x;
+                    const dy = circle.y - enemy.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // 円の縁に当たったかチェック（円の半径付近）
+                    const thickness = 15; // 円の当たり判定の厚さ
+                    if (Math.abs(dist - circle.radius) < thickness) {
+                        // ダメージを適用
+                        const burnBonus = getSkillBonus('burn_damage');
+                        const finalDamage = Math.floor(circle.damage * burnBonus);
+                        enemy.takeDamage(finalDamage, 'burn', true);
+                        
+                        // 延延焼効果を適用（死ぬまで継続、延焼より高い継続ダメージ）
+                        if (enemy.doubleBurnDamage === 0) {
+                            enemy.doubleBurnDamage = Math.floor(finalDamage * 0.5 * burnBonus); // 延焼の0.3から0.5に増加
+                        } else {
+                            // 既に延延焼状態の場合、ダメージを更新（より高い方を採用）
+                            enemy.doubleBurnDamage = Math.max(enemy.doubleBurnDamage, Math.floor(finalDamage * 0.5 * burnBonus));
+                        }
+                        
+                        // エフェクト
+                        createExplosion(enemy.x, enemy.y, '#ff0000', 12); // より大きく、より赤く
+                        
+                        // この敵に既にダメージを与えたことを記録
+                        circle.hitEnemies.add(enemy);
+                    }
+                }
+                
+                return circle.opacity > 0 && circle.radius < circle.maxRadius;
+            });
+        }
+        
+        // Gear-Third overclock/overheat management
+        if (this.type === 'gear-third') {
+            // Overclock countdown
+            if (this.overclockActive) {
+                this.overclockDuration--;
+                if (this.overclockDuration <= 0) {
+                    this.overclockActive = false;
+                    this.overheatActive = true;
+                    this.overheatDuration = 300; // 5 seconds overheat
+                }
+            }
+            
+            // Overheat countdown
+            if (this.overheatActive) {
+                this.overheatDuration--;
+                if (this.overheatDuration <= 0) {
+                    this.overheatActive = false;
+                    // Reset gauge when overheat ends
+                    this.overclockGauge = 0;
+                }
+            }
+        }
+        
+        // Gear specific: apply chain bonuses before targeting
+        if (this.type === 'gear' || this.type === 'gear-second' || this.type === 'gear-third') {
+            this.updateChainCount();
+            // 連鎖数に応じてダメージと攻撃速度を増加
+            const damageBonus = getSkillBonus('damage', this.baseTypeOriginal);
+            const rangeLevelCap = Math.min(this.level, 10);
+            const rangeBonus = getSkillBonus('range', this.baseTypeOriginal);
+            
+            // gear-third: 0.5, gear-second: 0.4, gear: 0.3
+            const chainDamageBonus = this.type === 'gear-third' ? 0.5 : (this.type === 'gear-second' ? 0.4 : 0.3);
+            let baseDamageMultiplier = 1 + this.level * 0.5;
+            
+            // Overclock: 2x damage
+            if (this.type === 'gear-third' && this.overclockActive) {
+                baseDamageMultiplier *= 2;
+            }
+            
+            this.damage = Math.floor(this.baseDamage * baseDamageMultiplier * damageBonus * (1 + this.chainCount * chainDamageBonus));
+            this.range = Math.floor(this.baseRange * (1 + rangeLevelCap * 0.15) * rangeBonus);
+            
+            const cooldownReduction = Math.min(this.chainCount * 0.1, 0.6); // 最大60%短縮
+            let cdReduc = Math.min(0.5, this.level * 0.05);
+            this.cooldown = this.baseCooldown * (1 - cdReduc) * (1 - cooldownReduction);
+            
+            // Gear-Third: Overclock 6x attack speed, Overheat 0.5x attack speed
+            if (this.type === 'gear-third') {
+                if (this.overclockActive) {
+                    this.cooldown *= 1/6; // 6x speed
+                } else if (this.overheatActive) {
+                    this.cooldown *= 2; // 0.5x speed
+                }
+            }
+            
+            // 連鎖がない場合は攻撃しない
+            if (this.chainCount === 0) return;
+        }
+        
+        // Apply attack speed bonus to cooldown
+        const effectiveCooldown = this.cooldown / attackSpeedBonus;
+        if (time - this.lastShot < effectiveCooldown) return;
 
         let target = null;
         let minDist = Infinity;
@@ -3093,14 +4990,72 @@ class Tower {
         if (target) {
             this.shoot(target);
             this.lastShot = time;
-            // Rod towers always face up (angle = 0)
-            if (this.type !== 'rod' && this.type !== 'lightning-rod' && this.type !== 'warp-rod' && this.type !== 'necromancer' && this.type !== 'lightning-rod-ii' && this.type !== 'lightning-spark' && this.type !== 'chain-spark' && this.type !== 'burn-lightning') {
+            // Rod towers and Sweeper (all evolutions) always face up (angle = 0)
+            const rodTypes = ['rod', 'lightning-rod', 'warp-rod', 'necromancer', 'lightning-rod-ii', 'lightning-spark', 'chain-spark', 'burn-lightning'];
+            const sweeperTypes = ['sweeper', 'big-sweeper', 'spike-sweeper', 'incendiary-sweeper'];
+            if (!rodTypes.includes(this.type) && !sweeperTypes.includes(this.type)) {
                 this.angle = Math.atan2(target.y - this.y, target.x - this.x);
             }
         }
     }
 
     shoot(target) {
+        // Gear-Third overclock gauge increase flag (increased when projectile hits)
+        this.lastShotForGauge = true;
+        
+        // Mine layer for Sweeper and its evolutions
+        if (this.special === 'mine-layer' || this.special === 'big-mine-layer' || this.special === 'spike-mine-layer' || this.special === 'incendiary-mine-layer') {
+            // 敵の進路上のランダムな位置に地雷を設置（射程範囲内）
+            const maxAttempts = 50; // 無限ループ防止
+            let attempt = 0;
+            let mineX, mineY;
+            let validPosition = false;
+            
+            while (attempt < maxAttempts && !validPosition) {
+                const pathSegments = path.length - 1;
+                const randomSegment = Math.floor(Math.random() * pathSegments);
+                const point1 = path[randomSegment];
+                const point2 = path[randomSegment + 1];
+                
+                // セグメント上のランダムな位置
+                const t = Math.random();
+                mineX = point1.x + (point2.x - point1.x) * t;
+                mineY = point1.y + (point2.y - point1.y) * t;
+                
+                // タワーからの距離をチェック
+                const dx = mineX - this.x;
+                const dy = mineY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance <= this.range) {
+                    validPosition = true;
+                }
+                attempt++;
+            }
+            
+            // 有効な位置が見つかった場合のみ地雷を設置
+            if (validPosition) {
+                // 特殊タイプを決定
+                let specialType = null;
+                if (this.special === 'big-mine-layer') specialType = 'big';
+                else if (this.special === 'spike-mine-layer') specialType = 'spike';
+                else if (this.special === 'incendiary-mine-layer') specialType = 'incendiary';
+                
+                const mine = new Mine(mineX, mineY, this.damage, this, specialType);
+                mines.push(mine);
+                this.placedMines.push(mine);
+                
+                // 50個を超えたら古いものを削除
+                if (this.placedMines.length > 50) {
+                    const oldMine = this.placedMines.shift(); // 最も古い地雷を取り除く
+                    if (oldMine) {
+                        oldMine.active = false;
+                    }
+                }
+            }
+            return;
+        }
+        
         // Lightning strike for rod towers
         if (this.special === 'lightning' || this.special === 'lightning-zone' || this.special === 'burn-lightning' || this.special === 'chain-lightning' || this.special === 'warp' || this.special === 'necromancy') {
             lightningStrikes.push(new LightningStrike(this.x, this.y, target, this.damage, this.special));
@@ -3108,21 +5063,24 @@ class Tower {
             // Shoot 5 projectiles in spread pattern
             for (let i = 0; i < 5; i++) {
                 const angle = -0.4 + (i * 0.2);
-                projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special, angle));
+                projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special, angle, this));
             }
         } else if (this.special === 'super-spread') {
             // Shoot 7 projectiles in spread pattern (Flugrl-TURRET)
             for (let i = 0; i < 7; i++) {
                 const angle = -0.6 + (i * 0.2);
-                projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special, angle));
+                projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special, angle, this));
             }
         } else if (this.special === 'machine-gun') {
             // Machine-TURRET: 高速連射（通常の発射物）
-            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, null, 0));
+            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, null, 0, this));
         } else if (this.special === 'splash' || this.special === 'giga-splash' || this.special === 'knockback-splash' || this.special === 'peta-splash') {
-            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special));
+            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special, 0, this));
+        } else if (this.special === 'solar-flare') {
+            // Sol-Blaster: 通常の発射物 + mega-chain-burn効果
+            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, 'mega-chain-burn', 0, this));
         } else {
-            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special));
+            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.color, this.type, this.special, 0, this));
         }
     }
 
@@ -3158,8 +5116,9 @@ class Tower {
         ctx.shadowColor = this.color;
         ctx.fillStyle = this.color;
 
-        // Scale slightly with level (cap at level 10)
-        const effectiveLevel = Math.min(this.level, 10);
+        // Scale slightly with level (cap at level 10, or level 5 for gear)
+        const maxScaleLevel = (this.type === 'gear' || this.type === 'gear-second' || this.type === 'gear-third') ? 5 : 10;
+        const effectiveLevel = Math.min(this.level, maxScaleLevel);
         const scale = 1 + (effectiveLevel - 1) * 0.1;
         ctx.scale(scale, scale);
 
@@ -3262,7 +5221,7 @@ class Tower {
             } else {
                 ctx.fillRect(0, -2, 30, 4);
             }
-        } else if (this.type === 'blaster' || this.type === 'flame-blaster' || this.type === 'frost-blaster' || this.type === 'blast-blaster' || this.type === 'explosion-blaster' || this.type === 'blizzard-blaster' || this.type === 'iceage-blaster') {
+        } else if (this.type === 'blaster' || this.type === 'flame-blaster' || this.type === 'frost-blaster' || this.type === 'blast-blaster' || this.type === 'explosion-blaster' || this.type === 'sol-blaster' || this.type === 'blizzard-blaster' || this.type === 'iceage-blaster') {
             ctx.beginPath();
             ctx.moveTo(15, 0);
             ctx.lineTo(-10, 10);
@@ -3305,6 +5264,46 @@ class Tower {
                     ctx.lineTo(Math.cos(angle) * 15, Math.sin(angle) * 15);
                     ctx.stroke();
                 }
+            } else if (this.type === 'sol-blaster') {
+                // 広がる円アニメーション（タワーの背後に描画）
+                if (this.expandingCircles && this.expandingCircles.length > 0) {
+                    this.expandingCircles.forEach(circle => {
+                        ctx.strokeStyle = `rgba(255, 170, 0, ${circle.opacity})`;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, circle.radius, 0, Math.PI * 2);
+                        ctx.stroke();
+                        
+                        // 内側の薄い円
+                        ctx.strokeStyle = `rgba(255, 255, 0, ${circle.opacity * 0.5})`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, circle.radius * 0.8, 0, Math.PI * 2);
+                        ctx.stroke();
+                    });
+                }
+                
+                // Draw sun-like core
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                ctx.fill();
+                // Add solar flare rays (rotating)
+                const flareRotation = Date.now() * 0.002;
+                for (let i = 0; i < 12; i++) {
+                    const angle = (Math.PI / 6) * i + flareRotation;
+                    ctx.strokeStyle = '#ffaa00';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+                    ctx.lineTo(Math.cos(angle) * 18, Math.sin(angle) * 18);
+                    ctx.stroke();
+                }
+                // Inner glow
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fill();
             } else if (this.type === 'frost-blaster') {
                 ctx.fillStyle = '#00aaff';
                 ctx.beginPath();
@@ -3377,6 +5376,407 @@ class Tower {
                     ctx.shadowBlur = 0;
                 }
             }
+        } else if (this.type === 'gear') {
+            // 連鎖数を計算
+            this.updateChainCount();
+            
+            // 連鎖がある場合のみ回転
+            if (this.chainCount > 0) {
+                this.rotationSpeed = 0.02 + (this.chainCount * 0.01);
+                this.rotationAngle += this.rotationSpeed * this.rotationDirection;
+            }
+            
+            // 歯車を描画
+            ctx.save();
+            ctx.rotate(this.rotationAngle);
+            
+            const teeth = 10; // 歯の数
+            const outerRadius = 16; // 外側の半径
+            const innerRadius = 11; // 内側の半径
+            const valleyRadius = 9; // 谷の半径（凹み部分）
+            const toothWidth = 0.35; // 歯の幅（角度の割合）
+            
+            // 連鎖数に応じて色を変更
+            if (this.chainCount === 0) {
+                ctx.fillStyle = '#444444'; // 暗い灰色（動いていない）
+            } else if (this.chainCount <= 2) {
+                ctx.fillStyle = '#888888'; // 通常の灰色
+            } else if (this.chainCount <= 4) {
+                ctx.fillStyle = '#aaaaaa'; // 明るい灰色
+            } else {
+                ctx.fillStyle = '#cccccc'; // 非常に明るい灰色
+                // 高連鎖時は光る
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffffff';
+            }
+            
+            // 歯車の歯を描画（凹凸をはっきりと）
+            ctx.beginPath();
+            for (let i = 0; i < teeth; i++) {
+                const baseAngle = (Math.PI * 2 * i) / teeth;
+                const toothAngle = (Math.PI * 2 * toothWidth) / teeth;
+                const valleyAngle = (Math.PI * 2 * (1 - toothWidth)) / teeth;
+                
+                // 歯の左側（立ち上がり）
+                const a1 = baseAngle;
+                ctx.lineTo(Math.cos(a1) * valleyRadius, Math.sin(a1) * valleyRadius);
+                ctx.lineTo(Math.cos(a1) * outerRadius, Math.sin(a1) * outerRadius);
+                
+                // 歯の上部（平らな部分）
+                const a2 = baseAngle + toothAngle;
+                ctx.lineTo(Math.cos(a2) * outerRadius, Math.sin(a2) * outerRadius);
+                
+                // 歯の右側（下り）
+                ctx.lineTo(Math.cos(a2) * valleyRadius, Math.sin(a2) * valleyRadius);
+                
+                // 谷の部分（凹み）
+                const a3 = baseAngle + toothAngle + valleyAngle;
+                ctx.lineTo(Math.cos(a3) * valleyRadius, Math.sin(a3) * valleyRadius);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // 内側の円盤
+            ctx.fillStyle = this.chainCount === 0 ? '#333333' : '#666666';
+            ctx.beginPath();
+            ctx.arc(0, 0, 7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 中心の穴
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 歯車のボルト（装飾）
+            ctx.fillStyle = '#222222';
+            for (let i = 0; i < 3; i++) {
+                const angle = (Math.PI * 2 * i) / 3;
+                const x = Math.cos(angle) * 5;
+                const y = Math.sin(angle) * 5;
+                ctx.beginPath();
+                ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+            
+        } else if (this.type === 'gear-second') {
+            // 連鎖数を計算
+            this.updateChainCount();
+            
+            // 連鎖がある場合のみ回転
+            if (this.chainCount > 0) {
+                this.rotationSpeed = 0.025 + (this.chainCount * 0.012); // gear-secondは少し速い
+                this.rotationAngle += this.rotationSpeed * this.rotationDirection;
+            }
+            
+            // 歯車を描画（gear-secondはより洗練された見た目）
+            ctx.save();
+            ctx.rotate(this.rotationAngle);
+            
+            const teeth = 12; // 歯の数が増加
+            const outerRadius = 16; // 外側の半径
+            const innerRadius = 11; // 内側の半径
+            const valleyRadius = 9; // 谷の半径（凹み部分）
+            const toothWidth = 0.35; // 歯の幅（角度の割合）
+            
+            // 連鎖数に応じて色を変更（gear-secondはより明るい）
+            if (this.chainCount === 0) {
+                ctx.fillStyle = '#666666'; // より明るい灰色
+            } else if (this.chainCount <= 2) {
+                ctx.fillStyle = '#aaaaaa'; // 明るい灰色
+            } else if (this.chainCount <= 4) {
+                ctx.fillStyle = '#cccccc'; // 非常に明るい灰色
+            } else {
+                ctx.fillStyle = '#dddddd'; // ほぼ白
+                // 高連鎖時は強く光る
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ffffff';
+            }
+            
+            // 歯車の歯を描画（凹凸をはっきりと）
+            ctx.beginPath();
+            for (let i = 0; i < teeth; i++) {
+                const baseAngle = (Math.PI * 2 * i) / teeth;
+                const toothAngle = (Math.PI * 2 * toothWidth) / teeth;
+                const valleyAngle = (Math.PI * 2 * (1 - toothWidth)) / teeth;
+                
+                // 歯の左側（立ち上がり）
+                const a1 = baseAngle;
+                ctx.lineTo(Math.cos(a1) * valleyRadius, Math.sin(a1) * valleyRadius);
+                ctx.lineTo(Math.cos(a1) * outerRadius, Math.sin(a1) * outerRadius);
+                
+                // 歯の上部（平らな部分）
+                const a2 = baseAngle + toothAngle;
+                ctx.lineTo(Math.cos(a2) * outerRadius, Math.sin(a2) * outerRadius);
+                
+                // 歯の右側（下り）
+                ctx.lineTo(Math.cos(a2) * valleyRadius, Math.sin(a2) * valleyRadius);
+                
+                // 谷の部分（凹み）
+                const a3 = baseAngle + toothAngle + valleyAngle;
+                ctx.lineTo(Math.cos(a3) * valleyRadius, Math.sin(a3) * valleyRadius);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // 内側の円盤（より明るい）
+            ctx.fillStyle = this.chainCount === 0 ? '#555555' : '#888888';
+            ctx.beginPath();
+            ctx.arc(0, 0, 7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 中心の穴
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 歯車のボルト（装飾、4つに増加）
+            ctx.fillStyle = '#333333';
+            for (let i = 0; i < 4; i++) {
+                const angle = (Math.PI * 2 * i) / 4;
+                const x = Math.cos(angle) * 5;
+                const y = Math.sin(angle) * 5;
+                ctx.beginPath();
+                ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+            
+        } else if (this.type === 'gear-third') {
+            // 連鎖数を計算
+            this.updateChainCount();
+            
+            // オーバーヒート中は回転停止、それ以外は連鎖がある場合のみ回転
+            if (!this.overheatActive && this.chainCount > 0) {
+                this.rotationSpeed = 0.03 + (this.chainCount * 0.015);
+                
+                // オーバークロック中は回転速度2倍
+                if (this.overclockActive) {
+                    this.rotationSpeed *= 2;
+                }
+                
+                this.rotationAngle += this.rotationSpeed * this.rotationDirection;
+                // 小さい歯車は逆回転
+                if (!this.smallGearAngle) this.smallGearAngle = 0;
+                this.smallGearAngle -= this.rotationSpeed * this.rotationDirection * 1.5;
+            }
+            
+            // 大きい歯車を描画
+            ctx.save();
+            ctx.rotate(this.rotationAngle);
+            
+            const bigTeeth = 14; // 大歯車の歯の数
+            const bigOuterRadius = 18; // 大歯車の外側の半径
+            const bigValleyRadius = 14; // 大歯車の谷の半径
+            const toothWidth = 0.35; // 歯の幅（角度の割合）
+            
+            // オーバーヒート/オーバークロックによる色変更
+            if (this.overheatActive) {
+                // オーバーヒート: 灰色
+                ctx.fillStyle = '#555555';
+            } else if (this.overclockActive) {
+                // オーバークロック: 黄色く発光
+                if (this.overclockDuration > 30) {
+                    ctx.fillStyle = '#ffff00'; // 黄色
+                } else {
+                    // 徐々に赤くなる（最後の30フレーム）
+                    const redProgress = (30 - this.overclockDuration) / 30;
+                    const r = Math.floor(255);
+                    const g = Math.floor(255 * (1 - redProgress));
+                    const b = 0;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                }
+                // 強く光る
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = ctx.fillStyle;
+            } else {
+                // 通常時: 連鎖数に応じて色を変更
+                if (this.chainCount === 0) {
+                    ctx.fillStyle = '#888888';
+                } else if (this.chainCount <= 3) {
+                    ctx.fillStyle = '#bbbbbb';
+                } else if (this.chainCount <= 6) {
+                    ctx.fillStyle = '#dddddd';
+                } else {
+                    ctx.fillStyle = '#eeeeee';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ffffff';
+                }
+            }
+            
+            // 大歯車の歯を描画
+            ctx.beginPath();
+            for (let i = 0; i < bigTeeth; i++) {
+                const baseAngle = (Math.PI * 2 * i) / bigTeeth;
+                const toothAngle = (Math.PI * 2 * toothWidth) / bigTeeth;
+                const valleyAngle = (Math.PI * 2 * (1 - toothWidth)) / bigTeeth;
+                
+                const a1 = baseAngle;
+                ctx.lineTo(Math.cos(a1) * bigValleyRadius, Math.sin(a1) * bigValleyRadius);
+                ctx.lineTo(Math.cos(a1) * bigOuterRadius, Math.sin(a1) * bigOuterRadius);
+                
+                const a2 = baseAngle + toothAngle;
+                ctx.lineTo(Math.cos(a2) * bigOuterRadius, Math.sin(a2) * bigOuterRadius);
+                ctx.lineTo(Math.cos(a2) * bigValleyRadius, Math.sin(a2) * bigValleyRadius);
+                
+                const a3 = baseAngle + toothAngle + valleyAngle;
+                ctx.lineTo(Math.cos(a3) * bigValleyRadius, Math.sin(a3) * bigValleyRadius);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // 大歯車の内側の円盤
+            ctx.fillStyle = this.chainCount === 0 ? '#666666' : '#999999';
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+            
+            // 小さい歯車を描画（逆回転）
+            ctx.save();
+            ctx.rotate(this.smallGearAngle || 0);
+            
+            const smallTeeth = 8; // 小歯車の歯の数
+            const smallOuterRadius = 11; // 小歯車の外側の半径
+            const smallValleyRadius = 8; // 小歯車の谷の半径
+            
+            // 小歯車の色（大歯車と同じロジックで少し暗め）
+            if (this.overheatActive) {
+                ctx.fillStyle = '#444444';
+            } else if (this.overclockActive) {
+                if (this.overclockDuration > 30) {
+                    ctx.fillStyle = '#dddd00'; // 黄色（少し暗め）
+                } else {
+                    const redProgress = (30 - this.overclockDuration) / 30;
+                    const r = Math.floor(220);
+                    const g = Math.floor(220 * (1 - redProgress));
+                    const b = 0;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                }
+            } else {
+                if (this.chainCount === 0) {
+                    ctx.fillStyle = '#666666';
+                } else if (this.chainCount <= 3) {
+                    ctx.fillStyle = '#999999';
+                } else if (this.chainCount <= 6) {
+                    ctx.fillStyle = '#bbbbbb';
+                } else {
+                    ctx.fillStyle = '#cccccc';
+                }
+            }
+            
+            // 小歯車の歯を描画
+            ctx.beginPath();
+            for (let i = 0; i < smallTeeth; i++) {
+                const baseAngle = (Math.PI * 2 * i) / smallTeeth;
+                const toothAngle = (Math.PI * 2 * toothWidth) / smallTeeth;
+                const valleyAngle = (Math.PI * 2 * (1 - toothWidth)) / smallTeeth;
+                
+                const a1 = baseAngle;
+                ctx.lineTo(Math.cos(a1) * smallValleyRadius, Math.sin(a1) * smallValleyRadius);
+                ctx.lineTo(Math.cos(a1) * smallOuterRadius, Math.sin(a1) * smallOuterRadius);
+                
+                const a2 = baseAngle + toothAngle;
+                ctx.lineTo(Math.cos(a2) * smallOuterRadius, Math.sin(a2) * smallOuterRadius);
+                ctx.lineTo(Math.cos(a2) * smallValleyRadius, Math.sin(a2) * smallValleyRadius);
+                
+                const a3 = baseAngle + toothAngle + valleyAngle;
+                ctx.lineTo(Math.cos(a3) * smallValleyRadius, Math.sin(a3) * smallValleyRadius);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // 小歯車の内側の円盤
+            ctx.fillStyle = this.chainCount === 0 ? '#555555' : '#888888';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 中心の穴
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 中心のボルト（装飾）
+            ctx.fillStyle = '#333333';
+            for (let i = 0; i < 4; i++) {
+                const angle = (Math.PI * 2 * i) / 4;
+                const x = Math.cos(angle) * 3.5;
+                const y = Math.sin(angle) * 3.5;
+                ctx.beginPath();
+                ctx.arc(x, y, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+            
+        } else if (this.type === 'sweeper' || this.type === 'big-sweeper' || this.type === 'spike-sweeper' || this.type === 'incendiary-sweeper') {
+            // Draw pentagon (五角形)
+            const size = this.type === 'sweeper' ? 12 : (this.type === 'big-sweeper' ? 15 : 18);
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                const x = Math.cos(angle) * size;
+                const y = Math.sin(angle) * size;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add special indicators
+            if (this.type === 'spike-sweeper') {
+                // Draw spikes on pentagon
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                    const x = Math.cos(angle) * size;
+                    const y = Math.sin(angle) * size;
+                    const extX = Math.cos(angle) * (size + 6);
+                    const extY = Math.sin(angle) * (size + 6);
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(extX, extY);
+                    ctx.stroke();
+                }
+            } else if (this.type === 'incendiary-sweeper') {
+                // Draw flame symbol
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.moveTo(0, -8);
+                ctx.bezierCurveTo(-4, -4, -6, 0, -3, 4);
+                ctx.bezierCurveTo(-2, 6, 2, 6, 3, 4);
+                ctx.bezierCurveTo(6, 0, 4, -4, 0, -8);
+                ctx.fill();
+            }
+            
+            // Draw mine symbol
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw warning lines
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const angle = (Math.PI / 2) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+                ctx.stroke();
+            }
         }
 
         ctx.shadowBlur = 0;
@@ -3391,7 +5791,7 @@ class Tower {
 }
 
 class Projectile {
-    constructor(x, y, target, damage, color, type, special, offsetAngle = 0) {
+    constructor(x, y, target, damage, color, type, special, offsetAngle = 0, sourceTower = null) {
         this.x = x;
         this.y = y;
         this.target = target;
@@ -3401,24 +5801,37 @@ class Projectile {
         this.type = type;
         this.special = special;
         this.active = true;
+        this.sourceTower = sourceTower;
         // サイズ調整
         if (special === 'peta-splash') this.radius = 18;
         else if (special === 'knockback-splash') this.radius = 14;
         else if (special === 'giga-splash') this.radius = 15;
         else if (special === 'splash') this.radius = 10;
+        else if (special === 'spike') this.radius = 5; // スパイク弾は少し大きめ
         else this.radius = 4;
         this.hitEnemies = []; // For pierce effect
         
-        let dx = target.x - x;
-        let dy = target.y - y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        
-        // Calculate base angle to target
-        const baseAngle = Math.atan2(dy, dx);
-        // Apply offset angle (for spread shots)
-        const finalAngle = baseAngle + offsetAngle;
-        this.vx = Math.cos(finalAngle) * this.speed;
-        this.vy = Math.sin(finalAngle) * this.speed;
+        // スパイク弾の場合は直線で飛ぶように設定（targetは速度ベクトルとして扱う）
+        if (special === 'spike') {
+            this.vx = target; // targetはvxとして渡される
+            this.vy = damage; // damageの位置にvyが渡される
+            this.damage = color; // colorの位置にdamageが渡される
+            this.color = type; // typeの位置にcolorが渡される
+            this.type = null;
+            this.target = null;
+            this.speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy); // 速度を計算
+        } else {
+            let dx = target.x - x;
+            let dy = target.y - y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            
+            // Calculate base angle to target
+            const baseAngle = Math.atan2(dy, dx);
+            // Apply offset angle (for spread shots)
+            const finalAngle = baseAngle + offsetAngle;
+            this.vx = Math.cos(finalAngle) * this.speed;
+            this.vy = Math.sin(finalAngle) * this.speed;
+        }
     }
 
     update() {
@@ -3504,6 +5917,32 @@ class Projectile {
             }
             
             // Deactivate if out of bounds
+            if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                this.active = false;
+            }
+        } else if (this.special === 'spike') {
+            // スパイク弾は最大2回まで貫通して直進する
+            // 敵との衝突判定
+            for (let e of enemies) {
+                if (!e.active || this.hitEnemies.includes(e)) continue;
+                
+                let dx = e.x - this.x;
+                let dy = e.y - this.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < e.radius + this.radius) {
+                    this.applyDamageAndEffects(e);
+                    this.hitEnemies.push(e); // 同じ敵に複数回当たらないように記録
+                    
+                    // 2回貫通したら消滅
+                    if (this.hitEnemies.length >= 2) {
+                        this.active = false;
+                        break;
+                    }
+                }
+            }
+            
+            // 画面外に出たら非アクティブ化
             if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
                 this.active = false;
             }
@@ -3622,10 +6061,29 @@ class Projectile {
     }
 
     applyDamageAndEffects(enemy) {
+        // Gear-Third overclock gauge increase (only when not overheating)
+        if (this.sourceTower && this.sourceTower.type === 'gear-third' && !this.sourceTower.overheatActive) {
+            this.sourceTower.overclockGauge = Math.min(100, this.sourceTower.overclockGauge + 5);
+            
+            // Activate overclock when gauge is full
+            if (this.sourceTower.overclockGauge >= 100 && !this.sourceTower.overclockActive) {
+                this.sourceTower.overclockActive = true;
+                this.sourceTower.overclockDuration = 180; // 3 seconds
+                this.sourceTower.overclockGauge = 0; // Reset gauge
+            }
+        }
+        
         // Calculate critical hit
-        const critRate = getSkillBonus('crit_rate');
+        const baseCritRate = getSkillBonus('crit_rate');
+        const critRate = baseCritRate + getActiveSkillBonus('crit_rate'); // Add Benix active
         const isCrit = Math.random() < critRate;
-        let finalDamage = isCrit ? this.damage * 2 : this.damage;
+        const critMultiplier = isCrit ? (2 + getActiveSkillBonus('crit_damage')) : 1; // Add Benix active crit damage
+        let finalDamage = this.damage * critMultiplier;
+        
+        // Apply Reika's passive: Bonus damage to slowed/frozen enemies
+        if (enemy.slowDuration > 0 || enemy.freezeStacks > 0) {
+            finalDamage *= getCommanderBonus('slow_bonus_damage');
+        }
         
         // Apply laceration bonus damage
         const hasLaceration = enemy.lacerationStacks > 0;
@@ -3633,38 +6091,47 @@ class Projectile {
             finalDamage += this.damage * 0.3 * enemy.lacerationStacks; // +30% per stack
         }
         
-        enemy.takeDamage(finalDamage);
-        
-        // Show damage text
-        createDamageText(enemy.x, enemy.y - enemy.radius - 10, finalDamage, false, isCrit, hasLaceration);
+        // Let takeDamage handle the damage text display (for shield mechanics)
+        enemy.takeDamage(finalDamage, null, true, isCrit, hasLaceration);
         
         // Apply burn effect
         if (this.special === 'burn') {
             const burnBonus = getSkillBonus('burn_damage');
+            const durationBonus = getCommanderBonus('debuff_duration');
             enemy.burnDamage = Math.floor(this.damage * 0.1 * burnBonus);
-            enemy.burnDuration = 60;
+            enemy.burnDuration = 60 + durationBonus;
             createExplosion(enemy.x, enemy.y, '#ff4400', 5);
         }
         
+        // Shielder immunity check - immune to burn, slow, freeze, stun while shield is active
+        // Note: Laceration still works on shielder
+        const shielderImmune = (enemy.type === 'shielder' && enemy.hasShield && enemy.shield > 0);
+        
         // Chain burn - enhanced burn
         if (this.special === 'chain-burn') {
-            const burnBonus = getSkillBonus('burn_damage');
-            enemy.burnDamage = Math.floor(this.damage * 0.15 * burnBonus); // 15% burn damage
-            enemy.burnDuration = 90; // Longer duration
-            enemy.chainBurn = true;
-            createExplosion(enemy.x, enemy.y, '#ff2200', 8);
+            if (!shielderImmune) {
+                const burnBonus = getSkillBonus('burn_damage');
+                const durationBonus = getCommanderBonus('debuff_duration');
+                enemy.burnDamage = Math.floor(this.damage * 0.15 * burnBonus); // 15% burn damage
+                enemy.burnDuration = 90 + durationBonus; // Longer duration
+                enemy.chainBurn = true;
+                createExplosion(enemy.x, enemy.y, '#ff2200', 8);
+            }
         }
         
         // Mega chain burn - even more burn damage
         if (this.special === 'mega-chain-burn') {
-            const burnBonus = getSkillBonus('burn_damage');
-            enemy.burnDamage = Math.floor(this.damage * 0.2 * burnBonus); // 20% burn damage
-            enemy.burnDuration = 120; // Even longer duration
-            enemy.chainBurn = true;
-            createExplosion(enemy.x, enemy.y, '#ff1100', 12);
+            if (!shielderImmune) {
+                const burnBonus = getSkillBonus('burn_damage');
+                const durationBonus = getCommanderBonus('debuff_duration');
+                enemy.burnDamage = Math.floor(this.damage * 0.2 * burnBonus); // 20% burn damage
+                enemy.burnDuration = 120 + durationBonus; // Even longer duration
+                enemy.chainBurn = true;
+                createExplosion(enemy.x, enemy.y, '#ff1100', 12);
+            }
         }
         
-        // Laceration - applies stacks (Missile-SNIPPER)
+        // Laceration - applies stacks (Missile-SNIPPER) - WORKS ON SHIELDER!
         if (this.special === 'laceration') {
             enemy.lacerationStacks = Math.min(enemy.lacerationStacks + 1, 5); // Max 5 stacks
             createExplosion(enemy.x, enemy.y, '#ff88ff', 8);
@@ -3672,66 +6139,78 @@ class Projectile {
         
         // Apply slow effect
         if (this.special === 'slow') {
-            const wasNotFrozen = enemy.slowDuration <= 0; // Check if enemy was not frozen
-            enemy.slowAmount = 0.5;
-            enemy.slowDuration = 120;
-            if (wasNotFrozen) playSound('ice'); // Play ice sound only if newly frozen
-            createExplosion(enemy.x, enemy.y, '#44aaff', 5);
+            if (!shielderImmune) {
+                const wasNotFrozen = enemy.slowDuration <= 0; // Check if enemy was not frozen
+                enemy.slowAmount = 0.5;
+                enemy.slowDuration = 120;
+                if (wasNotFrozen) playSound('ice'); // Play ice sound only if newly frozen
+                createExplosion(enemy.x, enemy.y, '#44aaff', 5);
+            }
         }
         
         // Freeze zone
         if (this.special === 'freeze-zone') {
-            const wasNotFrozen = enemy.slowDuration <= 0; // Check if enemy was not frozen
-            enemy.slowAmount = 0.4;
-            const freezeDurationBonus = getSkillBonus('freeze_duration');
-            enemy.slowDuration = Math.floor(60 * freezeDurationBonus);
-            if (wasNotFrozen) playSound('ice'); // Play ice sound only if newly frozen
-            freezeZones.push(new FreezeZone(enemy.x, enemy.y));
-            createExplosion(enemy.x, enemy.y, '#0099ff', 10);
+            if (!shielderImmune) {
+                const wasNotFrozen = enemy.slowDuration <= 0; // Check if enemy was not frozen
+                enemy.slowAmount = 0.4;
+                const freezeDurationBonus = getSkillBonus('freeze_duration');
+                enemy.slowDuration = Math.floor(60 * freezeDurationBonus);
+                if (wasNotFrozen) playSound('ice'); // Play ice sound only if newly frozen
+                freezeZones.push(new FreezeZone(enemy.x, enemy.y));
+                createExplosion(enemy.x, enemy.y, '#0099ff', 10);
+            }
         }
         
         // Stack freeze - can stack up to 3 times
         if (this.special === 'stack-freeze') {
-            enemy.freezeStacks = Math.min(enemy.freezeStacks + 1, 3); // Max 3 stacks
-            enemy.slowAmount = 0.2 * enemy.freezeStacks; // +20% per stack
-            const freezeDurationBonus = getSkillBonus('freeze_duration');
-            // Duration increases with stacks: 90 -> 120 -> 150 frames
-            const baseDuration = 90 + (enemy.freezeStacks - 1) * 30;
-            enemy.slowDuration = Math.floor(baseDuration * freezeDurationBonus);
-            playSound('ice');
-            freezeZones.push(new FreezeZone(enemy.x, enemy.y));
-            createExplosion(enemy.x, enemy.y, '#0088ee', 15);
+            if (!shielderImmune) {
+                enemy.freezeStacks = Math.min(enemy.freezeStacks + 1, 3); // Max 3 stacks
+                enemy.slowAmount = 0.2 * enemy.freezeStacks; // +20% per stack
+                const freezeDurationBonus = getSkillBonus('freeze_duration');
+                // Duration increases with stacks: 90 -> 120 -> 150 frames
+                const baseDuration = 90 + (enemy.freezeStacks - 1) * 30;
+                enemy.slowDuration = Math.floor(baseDuration * freezeDurationBonus);
+                playSound('ice');
+                freezeZones.push(new FreezeZone(enemy.x, enemy.y));
+                createExplosion(enemy.x, enemy.y, '#0088ee', 15);
+            }
         }
         
         // Lightning effect - chance to stun
         if (this.special === 'lightning') {
-            if (Math.random() < 0.3) { // 30% chance to stun
-                enemy.stunDuration = 60; // 1 second stun
-                createExplosion(enemy.x, enemy.y, '#ffff00', 10);
-            } else {
-                createExplosion(enemy.x, enemy.y, '#ffff00', 5);
+            if (!shielderImmune) {
+                if (Math.random() < 0.3) { // 30% chance to stun
+                    enemy.stunDuration = 60; // 1 second stun
+                    createExplosion(enemy.x, enemy.y, '#ffff00', 10);
+                } else {
+                    createExplosion(enemy.x, enemy.y, '#ffff00', 5);
+                }
             }
         }
         
         // Lightning zone - creates stun zone
         if (this.special === 'lightning-zone') {
-            stunZones.push(new StunZone(enemy.x, enemy.y));
-            createExplosion(enemy.x, enemy.y, '#ffff00', 15);
+            if (!shielderImmune) {
+                stunZones.push(new StunZone(enemy.x, enemy.y));
+                createExplosion(enemy.x, enemy.y, '#ffff00', 15);
+            }
         }
         
         // Burn-Lightning - stun chance + burn
         if (this.special === 'burn-lightning') {
-            // 30% chance to stun
-            if (Math.random() < 0.3) {
-                enemy.stunDuration = 60; // 1 second stun
+            if (!shielderImmune) {
+                // 30% chance to stun
+                if (Math.random() < 0.3) {
+                    enemy.stunDuration = 60; // 1 second stun
+                }
+                // Always apply burn
+                const burnBonus = getSkillBonus('burn_damage');
+                enemy.burnDamage = Math.floor(this.damage * 0.12 * burnBonus); // 12% burn damage
+                enemy.burnDuration = 60;
+                // Visual effect - mix of yellow and orange
+                createExplosion(enemy.x, enemy.y, '#ffaa00', 12);
+                createExplosion(enemy.x, enemy.y, '#ffff00', 8);
             }
-            // Always apply burn
-            const burnBonus = getSkillBonus('burn_damage');
-            enemy.burnDamage = Math.floor(this.damage * 0.12 * burnBonus); // 12% burn damage
-            enemy.burnDuration = 60;
-            // Visual effect - mix of yellow and orange
-            createExplosion(enemy.x, enemy.y, '#ffaa00', 12);
-            createExplosion(enemy.x, enemy.y, '#ffff00', 8);
         }
         
         if (!this.special || this.special === 'none') {
@@ -3747,6 +6226,32 @@ class Projectile {
             ctx.strokeStyle = this.color;
             ctx.lineWidth = Math.min(8, 2 + (this.damage / 50)); // Cap beam width at 8
             ctx.stroke();
+            return;
+        }
+
+        // スパイク弾の描画（シンプルな矢じり型）
+        if (this.special === 'spike') {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            const angle = Math.atan2(this.vy, this.vx);
+            ctx.rotate(angle);
+            
+            // シンプルな矢じり型
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.moveTo(18, 0);  // 先端
+            ctx.lineTo(-8, -6); // 左下
+            ctx.lineTo(-4, 0);  // 中間点
+            ctx.lineTo(-8, 6);  // 右下
+            ctx.closePath();
+            ctx.fill();
+            
+            // 白い縁取り
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
             return;
         }
 
@@ -3897,7 +6402,7 @@ function createEllipticalWaves(x, y) {
 
 // Damage Text Class
 class DamageText {
-    constructor(x, y, damage, isBurn = false, isCrit = false, isLaceration = false) {
+    constructor(x, y, damage, isBurn = false, isCrit = false, isLaceration = false, customColor = null, isFrostDamage = false) {
         this.x = x;
         this.y = y;
         this.isText = typeof damage === 'string';
@@ -3908,6 +6413,8 @@ class DamageText {
         this.isBurn = isBurn;
         this.isCrit = isCrit;
         this.isLaceration = isLaceration;
+        this.customColor = customColor; // Custom color (e.g., for shield damage)
+        this.isFrostDamage = isFrostDamage; // 凍結・スロー時のダメージ
     }
 
     update() {
@@ -3925,7 +6432,12 @@ class DamageText {
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 3;
         
-        if (this.isText) {
+        if (this.customColor) {
+            // Custom color (e.g., shield damage)
+            ctx.fillStyle = this.customColor;
+            ctx.strokeText(this.damage, this.x, this.y);
+            ctx.fillText(this.damage, this.x, this.y);
+        } else if (this.isText) {
             // Special text (like +5 LIVES)
             ctx.fillStyle = '#00ff00';
             ctx.font = 'bold 16px Orbitron';
@@ -3943,6 +6455,12 @@ class DamageText {
             ctx.font = 'bold 16px Orbitron';
             ctx.strokeText(this.damage, this.x, this.y);
             ctx.fillText(this.damage, this.x, this.y);
+        } else if (this.isFrostDamage) {
+            // Frost damage (slow/frozen) - blue with snowflake
+            const text = this.damage + ' ❄️';
+            ctx.fillStyle = '#00aaff';
+            ctx.strokeText(text, this.x, this.y);
+            ctx.fillText(text, this.x, this.y);
         } else if (this.isBurn) {
             // Burn damage with fire icon
             const text = this.damage + ' 🔥';
@@ -3960,8 +6478,11 @@ class DamageText {
     }
 }
 
-function createDamageText(x, y, damage, isBurn = false, isCrit = false, isLaceration = false) {
-    damageTexts.push(new DamageText(x, y, damage, isBurn, isCrit, isLaceration));
+function createDamageText(x, y, damage, isBurn = false, isCrit = false, isLaceration = false, customColor = null, isFrostDamage = false) {
+    damageTexts.push(new DamageText(x, y, damage, isBurn, isCrit, isLaceration, customColor, isFrostDamage));
+    
+    // Track damage for DPS calculation
+    totalDamageDealt += damage;
 }
 
 // Zombie Class (ネクロマンサーで生成されたゾンビ)
@@ -4137,6 +6658,258 @@ class WarpEffect {
     }
 }
 
+// Mine Class
+class Mine {
+    constructor(x, y, damage, tower, specialType = null) {
+        // Animation properties
+        this.targetX = x;
+        this.targetY = y;
+        this.x = tower.x; // Start from tower position
+        this.y = tower.y;
+        this.animationProgress = 0; // 0 to 1
+        this.animationDuration = 0.5; // 0.5 seconds
+        this.isAnimating = true;
+        
+        this.damage = damage;
+        this.tower = tower;
+        this.specialType = specialType; // 'spike' or 'incendiary'
+        this.radius = 8;
+        this.active = true;
+        this.pulseAngle = Math.random() * Math.PI * 2; // ランダムな開始角度
+        this.rotation = Math.random() * Math.PI * 2; // 地雷の傾き（ランダム）
+        this.triggerRadius = 15; // 起爆範囲
+        
+        // 進化に応じて爆発範囲を調整
+        if (specialType === 'spike' || specialType === 'incendiary') {
+            this.explosionRadius = 90; // big-sweeper以降は爆発範囲が広い
+            this.radius = 10; // 地雷自体も少し大きく
+        } else if (specialType === 'big') {
+            this.explosionRadius = 75; // big-sweeperは中程度
+            this.radius = 9;
+        } else {
+            this.explosionRadius = 60; // 通常のsweeper
+        }
+    }
+
+    update() {
+        this.pulseAngle += 0.05 * dt;
+        
+        // Animation update (easeOutQuart)
+        if (this.isAnimating) {
+            this.animationProgress += (dt / 60) / this.animationDuration;
+            if (this.animationProgress >= 1) {
+                this.animationProgress = 1;
+                this.isAnimating = false;
+                this.x = this.targetX;
+                this.y = this.targetY;
+            } else {
+                // easeOutQuart: 1 - (1-t)^4
+                const t = this.animationProgress;
+                const eased = 1 - Math.pow(1 - t, 4);
+                this.x = this.tower.x + (this.targetX - this.tower.x) * eased;
+                this.y = this.tower.y + (this.targetY - this.tower.y) * eased;
+            }
+            // Don't check collision during animation
+            return;
+        }
+        
+        // 敵との衝突判定
+        for (let enemy of enemies) {
+            if (!enemy.active) continue;
+            
+            const dx = enemy.x - this.x;
+            const dy = enemy.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < this.triggerRadius + enemy.radius) {
+                this.explode();
+                return;
+            }
+        }
+    }
+
+    explode() {
+        if (!this.active) return;
+        this.active = false;
+
+        // 爆発エフェクトの色を進化に応じて変更
+        let particleColor = '#ff8800';
+        if (this.specialType === 'spike') particleColor = '#ff9900';
+        if (this.specialType === 'incendiary') particleColor = '#ff4400';
+        
+        // 爆発エフェクト
+        const particleCount = this.specialType ? 20 : 15;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const speed = 2 + Math.random() * 3;
+            particles.push(new Particle(
+                this.x,
+                this.y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                particleColor,
+                this.specialType ? 10 : 8
+            ));
+        }
+
+        // Spike-Sweeper: とげを周りにまき散らす
+        if (this.specialType === 'spike') {
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI * 2 * i) / 8 + this.rotation; // 地雷の傾きを加算
+                const spikeSpeed = 6 + Math.random() * 2;
+                const vx = Math.cos(angle) * spikeSpeed;
+                const vy = Math.sin(angle) * spikeSpeed;
+                
+                // スパイク専用のProjectile生成
+                // 引数: (x, y, target, damage, color, type, special, offsetAngle)
+                // spikeの場合: target=vx, damage=vy, color=actualDamage, type=actualColor, special='spike'
+                const spike = new Projectile(
+                    this.x,                 // x
+                    this.y,                 // y
+                    vx,                     // target (実際はvx)
+                    vy,                     // damage (実際はvy)
+                    this.damage * 0.5,      // color (実際はdamage)
+                    '#ffaa00',              // type (実際はcolor)
+                    'spike',                // special
+                    0                       // offsetAngle
+                );
+                projectiles.push(spike);
+            }
+        }
+
+        // 爆発範囲内の敵にダメージ
+        for (let enemy of enemies) {
+            if (!enemy.active) continue;
+            
+            const dx = enemy.x - this.x;
+            const dy = enemy.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < this.explosionRadius) {
+                // Let takeDamage handle damage text display
+                enemy.takeDamage(this.damage, null, true, false, false);
+                
+                // Incendiary-Sweeper: 延焼状態を付与 (doesn't work on shielded enemies)
+                if (this.specialType === 'incendiary') {
+                    const shielderImmune = (enemy.type === 'shielder' && enemy.hasShield && enemy.shield > 0);
+                    
+                    if (!shielderImmune) {
+                        const burnBonus = getSkillBonus('burn_damage');
+                        if (!enemy.isBurning) {
+                            enemy.isBurning = true;
+                            enemy.burnDuration = 180; // 3秒間燃焼
+                            enemy.burnDamage = Math.floor(this.damage * 0.15 * burnBonus); // 15% burn damage
+                        } else {
+                            // すでに燃焼中なら持続時間をリセット
+                            enemy.burnDuration = Math.max(enemy.burnDuration, 180);
+                            enemy.burnDamage = Math.max(enemy.burnDamage, Math.floor(this.damage * 0.15 * burnBonus));
+                        }
+                    }
+                }
+            }
+        }
+
+        playSound('enemyDestroy');
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        // Calculate scale based on animation progress
+        let scale = 1;
+        if (this.isAnimating) {
+            // Start at 0.3, end at 1.0 (easeOutQuart)
+            const t = this.animationProgress;
+            const eased = 1 - Math.pow(1 - t, 4);
+            scale = 0.3 + (0.7 * eased);
+        }
+
+        ctx.save();
+        
+        // パルスエフェクト
+        const pulse = Math.sin(this.pulseAngle) * 0.3 + 0.7;
+        
+        // 外側の警告円（進化形に応じて色を変更）
+        let warningColor = 'rgba(255, 136, 0, ';
+        if (this.specialType === 'spike') warningColor = 'rgba(255, 153, 0, ';
+        if (this.specialType === 'incendiary') warningColor = 'rgba(255, 68, 0, ';
+        
+        ctx.strokeStyle = warningColor + (pulse * 0.5) + ')';
+        ctx.lineWidth = 2 * scale; // Scale line width
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.triggerRadius * scale, 0, Math.PI * 2); // Scale radius
+        ctx.stroke();
+        
+        // 地雷本体の回転を適用
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.scale(scale, scale); // Apply scale to body
+        
+        // 地雷本体（五角形）の色を進化形に応じて変更
+        if (this.specialType === 'spike') {
+            ctx.fillStyle = '#ff9900';
+            ctx.strokeStyle = '#cc6600';
+        } else if (this.specialType === 'incendiary') {
+            ctx.fillStyle = '#ff4400';
+            ctx.strokeStyle = '#cc2200';
+        } else if (this.specialType === 'big') {
+            ctx.fillStyle = '#ffbb00';
+            ctx.strokeStyle = '#cc8800';
+        } else {
+            ctx.fillStyle = '#ffcc00';
+            ctx.strokeStyle = '#cc9900';
+        }
+        
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+            const x = Math.cos(angle) * this.radius; // this.xを削除
+            const y = Math.sin(angle) * this.radius; // this.yを削除
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Spike-Sweeper: とげを描画
+        if (this.specialType === 'spike') {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                const x = Math.cos(angle) * this.radius; // this.xを削除
+                const y = Math.sin(angle) * this.radius; // this.yを削除
+                const extX = Math.cos(angle) * (this.radius + 4); // this.xを削除
+                const extY = Math.sin(angle) * (this.radius + 4); // this.yを削除
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(extX, extY);
+                ctx.stroke();
+            }
+        }
+        
+        // Incendiary-Sweeper: 炎のパルスエフェクト
+        if (this.specialType === 'incendiary') {
+            ctx.strokeStyle = `rgba(255, 100, 0, ${pulse * 0.7})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius + 3, 0, Math.PI * 2); // this.x, this.yを(0, 0)に変更
+            ctx.stroke();
+        }
+        
+        // 中心の点
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(0, 0, 3, 0, Math.PI * 2); // this.x, this.yを(0, 0)に変更
+        ctx.fill();
+        
+        ctx.restore();
+    }
+}
+
+
 // Freeze Zone Class
 class FreezeZone {
     constructor(x, y) {
@@ -4151,9 +6924,14 @@ class FreezeZone {
         this.duration -= dt;
         if (this.duration <= 0) this.duration = 0;
         
-        // Apply slow to enemies in range
+        // Apply slow to enemies in range (except shielded enemies)
         for (let e of enemies) {
             if (!e.active) continue;
+            
+            // Shielder immunity check
+            const shielderImmune = (e.type === 'shielder' && e.hasShield && e.shield > 0);
+            if (shielderImmune) continue;
+            
             let dx = e.x - this.x;
             let dy = e.y - this.y;
             let dist = Math.sqrt(dx*dx + dy*dy);
@@ -4197,9 +6975,14 @@ class StunZone {
         this.duration -= dt;
         if (this.duration <= 0) this.duration = 0;
         
-        // Apply stun chance to enemies in range
+        // Apply stun chance to enemies in range (except shielded enemies)
         for (let e of enemies) {
             if (!e.active || e.stunDuration > 0) continue;
+            
+            // Shielder immunity check
+            const shielderImmune = (e.type === 'shielder' && e.hasShield && e.shield > 0);
+            if (shielderImmune) continue;
+            
             let dx = e.x - this.x;
             let dy = e.y - this.y;
             let dist = Math.sqrt(dx*dx + dy*dy);
@@ -4303,6 +7086,18 @@ class LightningStrike {
     applyDamage() {
         if (!this.target || !this.target.active) return;
         
+        // Gear-Third overclock gauge increase (only when not overheating)
+        if (this.sourceTower && this.sourceTower.type === 'gear-third' && !this.sourceTower.overheatActive) {
+            this.sourceTower.overclockGauge = Math.min(100, this.sourceTower.overclockGauge + 5);
+            
+            // Activate overclock when gauge is full
+            if (this.sourceTower.overclockGauge >= 100 && !this.sourceTower.overclockActive) {
+                this.sourceTower.overclockActive = true;
+                this.sourceTower.overclockDuration = 180; // 3 seconds
+                this.sourceTower.overclockGauge = 0; // Reset gauge
+            }
+        }
+        
         // Store enemy info before applying damage (for necromancy)
         const enemyWillDie = (this.target.hp - this.damage) <= 0;
         const enemyX = this.target.x;
@@ -4335,17 +7130,23 @@ class LightningStrike {
             createExplosion(this.target.x, this.target.y, '#ffaa00', 12);
             createExplosion(this.target.x, this.target.y, '#ffff00', 8);
         } else if (this.special === 'warp') {
-            // Warp enemy backwards on path (chance-based)
-            const warpChance = getSkillBonus('warp_chance');
-            if (Math.random() < warpChance && this.target.pathIndex > 0) {
-                const oldX = this.target.x;
-                const oldY = this.target.y;
-                this.target.pathIndex = Math.max(0, this.target.pathIndex - 3);
-                const newPos = this.target.path[this.target.pathIndex];
-                this.target.x = newPos.x;
-                this.target.y = newPos.y;
-                // ワープエフェクトを追加
-                warpEffects.push(new WarpEffect(oldX, oldY, newPos.x, newPos.y));
+            // Warp enemy backwards on path (chance-based) - doesn't work on shielded enemies
+            const shielderImmune = (this.target.type === 'shielder' && this.target.hasShield && this.target.shield > 0);
+            
+            if (!shielderImmune) {
+                const warpChance = getSkillBonus('warp_chance');
+                if (Math.random() < warpChance && this.target.pathIndex > 0) {
+                    const oldX = this.target.x;
+                    const oldY = this.target.y;
+                    this.target.pathIndex = Math.max(0, this.target.pathIndex - 3);
+                    const newPos = this.target.path[this.target.pathIndex];
+                    this.target.x = newPos.x;
+                    this.target.y = newPos.y;
+                    // ワープエフェクトを追加
+                    warpEffects.push(new WarpEffect(oldX, oldY, newPos.x, newPos.y));
+                    // Play warp sound
+                    playSound("warp");
+                }
             }
             createExplosion(this.target.x, this.target.y, '#00ffff', 15);
         } else if (this.special === 'necromancy') {
@@ -4458,7 +7259,188 @@ class LightningStrike {
     }
 }
 
+// Solar Flare class for Sol-Blaster
+class SolarFlare {
+    constructor(x, y, angle, damage) {
+        this.centerX = x;
+        this.centerY = y;
+        this.x = x;
+        this.y = y;
+        this.baseAngle = angle; // 基本方向
+        this.spiralAngle = 0; // 螺旋角度
+        this.damage = damage;
+        this.speed = 0.8; // 速度を遅く
+        this.spiralSpeed = 0.15; // 螺旋の回転速度
+        this.distanceFromCenter = 0; // 中心からの距離
+        this.radius = 15;
+        this.life = 120; // フレアの生存時間（約2秒）
+        this.active = true;
+        this.color = '#ffaa00';
+        this.glowIntensity = 1.0;
+    }
+
+    update() {
+        // 円を描きながら外へ移動
+        this.spiralAngle += this.spiralSpeed;
+        this.distanceFromCenter += this.speed;
+        
+        // 螺旋半径（距離に応じて大きくなる）
+        const spiralRadius = Math.min(this.distanceFromCenter * 0.5, 50);
+        
+        // 基本方向 + 螺旋運動
+        this.x = this.centerX + Math.cos(this.baseAngle) * this.distanceFromCenter + Math.cos(this.spiralAngle) * spiralRadius;
+        this.y = this.centerY + Math.sin(this.baseAngle) * this.distanceFromCenter + Math.sin(this.spiralAngle) * spiralRadius;
+        
+        // Decay life
+        this.life--;
+        if (this.life <= 0) {
+            this.active = false;
+            return;
+        }
+        
+        // Update glow intensity (pulsing effect)
+        this.glowIntensity = 0.7 + Math.sin(Date.now() * 0.01) * 0.3;
+        
+        // Check collision with enemies
+        for (let enemy of enemies) {
+            if (!enemy.active) continue;
+            
+            const dx = this.x - enemy.x;
+            const dy = this.y - enemy.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < this.radius + enemy.radius) {
+                // Apply damage
+                const burnBonus = getSkillBonus('burn_damage');
+                const finalDamage = Math.floor(this.damage * burnBonus);
+                enemy.takeDamage(finalDamage, 'burn', true);
+                
+                // Apply burn effect (強化された延焼)
+                if (!enemy.isBurning) {
+                    enemy.isBurning = true;
+                    enemy.burnDuration = 180; // 3秒
+                    enemy.burnDamage = Math.floor(finalDamage * 0.3 * burnBonus); // Sol-Blasterの延焼は強力
+                }
+                
+                // Create explosion
+                createExplosion(enemy.x, enemy.y, '#ff6600', 10);
+                
+                // Deactivate flare after hit
+                this.active = false;
+                break;
+            }
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        
+        // Draw glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+        gradient.addColorStop(0, `rgba(255, 170, 0, ${this.glowIntensity * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(255, 100, 0, ${this.glowIntensity * 0.4})`);
+        gradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw core
+        ctx.shadowBlur = 20 * this.glowIntensity;
+        ctx.shadowColor = '#ffaa00';
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+}
+
 // --- Main Loop ---
+
+// Calculate chain groups for all gear towers
+function calculateGearChainGroups() {
+    const gearTowers = towers.filter(t => t.type === 'gear' || t.type === 'gear-second' || t.type === 'gear-third');
+    if (gearTowers.length === 0) return;
+    
+    const minChainDist = 25;
+    const maxChainDist = 45;
+    
+    // Build adjacency map
+    const adjacency = new Map();
+    for (let i = 0; i < gearTowers.length; i++) {
+        adjacency.set(gearTowers[i], []);
+    }
+    
+    // Find all connections
+    for (let i = 0; i < gearTowers.length; i++) {
+        for (let j = i + 1; j < gearTowers.length; j++) {
+            const dx = gearTowers[i].x - gearTowers[j].x;
+            const dy = gearTowers[i].y - gearTowers[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist >= minChainDist && dist <= maxChainDist) {
+                adjacency.get(gearTowers[i]).push(gearTowers[j]);
+                adjacency.get(gearTowers[j]).push(gearTowers[i]);
+            }
+        }
+    }
+    
+    // Find connected components using BFS
+    const visited = new Set();
+    
+    for (let tower of gearTowers) {
+        if (visited.has(tower)) continue;
+        
+        // BFS to find all towers in this group
+        const group = [];
+        const queue = [tower];
+        visited.add(tower);
+        
+        while (queue.length > 0) {
+            const current = queue.shift();
+            group.push(current);
+            
+            for (let neighbor of adjacency.get(current)) {
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                    queue.push(neighbor);
+                }
+            }
+        }
+        
+        // Set chain count for all towers in this group
+        const groupSize = group.length;
+        
+        // Calculate bonus for Gear-Third towers (count total Gear-Third connections in group)
+        let gearThirdBonus = 0;
+        const gearThirdInGroup = group.filter(t => t.type === 'gear-third');
+        if (gearThirdInGroup.length > 0) {
+            // Count total Gear-Third to Gear-Third connections in this group
+            const connectionSet = new Set();
+            for (let t of gearThirdInGroup) {
+                const connections = adjacency.get(t).filter(neighbor => neighbor.type === 'gear-third');
+                for (let conn of connections) {
+                    // Use sorted pair to avoid counting same connection twice
+                    const pair = [t, conn].sort((a, b) => towers.indexOf(a) - towers.indexOf(b));
+                    connectionSet.add(`${towers.indexOf(pair[0])}-${towers.indexOf(pair[1])}`);
+                }
+            }
+            gearThirdBonus = connectionSet.size * 2;
+        }
+        
+        // Apply the same chain count to all towers in the group
+        const baseChainCount = groupSize + gearThirdBonus;
+        for (let t of group) {
+            // Apply chain count limit based on tower type
+            const skillBonus = t.type === 'gear' ? getSkillBonus('gear_chain_limit') : 0; // Get bonus only for first form
+            const maxChainCount = t.type === 'gear-third' ? 100 : (t.type === 'gear-second' ? 50 : (15 + skillBonus));
+            t.chainCount = Math.min(baseChainCount, maxChainCount);
+        }
+    }
+}
 
 function gameLoop(timestamp) {
     // FPS limiting
@@ -4511,6 +7493,9 @@ function gameLoop(timestamp) {
     // Update dash animation
     dashOffset = (dashOffset + 0.5 * dt) % 15;
 
+    // Calculate gear chain groups
+    calculateGearChainGroups();
+
     // Update screen shake
     let shakeX = 0;
     let shakeY = 0;
@@ -4525,6 +7510,44 @@ function gameLoop(timestamp) {
     if (damageFlashAlpha > 0) {
         damageFlashAlpha -= 0.03 * dt; // Fade out speed
         if (damageFlashAlpha < 0) damageFlashAlpha = 0;
+    }
+    
+    // Update commander active skill timers
+    if (selectedCommander && gameActive) {
+        // Update active skill duration
+        if (activeSkillDuration > 0) {
+            activeSkillDuration -= dt;
+            if (activeSkillDuration <= 0) {
+                activeSkillDuration = 0;
+                activeSkillActive = false;
+                // Start cooldown after effect ends
+                const commander = commanders[selectedCommander];
+                activeSkillCooldown = commander.activeSkill.cooldown;
+                
+                // Reset whiteout time for all enemies when effect ends
+                if (selectedCommander === 'reika') {
+                    for (let enemy of enemies) {
+                        if (enemy.active) {
+                            enemy.whiteoutTime = 0;
+                        }
+                    }
+                }
+            }
+            
+            // Apply continuous skill effects
+            applyCommanderActiveSkillEffects();
+        }
+        
+        // Update cooldown
+        if (activeSkillCooldown > 0) {
+            activeSkillCooldown -= dt;
+            if (activeSkillCooldown <= 0) {
+                activeSkillCooldown = 0;
+            }
+        }
+        
+        // Update skill button display
+        updateSkillButtonDisplay();
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -4544,7 +7567,7 @@ function gameLoop(timestamp) {
         const { x: previewX, y: previewY } = snapToGrid(mouseX, mouseY);
         
         const canPlace = canPlaceTower(previewX, previewY);
-        const cost = TOWER_TYPES[selectedTowerType].cost;
+        const cost = getGearTowerCost(selectedTowerType);
         const hasEnoughMoney = money >= cost;
         
         // Determine color based on placement validity
@@ -4583,10 +7606,27 @@ function gameLoop(timestamp) {
                 possibleTypes.push('rampage');
             }
             
+            // Endless mode: Add shielder enemies from wave 50 (10 slots)
+            if (endlessMode && wave >= 50) {
+                possibleTypes.push('shielder');
+            }
+            
             let type = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
             
+            // Shielder enemies take 10 spawn slots
+            if (type === 'shielder') {
+                if (enemiesToSpawn >= 10) {
+                    enemies.push(new Enemy(path, type));
+                    enemiesToSpawn -= 10;
+                } else {
+                    // Not enough slots, spawn normal instead
+                    type = 'normal';
+                    enemies.push(new Enemy(path, type));
+                    enemiesToSpawn--;
+                }
+            }
             // Rampage enemies take 5 spawn slots
-            if (type === 'rampage') {
+            else if (type === 'rampage') {
                 if (enemiesToSpawn >= 5) {
                     enemies.push(new Enemy(path, type));
                     enemiesToSpawn -= 5;
@@ -4686,8 +7726,29 @@ function gameLoop(timestamp) {
         document.getElementById('waveProgressBar').style.width = '100%';
     }
 
+    // Draw freeze zones and lightning strikes FIRST (background effects)
+    freezeZones = freezeZones.filter(z => z.duration > 0);
+    freezeZones.forEach(z => {
+        z.update();
+        z.draw(ctx);
+    });
+
+    lightningStrikes = lightningStrikes.filter(ls => ls.active);
+    lightningStrikes.forEach(ls => {
+        ls.update();
+        ls.draw(ctx);
+    });
+
+    stunZones = stunZones.filter(z => z.duration > 0);
+    stunZones.forEach(z => {
+        z.update();
+        z.draw(ctx);
+    });
+
     towers.forEach(t => {
-        t.update(timestamp);
+        // Apply Eiko's active skill: Attack speed +100%
+        const attackSpeedBonus = 1 + getActiveSkillBonus('attack_speed');
+        t.update(timestamp, attackSpeedBonus);
         // Pass true if this tower is the selected one
         t.draw(ctx, t === selectedTowerInstance);
     });
@@ -4748,22 +7809,11 @@ function gameLoop(timestamp) {
         d.draw(ctx);
     });
 
-    freezeZones = freezeZones.filter(z => z.duration > 0);
-    freezeZones.forEach(z => {
-        z.update();
-        z.draw(ctx);
-    });
-
-    stunZones = stunZones.filter(z => z.duration > 0);
-    stunZones.forEach(z => {
-        z.update();
-        z.draw(ctx);
-    });
-
-    lightningStrikes = lightningStrikes.filter(ls => ls.active);
-    lightningStrikes.forEach(ls => {
-        ls.update();
-        ls.draw(ctx);
+    // Update and draw solar flares
+    solarFlares = solarFlares.filter(f => f.active);
+    solarFlares.forEach(f => {
+        if (gameActive) f.update();
+        f.draw(ctx);
     });
 
     // Update and draw zombies
@@ -4778,6 +7828,13 @@ function gameLoop(timestamp) {
     warpEffects.forEach(w => {
         w.update();
         w.draw(ctx);
+    });
+
+    // Update and draw mines
+    mines = mines.filter(m => m.active);
+    mines.forEach(m => {
+        if (gameActive) m.update();
+        m.draw(ctx);
     });
 
     // Update and draw elliptical waves
@@ -4813,18 +7870,22 @@ function gameLoop(timestamp) {
     }
 
     // Draw temporary tower with confirmation buttons (draw last so it's on top)
-    if (tempTowerType && tempTowerX !== null && tempTowerY !== null) {
+    if ((tempTowerType && tempTowerX !== null && tempTowerY !== null) || (tempTowerType && showPreviewWithShift)) {
+        // Use mouse position if only preview mode
+        const previewX = (tempTowerX !== null) ? tempTowerX : mouseX;
+        const previewY = (tempTowerY !== null) ? tempTowerY : mouseY;
+        const isPreviewOnly = showPreviewWithShift && tempTowerX === null;
         let info = TOWER_TYPES[tempTowerType];
-        const canPlace = canPlaceTower(tempTowerX, tempTowerY);
-        const cost = TOWER_TYPES[tempTowerType].cost;
+        const canPlace = canPlaceTower(previewX, previewY);
+        const cost = getGearTowerCost(tempTowerType);
         const hasEnoughMoney = money >= cost;
-        const canConfirm = canPlace && hasEnoughMoney;
+        const canConfirm = canPlace && hasEnoughMoney && !isPreviewOnly;
         
         // Draw range preview
         ctx.beginPath();
         ctx.strokeStyle = canConfirm ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)';
         ctx.fillStyle = canConfirm ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)';
-        ctx.arc(tempTowerX, tempTowerY, info.range, 0, Math.PI*2);
+        ctx.arc(previewX, previewY, info.range, 0, Math.PI*2);
         ctx.fill();
         ctx.stroke();
         
@@ -4832,48 +7893,50 @@ function gameLoop(timestamp) {
         ctx.fillStyle = canConfirm ? info.color : '#888888';
         ctx.globalAlpha = 0.7;
         ctx.beginPath();
-        ctx.arc(tempTowerX, tempTowerY, 10, 0, Math.PI*2);
+        ctx.arc(previewX, previewY, 10, 0, Math.PI*2);
         ctx.fill();
         ctx.globalAlpha = 1.0;
         
-        // Draw confirmation buttons
-        const buttonSize = 30;
-        const buttonY = tempTowerY + 35;
+        // Draw confirmation buttons (only when not preview-only mode)
+        if (!isPreviewOnly) {
+            const buttonSize = 30;
+            const buttonY = previewY + 35;
+            
+            // Confirm button (✓)
+            ctx.fillStyle = canConfirm ? '#00ff00' : '#444444';
+            ctx.strokeStyle = canConfirm ? '#00ff00' : '#666666';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(previewX - 20, buttonY, buttonSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.strokeStyle = canConfirm ? '#000000' : '#333333';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(previewX - 27, buttonY);
+            ctx.lineTo(previewX - 22, buttonY + 5);
+            ctx.lineTo(previewX - 13, buttonY - 5);
+            ctx.stroke();
         
-        // Confirm button (✓)
-        ctx.fillStyle = canConfirm ? '#00ff00' : '#444444';
-        ctx.strokeStyle = canConfirm ? '#00ff00' : '#666666';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(tempTowerX - 20, buttonY, buttonSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.strokeStyle = canConfirm ? '#000000' : '#333333';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(tempTowerX - 27, buttonY);
-        ctx.lineTo(tempTowerX - 22, buttonY + 5);
-        ctx.lineTo(tempTowerX - 13, buttonY - 5);
-        ctx.stroke();
-        
-        // Cancel button (×)
-        ctx.fillStyle = '#ff0000';
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(tempTowerX + 20, buttonY, buttonSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(tempTowerX + 15, buttonY - 5);
-        ctx.lineTo(tempTowerX + 25, buttonY + 5);
-        ctx.moveTo(tempTowerX + 25, buttonY - 5);
-        ctx.lineTo(tempTowerX + 15, buttonY + 5);
-        ctx.stroke();
+            // Cancel button (×)
+            ctx.fillStyle = '#ff0000';
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(previewX + 20, buttonY, buttonSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(previewX + 15, buttonY - 5);
+            ctx.lineTo(previewX + 25, buttonY + 5);
+            ctx.moveTo(previewX + 25, buttonY - 5);
+            ctx.lineTo(previewX + 15, buttonY + 5);
+            ctx.stroke();
+        }
     }
 
     // Restore camera transform
@@ -4893,6 +7956,8 @@ function gameLoop(timestamp) {
     
     // Update FPS counter HTML element
     const fpsCounter = document.getElementById('fps-counter');
+    const debugInfo = document.getElementById('debug-info');
+    
     if (fpsCounter) {
         if (qualitySettings.showFPS && fpsHistory.length > 0) {
             fpsCounter.textContent = `FPS ${currentFPS} [↑${maxFPS} ↓${minFPS}]`;
@@ -4900,6 +7965,34 @@ function gameLoop(timestamp) {
         } else {
             fpsCounter.style.display = 'none';
         }
+    }
+    
+    // Update debug info (separate from FPS)
+    if (debugInfo) {
+        if (debugMode) {
+            // Calculate DPS every second
+            if (timestamp - lastDPSUpdateTime >= 1000) {
+                currentDPS = totalDamageDealt;
+                totalDamageDealt = 0;
+                lastDPSUpdateTime = timestamp;
+            }
+            
+            const objectInfo = `E:${enemies.filter(e => e.active).length} ` +
+                `T:${towers.length} ` +
+                `P:${projectiles.filter(p => p.active).length} ` +
+                `M:${mines.filter(m => m.active).length} ` +
+                `Pa:${particles.length} ` +
+                `DPS:${currentDPS}`;
+            debugInfo.textContent = objectInfo;
+            debugInfo.style.display = 'block';
+        } else {
+            debugInfo.style.display = 'none';
+        }
+    }
+    
+    // Update upgrade panel dynamically if a tower is selected
+    if (selectedTowerInstance) {
+        updateUpgradePanel();
     }
 
     animationFrameId = requestAnimationFrame(gameLoop);
@@ -4937,6 +8030,15 @@ function drawMap(ctx) {
         // NOTE: 赤破線枠
         if (stageShape && stageShape.customPlayableZones) {
             // Draw as a connected path for Stage 2 (L-shape)
+            if (currentStage === 3) { 
+                ctx.beginPath();
+                ctx.moveTo(50, 50);
+                ctx.lineTo(1250, 50);
+                ctx.lineTo(1250, 850);
+                ctx.lineTo(50, 850);
+                ctx.lineTo(50, 50); // Close shape
+                ctx.stroke();
+            } else
             if (currentStage === 2) {
                 ctx.beginPath();
                 // Start from bottom-left of protrusion
@@ -4972,8 +8074,9 @@ function drawMap(ctx) {
         ctx.fillRect(FIELD_MARGIN, FIELD_MARGIN, FIELD_WIDTH, FIELD_HEIGHT);
     }
     
-    // Draw grid if enabled and in placement mode
-    if (gridSnapEnabled && selectedTowerType) {
+    // Draw grid if enabled and in placement mode, or when pasting with Shift+Space
+    const shouldShowGrid = (gridSnapEnabled && selectedTowerType) || showGridWhilePasting;
+    if (shouldShowGrid) {
         ctx.strokeStyle = 'rgba(100, 150, 200, 0.2)';
         ctx.lineWidth = 1;
         
@@ -5164,8 +8267,22 @@ function selectTowerToBuild(type) {
     updateTowerButtons();
 }
 
+// Get dynamic cost for gear towers based on number already placed
+function getGearTowerCost(towerType) {
+    if (towerType !== 'gear' && towerType !== 'gear-second' && towerType !== 'gear-third') {
+        return TOWER_TYPES[towerType].cost;
+    }
+    
+    // Count existing gear towers
+    const gearCount = towers.filter(t => t.type === 'gear' || t.type === 'gear-second' || t.type === 'gear-third').length;
+    const baseCost = TOWER_TYPES[towerType].cost;
+    
+    // Cost increases by base cost for each gear tower
+    return baseCost + (baseCost * gearCount);
+}
+
 function updateTowerButtons() {
-    ['turret', 'sniper', 'blaster', 'rod'].forEach(t => {
+    ['turret', 'sniper', 'blaster', 'sweeper', 'rod', 'gear'].forEach(t => {
         const btn = document.getElementById(`btn-${t}`);
         if (!btn) return;
         
@@ -5179,7 +8296,35 @@ function updateTowerButtons() {
             }
         }
         
-        const cost = TOWER_TYPES[t].cost;
+        // Sweeperは解放されるまで非表示
+        if (t === 'sweeper') {
+            if (!unlockedSkills.includes('minesweeper')) {
+                btn.style.display = 'none';
+                return;
+            } else {
+                btn.style.display = 'flex';
+            }
+        }
+        
+        // Gearは解放されるまで非表示
+        if (t === 'gear') {
+            if (!unlockedSkills.includes('unlock_gear') && !unlockedSkills.includes('self_generation')) {
+                btn.style.display = 'none';
+                return;
+            } else {
+                btn.style.display = 'flex';
+            }
+        }
+        
+        const cost = getGearTowerCost(t);
+        
+        // Update gear cost display
+        if (t === 'gear') {
+            const costElement = document.getElementById('gear-cost');
+            if (costElement) {
+                costElement.textContent = `$${cost}`;
+            }
+        }
         
         if (selectedTowerType === t) {
             btn.classList.add('selected');
@@ -5212,6 +8357,18 @@ function updateUI() {
     if (chipDisplayElement) {
         chipDisplayElement.innerText = tempChipsThisGame; // Show temporary chips during game
     }
+    
+    // Debug: Show copied tower info
+    if (debugMode && copiedTowerData) {
+        const debugInfo = document.getElementById('debug-info');
+        if (debugInfo && debugInfo.style.display === 'block') {
+            const copiedInfo = ` | COPY: ${copiedTowerData.type} Lv.${copiedTowerData.level}`;
+            if (!debugInfo.textContent.includes('COPY:')) {
+                debugInfo.textContent += copiedInfo;
+            }
+        }
+    }
+    
     updateTowerButtons();
     updateUpgradePanel();
 }
@@ -5238,6 +8395,53 @@ function updateUpgradePanel() {
     document.getElementById('upgNextRng').innerText = next.range;
     document.getElementById('upgCost').innerText = cost;
     document.getElementById('sellPrice').innerText = sell;
+    
+    // Gear tower: show chain count
+    const chainInfo = document.getElementById('upgChainInfo');
+    if (t.type === 'gear' || t.type === 'gear-second' || t.type === 'gear-third') {
+        const chainCount = t.chainCount || 0;
+        const skillBonus = t.type === 'gear' ? getSkillBonus('gear_chain_limit') : 0; // Get bonus only for first form
+        const maxChain = t.type === 'gear-third' ? 100 : (t.type === 'gear-second' ? 50 : (15 + skillBonus));
+        document.getElementById('upgChain').innerText = `${chainCount} / ${maxChain}`;
+        chainInfo.classList.remove('hidden');
+    } else {
+        chainInfo.classList.add('hidden');
+    }
+    
+    // Gear-Third: show overclock gauge
+    const overclockGauge = document.getElementById('upgOverclockGauge');
+    if (t.type === 'gear-third') {
+        const gauge = t.overclockGauge || 0;
+        const statusText = document.getElementById('upgOverclockStatus');
+        const valueText = document.getElementById('upgOverclockValue');
+        const bar = document.getElementById('upgOverclockBar');
+        
+        if (t.overheatActive) {
+            statusText.innerText = 'OVERHEAT';
+            statusText.style.color = '#ff4444';
+            const overheatProgress = Math.floor((t.overheatDuration / 300) * 100);
+            valueText.innerText = overheatProgress;
+            bar.style.background = '#ff4444';
+            bar.style.width = overheatProgress + '%';
+        } else if (t.overclockActive) {
+            statusText.innerText = 'OVERCLOCK!';
+            statusText.style.color = '#ffff00';
+            const overclockProgress = Math.floor((t.overclockDuration / 180) * 100);
+            valueText.innerText = overclockProgress;
+            bar.style.background = 'linear-gradient(90deg, #ffaa00, #ffff00)';
+            bar.style.width = overclockProgress + '%';
+        } else {
+            statusText.innerText = 'OVERCLOCK';
+            statusText.style.color = '#ffff00';
+            valueText.innerText = gauge;
+            bar.style.background = 'linear-gradient(90deg, #ffaa00, #ffff00)';
+            bar.style.width = gauge + '%';
+        }
+        
+        overclockGauge.classList.remove('hidden');
+    } else {
+        overclockGauge.classList.add('hidden');
+    }
 
     const btn = document.getElementById('btnUpgrade');
     if (debugMode || money >= cost) {
@@ -5325,8 +8529,16 @@ window.upgradeSelectedTower = function() {
 // Long press upgrade logic
 let upgradeHoldInterval = null;
 let upgradeHoldTimeout = null;
+let isUpgrading = false; // Prevent overlapping upgrades
 
 window.startUpgradeHold = function() {
+    // Prevent starting if already upgrading
+    if (isUpgrading) return;
+    isUpgrading = true;
+    
+    // Clear any existing timers
+    stopUpgradeHold();
+    
     // Initial upgrade
     upgradeSelectedTower();
     
@@ -5339,6 +8551,8 @@ window.startUpgradeHold = function() {
 };
 
 window.stopUpgradeHold = function() {
+    isUpgrading = false;
+    
     if (upgradeHoldTimeout) {
         clearTimeout(upgradeHoldTimeout);
         upgradeHoldTimeout = null;
@@ -5411,6 +8625,12 @@ function stageClear() {
     // Add temporary chips to permanent storage
     electronicChips += tempChipsThisGame;
     
+    // Mark current stage as cleared
+    const currentStageObj = stages.find(s => s.id === currentStage);
+    if (currentStageObj) {
+        currentStageObj.cleared = true;
+    }
+    
     // Unlock next stage
     const currentStageIndex = stages.findIndex(s => s.id === currentStage);
     if (currentStageIndex >= 0 && currentStageIndex < stages.length - 1) {
@@ -5432,6 +8652,11 @@ function stageClear() {
 
 function backToStageMapFromClear() {
     document.getElementById('stage-clear-screen').classList.add('hidden');
+    
+    // Hide canvas and UI
+    document.getElementById('gameCanvas').classList.remove('active');
+    document.getElementById('uiLayer').classList.remove('active');
+    
     showStageMap();
 }
 
@@ -5643,10 +8868,36 @@ canvas.addEventListener('touchend', (e) => {
     }
 });
 
+// Keyboard events for grid and preview toggle while pasting
+window.addEventListener('keydown', (e) => {
+    if (tempTowerType) {
+        // Shift key for preview
+        if (e.key === 'Shift') {
+            showPreviewWithShift = true;
+        }
+        // Shift+Space for grid
+        if (e.code === 'Space' && e.shiftKey) {
+            e.preventDefault();
+            showGridWhilePasting = true;
+        }
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    // Reset on either Shift or Space release
+    if (e.key === 'Shift') {
+        showPreviewWithShift = false;
+        showGridWhilePasting = false;
+    }
+    if (e.code === 'Space') {
+        showGridWhilePasting = false;
+    }
+});
+
 function confirmTempTower() {
     if (!tempTowerType || tempTowerX === null || tempTowerY === null) return;
     
-    const cost = TOWER_TYPES[tempTowerType].cost;
+    const cost = getGearTowerCost(tempTowerType);
     if ((debugMode || money >= cost) && canPlaceTower(tempTowerX, tempTowerY)) {
         towers.push(new Tower(tempTowerX, tempTowerY, tempTowerType));
         if (!debugMode) {
@@ -5662,6 +8913,7 @@ function confirmTempTower() {
     tempTowerX = null;
     tempTowerY = null;
     tempTowerType = null;
+    showGridWhilePasting = false;
 }
 
 function cancelTempTower() {
@@ -5669,6 +8921,7 @@ function cancelTempTower() {
     tempTowerX = null;
     tempTowerY = null;
     tempTowerType = null;
+    showGridWhilePasting = false;
 }
 
 function handleTouchInteraction(clientX, clientY) {
@@ -5745,6 +8998,18 @@ function handleInteraction(clientX, clientY) {
         selectedTowerType = null; // Cancel build
         selectedTowerInstance = clickedTower;
         playSound('select'); // Play sound when selecting tower
+        
+        // Debug feature: Ctrl/Cmd + Click to copy tower (only in debug mode)
+        if (debugMode && (event.ctrlKey || event.metaKey)) {
+            copiedTowerData = {
+                type: clickedTower.type,
+                level: clickedTower.level
+            };
+            console.log(`Tower copied: ${clickedTower.type} (Level ${clickedTower.level})`);
+            // Visual feedback
+            createExplosion(clickedTower.x, clickedTower.y, '#00ffff', 15);
+        }
+        
         updateUI();
         return;
     }
@@ -5753,6 +9018,30 @@ function handleInteraction(clientX, clientY) {
     if (selectedTowerType) {
         // Try to place tower
         placeTower();
+    } else if (debugMode && copiedTowerData && event.shiftKey) {
+        // Debug feature: Shift + Click to paste copied tower
+        const towerType = copiedTowerData.type;
+        const targetLevel = copiedTowerData.level;
+        
+        // Check if placement is valid
+        if (!canPlaceTower(clickX, clickY)) {
+            console.log('Cannot paste tower here - invalid position');
+            return;
+        }
+        
+        // Place base tower (free for debug)
+        const newTower = new Tower(clickX, clickY, towerType);
+        towers.push(newTower);
+        
+        // Level up to target level
+        for (let i = 1; i < targetLevel; i++) {
+            newTower.upgrade();
+        }
+        
+        console.log(`Tower pasted: ${towerType} (Level ${targetLevel})`);
+        createExplosion(clickX, clickY, '#00ff00', 20);
+        playSound('select');
+        updateUI();
     } else {
         // Deselect tower if clicking empty space
         if (selectedTowerInstance) {
@@ -5838,7 +9127,7 @@ function placeTower() {
     if (!selectedTowerType) return;
     if (!gameActive) return;
 
-    const cost = TOWER_TYPES[selectedTowerType].cost;
+    const cost = getGearTowerCost(selectedTowerType);
     if (!debugMode && money < cost) return;
 
     // Apply grid snap if enabled
@@ -5971,8 +9260,9 @@ function drawSkillTree() {
         return;
     }
     
-    // スキルツリー
+    // NOTE: スキルツリーの位置
     const positions = {
+        'terraforming2': { x: 0.5, y: -0.3 }, // テラフォーミング2
         'terraforming': { x: 0.5, y: -0.1 }, // テラフォーミング
         'base_upgrade2': { x: 0.5, y: 0.1 }, // ベース改造（base_upgradeの上）
         'base_upgrade': { x: 0.5, y: 0.3 }, // ベース強化（initial_creditsの上）
@@ -5980,24 +9270,37 @@ function drawSkillTree() {
         'turret_damage': { x: 0.3, y: 0.5 },
         'turret_range': { x: 0.1, y: 0.5 },
         'quantity_over_quality': { x: -0.3, y: 0.3 }, // 量産型
+        'bullet_hardening': { x: -0.5, y: 0.3 }, // 弾丸硬化
+        'rapid_fire': { x: -0.7, y: 0.3 }, // 連射
         // SNIPER branch (top-left)
         'sniper_damage': { x: 0.3, y: 0.3 },
         'sniper_range': { x: 0.1, y: 0.3 },
         'mass': { x: -0.3, y: 0.5 }, // 質量
+        'sharpness_or_hardness': { x: -0.5, y: 0.5 }, // 鋭さor硬さ
+        'tile_break': { x: -0.7, y: 0.5 }, // 瓦割り(裂傷)
         // BLASTER branch (bottom-left)
         'blaster_damage': { x: 0.3, y: 0.7 },
         'blaster_range': { x: 0.1, y: 0.7 },
         'burn_damage': { x: -0.1, y: 0.9 }, // 延焼ダメージ
         'freeze_duration': { x: 0.1, y: 0.9 }, // 氷結持続時間
         'hotfix': { x: -0.3, y: 0.7 }, // ホットフィックス
+        'bang': { x: -0.5, y: 0.7 }, // バン！
+        'inferno': { x: -0.3, y: 1.1 }, // インフェルノ
+        // SWEEPER branch
+        'minesweeper': { x: 0.7, y: -0.1 }, // sweeper解放
+        // GEAR brabch
+        'self_generation': { x: 0.7, y: -0.3 }, // 自己発電
+        'durability_improvement': { x: 0.9, y: -0.3 }, // 耐久性向上
         // All tower damage (center-left, requires all 3 range skills)
-        'all_tower_damage': { x: -0.1, y: 0.5 },
-        'ultimate_power': { x: 0.3, y: -0.1 },
+        'all_tower_damage': { x: -0.1, y: 0.5 },　//全タワー強化
+        'ultimate_power2': { x: -0.9, y: 0.5 }, //全タワー強化2
+        'ultimate_power': { x: 0.3, y: -0.1 }, //進化開放
         // weekness branch (top)
         'weak_point_analysis': { x: 0.3, y: 0.1 }, // 弱点解析
         'vulnerability': { x: 0.1, y: 0.1 }, // 脆弱性
+        'ai_analysis': { x: -0.1, y: 0.1 }, // AI解析
         // ROD branch (bottom)
-        'unlock_rod': { x: 0.5, y: 0.7 },
+        'unlock_rod': { x: 0.5, y: 0.7 }, //rod解放
         'rod_damage': { x: 0.3, y: 0.9 },
         'rod_range': { x: 0.1, y: 1.1 },
         'voltage_transformer': { x: 0.44, y: 0.9 }, //変電圧
@@ -6006,13 +9309,13 @@ function drawSkillTree() {
         'magician': { x: 0.9, y: 0.9 }, // ワープ
         'quantum_transfer': { x: 1.1, y: 1.1 }, // 量子転送
         // Credits branch (right)
-        'initial_credits': { x: 0.5, y: 0.5 },
+        'initial_credits': { x: 0.5, y: 0.5 }, //資金追加
         'initial_credits2': { x: 0.7, y: 0.5 },
         'initial_credits3': { x: 0.9, y: 0.6 }, 
         'initial_credits4': { x: 0.7, y: 0.7 },
         'enemy_credits': { x: 1.1, y: 0.5 }, // 敵クレジット獲得量
         'economics': { x: 1.3, y: 0.4 }, // 敵クレジット獲得量
-        'chip_rate': { x: 0.9, y: 0.4 } // チップ獲得率
+        'chip_rate': { x: 0.9, y: 0.4 }, // チップ獲得率
     };
     
     // Apply camera transform
@@ -6792,6 +10095,7 @@ function updateStartPromptText() {
 resizeCanvas();
 loadSkillTree();
 loadStageProgress();
+loadCommanderData();
 loadSettings();
 updateUI();
 setupTowerButtonDrag();
@@ -6823,4 +10127,306 @@ function loadEndlessBestScore() {
     if (saved) {
         endlessBestScore = parseInt(saved);
     }
+}
+
+// ============================
+// Debug Command System
+// ============================
+
+function setupCommandInput() {
+    // Create command input overlay
+    const commandOverlay = document.createElement('div');
+    commandOverlay.id = 'command-input-overlay';
+    commandOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+    
+    const commandInput = document.createElement('input');
+    commandInput.id = 'command-input';
+    commandInput.type = 'text';
+    commandInput.placeholder = 'Enter command (e.g., /summon fortress 1 100)';
+    commandInput.style.cssText = `
+        width: 600px;
+        padding: 15px;
+        font-size: 18px;
+        font-family: 'Orbitron', monospace;
+        background: #111;
+        color: #0f0;
+        border: 2px solid #0f0;
+        border-radius: 5px;
+        outline: none;
+    `;
+    
+    // Create autocomplete suggestions list
+    const suggestList = document.createElement('div');
+    suggestList.id = 'command-suggestions';
+    suggestList.style.cssText = `
+        position: absolute;
+        top: calc(50% + 30px);
+        width: 600px;
+        max-height: 200px;
+        overflow-y: auto;
+        background: #111;
+        border: 2px solid #0f0;
+        border-top: none;
+        border-radius: 0 0 5px 5px;
+        display: none;
+        font-family: 'Orbitron', monospace;
+        font-size: 14px;
+    `;
+    
+    commandOverlay.appendChild(commandInput);
+    commandOverlay.appendChild(suggestList);
+    document.body.appendChild(commandOverlay);
+    
+    // Input event for autocomplete
+    commandInput.addEventListener('input', (e) => {
+        updateAutoComplete(commandInput.value, suggestList);
+    });
+    
+    // Tab key for autocomplete selection
+    commandInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab' && suggestList.style.display !== 'none') {
+            e.preventDefault();
+            const firstSuggestion = suggestList.querySelector('.suggestion');
+            if (firstSuggestion) {
+                commandInput.value = firstSuggestion.textContent;
+                suggestList.style.display = 'none';
+            }
+        }
+    });
+    
+    // Key event listener for / key
+    document.addEventListener('keydown', (e) => {
+        // Open command input with / key (only in debug mode)
+        if (e.key === '/' && debugMode && !commandInputActive) {
+            e.preventDefault();
+            commandInputActive = true;
+            commandOverlay.style.display = 'flex';
+            commandInput.value = '/';
+            commandInput.focus();
+            suggestList.style.display = 'none';
+            return;
+        }
+        
+        // Close command input with Escape
+        if (e.key === 'Escape' && commandInputActive) {
+            commandInputActive = false;
+            commandOverlay.style.display = 'none';
+            commandInput.value = '';
+            suggestList.style.display = 'none';
+            return;
+        }
+        
+        // Execute command with Enter
+        if (e.key === 'Enter' && commandInputActive) {
+            const command = commandInput.value.trim();
+            executeCommand(command);
+            commandInputActive = false;
+            commandOverlay.style.display = 'none';
+            commandInput.value = '';
+            suggestList.style.display = 'none';
+            return;
+        }
+    });
+}
+
+function executeCommand(command) {
+    if (!command.startsWith('/')) {
+        console.log('Commands must start with /');
+        return;
+    }
+    
+    const parts = command.substring(1).split(' ');
+    const cmd = parts[0];
+    
+    if (cmd === 'summon') {
+        // /summon <enemy名> <数> <wave強さ>
+        if (parts.length < 4) {
+            console.log('Usage: /summon <enemy_type> <count> <wave_strength>');
+            console.log('Example: /summon fortress 1 100');
+            console.log('Available types: normal, fast, tank, rampage, boss, fortress');
+            return;
+        }
+        
+        const enemyType = parts[1];
+        const count = parseInt(parts[2]);
+        const waveStrength = parseInt(parts[3]);
+        
+        if (isNaN(count) || isNaN(waveStrength)) {
+            console.log('Count and wave strength must be numbers');
+            return;
+        }
+        
+        if (count < 1 || count > 100) {
+            console.log('Count must be between 1 and 100');
+            return;
+        }
+        
+        summonEnemies(enemyType, count, waveStrength);
+    } else if (cmd === 'clear') {
+        // /clear <対象>
+        if (parts.length < 2) {
+            console.log('Usage: /clear <target>');
+            console.log('Example: /clear tower, /clear enemy');
+            console.log('Available targets: tower, enemy');
+            return;
+        }
+        
+        const target = parts[1].toLowerCase();
+        clearTarget(target);
+    } else if (cmd === 'setwave') {
+        // /setwave <wave数>
+        if (parts.length < 2) {
+            console.log('Usage: /setwave <wave_number>');
+            console.log('Example: /setwave 50');
+            return;
+        }
+        
+        const waveNumber = parseInt(parts[1]);
+        
+        if (isNaN(waveNumber)) {
+            console.log('Wave number must be a number');
+            return;
+        }
+        
+        if (waveNumber < 1) {
+            console.log('Wave number must be at least 1');
+            return;
+        }
+        
+        wave = waveNumber;
+        console.log(`✅ Wave set to ${wave}`);
+        
+        // Update UI
+        updateUI();
+        
+        // Visual feedback
+        createExplosion(canvas.width / 2, canvas.height / 2, '#00ff00', 20);
+    } else {
+        console.log(`Unknown command: ${cmd}`);
+        console.log('Available commands:');
+        console.log('  /summon <enemy_type> <count> <wave_strength>');
+        console.log('  /clear <target>');
+        console.log('  /setwave <wave_number>');
+    }
+}
+
+function updateAutoComplete(input, suggestList) {
+    const commands = [
+        '/summon normal <count> <wave>',
+        '/summon fast <count> <wave>',
+        '/summon tank <count> <wave>',
+        '/summon rampage <count> <wave>',
+        '/summon boss <count> <wave>',
+        '/summon fortress <count> <wave>',
+        '/summon shielder <count> <wave>',
+        '/clear tower',
+        '/clear enemy',
+        '/setwave <wave>'
+    ];
+    
+    const filtered = commands.filter(cmd => cmd.startsWith(input));
+    
+    if (filtered.length === 0 || input === '' || input === '/') {
+        suggestList.style.display = 'none';
+        return;
+    }
+    
+    suggestList.innerHTML = '';
+    filtered.forEach(cmd => {
+        const div = document.createElement('div');
+        div.className = 'suggestion';
+        div.textContent = cmd;
+        div.style.cssText = `
+            padding: 8px 15px;
+            color: #0f0;
+            cursor: pointer;
+            transition: background 0.1s;
+        `;
+        div.addEventListener('mouseenter', () => {
+            div.style.background = 'rgba(0, 255, 0, 0.2)';
+        });
+        div.addEventListener('mouseleave', () => {
+            div.style.background = 'transparent';
+        });
+        div.addEventListener('click', () => {
+            document.getElementById('command-input').value = cmd;
+            suggestList.style.display = 'none';
+            document.getElementById('command-input').focus();
+        });
+        suggestList.appendChild(div);
+    });
+    
+    suggestList.style.display = 'block';
+}
+
+function clearTarget(target) {
+    if (target === 'tower' || target === 'towers') {
+        const count = towers.length;
+        towers = [];
+        console.log(`✅ Cleared ${count} tower(s)`);
+        
+        // Visual feedback - red explosion at each tower position before clearing
+        for (let i = 0; i < Math.min(count, 20); i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            createExplosion(x, y, '#ff0000', 15);
+        }
+    } else if (target === 'enemy' || target === 'enemies') {
+        const count = enemies.length;
+        // Create explosion at each enemy position
+        enemies.forEach(enemy => {
+            createExplosion(enemy.x, enemy.y, '#ff0000', 10);
+        });
+        enemies = [];
+        zombies = []; // Clear zombies too
+        console.log(`✅ Cleared ${count} enemy(ies)`);
+    } else {
+        console.log(`Invalid target: ${target}`);
+        console.log('Valid targets: tower, enemy');
+    }
+}
+
+function summonEnemies(enemyType, count, waveStrength) {
+    // Validate enemy type
+    const validTypes = ['normal', 'fast', 'tank', 'rampage', 'boss', 'fortress', 'shielder', 'decoy'];
+    if (!validTypes.includes(enemyType)) {
+        console.log(`Invalid enemy type: ${enemyType}`);
+        console.log(`Valid types: ${validTypes.join(', ')}`);
+        return;
+    }
+    
+    // Temporarily set wave to the specified strength
+    const originalWave = wave;
+    wave = waveStrength;
+    
+    // Spawn enemies with delay (150ms interval)
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            enemies.push(new Enemy(path, enemyType));
+            
+            // Visual feedback for each spawn
+            if (path.length > 0) {
+                const spawnPoint = path[0];
+                createExplosion(spawnPoint.x, spawnPoint.y, '#0f0', 20);
+            }
+        }, i * 150);
+    }
+    
+    // Restore original wave after all spawns
+    setTimeout(() => {
+        wave = originalWave;
+    }, count * 150 + 100);
+    
+    console.log(`✅ Summoning ${count} ${enemyType}(s) with wave ${waveStrength} strength (0.15s interval)`);
 }
