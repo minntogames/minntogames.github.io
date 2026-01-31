@@ -315,7 +315,15 @@ strong {
   justify-content: center;
   z-index: 0; /* ←下げる */
   border-radius: 50%;
-  transition: background 0.15s;
+  transition: background 0.15s, right 0.2s ease; /* rightのトランジションを追加 */
+}
+/* 初期読み込み時のトランジションを無効化 */
+.search-icon-btn.no-transition {
+  transition: none;
+}
+/* クリアボタン非表示時は右寄せ */
+.search-icon-btn.right-aligned {
+  right: 8px;
 }
 .search-icon-btn:hover {
   background: #e0f7fa;
@@ -353,6 +361,12 @@ input[type="text"]:focus {
   border: 1.5px solid #15a1cc;
   background: #fff;
   box-shadow: 0 2px 8px rgba(21,161,204,0.08);
+}
+
+/* 検索候補表示時に下部の角丸を切る */
+input[type="text"].suggestions-active {
+  border-radius: 24px 24px 0 0;
+  border-bottom-color: transparent;
 }
 
 button {
@@ -1195,6 +1209,24 @@ img, .imgframe img, .detail-image, .thumbnail-circle img {
   border-radius: 2px;
   transition: all 0.2s;
 }
+/* ハンバーガーメニュー用オーバーレイ */
+.hamburger-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 14; /* ドロワーの下 */
+  opacity: 0;
+  transition: opacity 0.28s cubic-bezier(.4,0,.2,1);
+}
+.hamburger-overlay.open {
+  display: block;
+  opacity: 1;
+}
+
 .hamburger-drawer {
   display: block;
   position: fixed;
@@ -1243,6 +1275,110 @@ body.hamburger-open {
 }
 .hamburger-lang-btn:hover {
   background: linear-gradient(135deg, #4a50a2, #156acc);
+}
+
+/* 閲覧履歴コンテンツ */
+.history-content {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.history-content.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  opacity: 0;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: #666;
+  font-size: 13px;
+}
+
+.history-item {
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideInHistory 0.3s ease-out;
+  transform-origin: top;
+}
+
+@keyframes slideInHistory {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.history-item:hover {
+  background: #e3f2fd;
+  transform: translateX(4px);
+}
+
+.history-item-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-clear-btn {
+  width: 100%;
+  padding: 6px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.history-clear-btn:hover {
+  background: #ff5252;
+}
+
+/* カードサイズ調整 */
+body.card-size-small .card {
+  width: 120px;
+}
+body.card-size-small .card .imgframe {
+  width: 120px;
+  height: 120px;
+}
+body.card-size-small .card h2 {
+  font-size: 14px;
+  margin: 6px 0;
+  padding: 0 4px;
+}
+
+/* モバイル版ではカードサイズ調整ボタンを非表示 */
+@media (max-width: 900px) {
+  #cardSizeToggleBtn {
+    display: none;
+  }
 }
 
 /* キャラ詳細表示時はハンバーガーメニュー非表示 */
@@ -1393,6 +1529,32 @@ body.theme-dark .buttonOutlineGradient {
 }
 body.theme-dark .buttonOutlineGradient::before {
   background: linear-gradient(135deg, #14213d, #22305c);
+}
+
+/* ダークテーマ用閲覧履歴 */
+body.theme-dark .history-content {
+  background: #1a2540;
+}
+
+body.theme-dark .history-list {
+  color: #b0c2e0;
+}
+
+body.theme-dark .history-item {
+  background: #22305c;
+  color: #e9eaf6;
+}
+
+body.theme-dark .history-item:hover {
+  background: #2c3e50;
+}
+
+body.theme-dark .history-clear-btn {
+  background: #ef476f;
+}
+
+body.theme-dark .history-clear-btn:hover {
+  background: #d63759;
 }
 body.theme-dark .buttonOutlineGradient_item {
   color: #fff;
@@ -2447,6 +2609,33 @@ body.theme-aquamarine .hamburger-theme-btn:hover {
   color: #ffffff;
 }
 
+/* Aquamarineテーマ用閲覧履歴 */
+body.theme-aquamarine .history-content {
+  background: #ffffff;
+  border: 1px solid #cccccc;
+}
+
+body.theme-aquamarine .history-list {
+  color: #333333;
+}
+
+body.theme-aquamarine .history-item {
+  background: #f5f5f5;
+  color: #000000;
+}
+
+body.theme-aquamarine .history-item:hover {
+  background: #e0f7f0;
+}
+
+body.theme-aquamarine .history-clear-btn {
+  background: #ff6b6b;
+}
+
+body.theme-aquamarine .history-clear-btn:hover {
+  background: #ff5252;
+}
+
 body.theme-aquamarine .theme-dropdown-menu {
   background: #ffffff;
   border-color: #66cdaa;
@@ -3438,6 +3627,38 @@ body.theme-modern .btn-cancel:hover {
 :root[data-theme="neon"] .tag-selection-item:hover {
   background: #16213e;
   border-color: #00ff88;
+}
+
+/* Neonテーマ用閲覧履歴 */
+:root[data-theme="neon"] .history-content {
+  background: #1a1a2e;
+  border: 1px solid #00ff88;
+}
+
+:root[data-theme="neon"] .history-list {
+  color: #b0ffde;
+}
+
+:root[data-theme="neon"] .history-item {
+  background: #16213e;
+  color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+:root[data-theme="neon"] .history-item:hover {
+  background: #0f3460;
+  border-color: #00ff88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+:root[data-theme="neon"] .history-clear-btn {
+  background: #ff006e;
+  border: 1px solid #ff006e;
+}
+
+:root[data-theme="neon"] .history-clear-btn:hover {
+  background: #e5005e;
+  box-shadow: 0 0 10px rgba(255, 0, 110, 0.5);
 }
 
 .filter-option span {

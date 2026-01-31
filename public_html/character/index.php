@@ -139,6 +139,8 @@ if ($characterId) {
     <button id="hamburgerBtn" class="hamburger-btn" aria-label="メニュー" onclick="toggleHamburgerMenu()">
       <span></span><span></span><span></span>
     </button>
+    <!-- ハンバーガーメニュー用オーバーレイ -->
+    <div id="hamburgerOverlay" class="hamburger-overlay"></div>
     <div id="hamburgerDrawer" class="hamburger-drawer">
       <!-- ▼バツボタンを左上に移動 -->
       <button class="hamburger-close-btn" onclick="toggleHamburgerMenu()" aria-label="閉じる" type="button">
@@ -249,6 +251,30 @@ if ($characterId) {
         </svg>
         並び順: <span id="sortOrderStatus">ID順</span>
       </button>
+      
+      <!-- ▼カードサイズ調整ボタン -->
+      <button onclick="toggleCardSize()" class="hamburger-lang-btn" id="cardSizeToggleBtn" title="カード表示サイズ切り替え">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        カードサイズ: <span id="cardSizeStatus">通常</span>
+      </button>
+      
+      <!-- ▼閲覧履歴ボタン（折りたたみ） -->
+      <button onclick="toggleViewHistory()" class="hamburger-lang-btn" id="viewHistoryBtn" title="最近見たキャラクター">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        閲覧履歴 ▼
+      </button>
+      <div id="viewHistoryContent" class="history-content collapsed">
+        <div id="viewHistoryList" class="history-list">まだ閲覧履歴がありません</div>
+        <button onclick="clearViewHistory()" class="history-clear-btn">履歴をクリア</button>
+      </div>
       
       <!-- ▼データ管理セクション -->
       <div style="margin-top: 16px; margin-bottom: 8px; font-size: 14px; color: #666; font-weight: bold;">データ管理</div>

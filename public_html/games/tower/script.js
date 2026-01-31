@@ -42,6 +42,9 @@ let endlessMode = false;
 let endlessScore = 0;
 let endlessBestScore = 0;
 let fortressBossSpawned = false;
+let bossDeathAnimation = null; // Boss death animation state
+let stormGroupIdCounter = 0; // Counter for unique storm group IDs
+let stormGroupKillCount = new Map(); // Track kills per storm group (groupId -> count)
 
 // Auto Wave Mode
 let autoWaveMode = false;
@@ -983,14 +986,14 @@ const skillTree = {
     'tile_break': {
         id: 'tile_break',
         name: '瓦割り',
-        description: '裂傷の割合増加',
+        description: '裂傷の割合増加+20%',
         cost: 300,
         icon: '💢',
         image: 'img/tree/damage.PNG',
         requires: ['terraforming2'],
         unlocks: ['ultimate_power2'],
         better: true,
-        effect: () => { /* Laceration percentage increase */ }
+        effect: () => { /* +20% laceration damage */ }
     },
     'ultimate_power2': {
         id: 'ultimate_power2',
@@ -1059,6 +1062,9 @@ function getSkillBonus(type, towerBaseType = null) {
         let chainLimit = 0;
         if (unlockedSkills.includes('durability_improvement')) chainLimit += 5; // +5 chain limit
         return chainLimit;
+    } else if (type === 'laceration_damage') {
+        if (unlockedSkills.includes('tile_break')) bonus *= 1.20; // +20% laceration damage
+        return bonus;
     }
     return bonus;
 }
@@ -3822,7 +3828,16 @@ function updateChipDisplay() {
 function startWave() {
     if (waveActive) return;
     waveActive = true;
-    enemiesToSpawn = 5 + Math.floor(wave * 2.5);
+    
+    // Base spawn count
+    let baseSpawn = 5 + Math.floor(wave * 2.5);
+    
+    // Double the spawn slots from wave 100+
+    if (wave >= 100) {
+        baseSpawn *= 2;
+    }
+    
+    enemiesToSpawn = baseSpawn;
     totalWaveEnemies = enemiesToSpawn; // Set total for progress
     spawnInterval = Math.max(200, 1000 - (wave * 50));
     document.getElementById('nextWaveBtn').disabled = true;
@@ -3942,6 +3957,16 @@ class Enemy {
         const fastEffectiveWave = Math.min(wave, 30);
         const fastBaseSpeed = 1.5 + (fastEffectiveWave * 0.1);
         const baseReward = 10 + Math.floor(wave * 1.5); // Increased reward with wave progression
+        
+        // Wave-based multiplier for normal/fast/tank (wave 101+)
+        // wave 1-100: multiplier=1, wave 101-200: multiplier=2, wave 201-300: multiplier=3, etc.
+        const waveMultiplier = Math.max(1, Math.floor((wave - 1) / 100) + 1);
+        
+        // Rampage multiplier: wave 200,300,400... -> 2x,3x,4x...
+        const rampageMultiplier = Math.max(1, Math.floor(wave / 100));
+        
+        // Shielder multiplier: wave 150,250,350... -> 2x,3x,4x...
+        const shielderMultiplier = Math.max(1, Math.floor((wave - 50) / 100) + 1);
 
         if (this.type === 'fortress') {
             // Fortress Boss - appears every 50 waves in endless mode
@@ -3954,11 +3979,12 @@ class Enemy {
             this.rotation = 0; // For rotation animation
         } else if (this.type === 'rampage') {
             // Rampage Enemy - appears wave 100+ in endless mode
-            this.hp = baseHp * 5.0; // 5x normal
+            // wave 1-199: 1x, wave 200-299: 2x, wave 300-399: 3x, etc.
+            this.hp = baseHp * 5.0 * rampageMultiplier;
             this.speed = baseSpeed; // Same speed as normal
             this.radius = 18; // Larger than normal
             this.color = '#ff6600';
-            this.reward = Math.floor(baseReward * 5.0);
+            this.reward = Math.floor(baseReward * 5.0 * rampageMultiplier);
             this.pattern = Math.random(); // For pattern rendering
             // Random shape: circle(0), pentagon(5), triangle(3)
             const shapes = [0, 5, 3];
@@ -3970,24 +3996,41 @@ class Enemy {
             this.color = '#ff0000';
             this.reward = Math.floor(baseReward * 30.0); // Big reward for boss
             this.isBoss = true;
+        } else if (this.type === 'storm') {
+            // Storm Boss - splits into 3 smaller storms when killed
+            // splitLevel: 0 = original (100%), 1 = first split (75%), 2 = second split (50%), 3 = third split (25%)
+            this.splitLevel = 0; // Initialize splitLevel (will be set when spawned from split)
+            this.stormGroupId = ++stormGroupIdCounter; // Unique group ID for tracking storm family
+            const splitMultipliers = [1.0, 0.75, 0.5, 0.25];
+            const splitMultiplier = splitMultipliers[this.splitLevel] || 0.25;
+            
+            this.hp = baseHp * 30.0 * splitMultiplier; // 2x normal boss at full size
+            this.speed = baseSpeed * 0.45; // Slightly faster than normal boss
+            this.radius = 35 - (this.splitLevel * 7); // Shrinks with each split: 35, 28, 21, 14 (larger)
+            this.color = '#8800ff'; // Purple color
+            this.reward = Math.floor(baseReward * 30.0 * splitMultiplier);
+            this.isBoss = true;
+            this.canSplit = this.splitLevel < 3; // Can split up to 3 times
+            this.rotation = 0; // For rotation animation
         } else if (this.type === 'fast') {
-            this.hp = baseHp * 0.6;
+            this.hp = baseHp * 0.6 * waveMultiplier; // Apply multiplier
             this.speed = fastBaseSpeed * 1.8; // Cap at wave 30
             this.radius = 10;
             this.color = '#ffff00';
-            this.reward = Math.floor(baseReward * 1.2);
+            this.reward = Math.floor(baseReward * 1.2 * waveMultiplier);
         } else if (this.type === 'tank') {
-            this.hp = baseHp * 3.0;
+            this.hp = baseHp * 3.0 * waveMultiplier; // Apply multiplier
             this.speed = baseSpeed * 0.6;
             this.radius = 16;
             this.color = '#9900ff';
-            this.reward = Math.floor(baseReward * 2.0);
+            this.reward = Math.floor(baseReward * 2.0 * waveMultiplier);
         } else if (this.type === 'shielder') {
-            this.hp = baseHp * 2.5; // Moderate HP
+            // wave 1-149: 1x, wave 150-249: 2x, wave 250-349: 3x, etc.
+            this.hp = baseHp * 2.5 * shielderMultiplier;
             this.speed = baseSpeed * 0.7; // Slower than normal
             this.radius = 14;
             this.color = '#888888'; // Gray when shielded
-            this.reward = Math.floor(baseReward * 2.5);
+            this.reward = Math.floor(baseReward * 2.5 * shielderMultiplier);
             // Initialize shield
             this.hasShield = true;
             this.shield = this.hp * 0.5; // Shield is 50% of HP
@@ -4001,14 +4044,25 @@ class Enemy {
             this.reward = 0; // No reward
             this.isDecoy = true; // Flag for special handling
         } else {
-            this.hp = baseHp;
+            this.hp = baseHp * waveMultiplier; // Apply multiplier for normal type
             this.speed = baseSpeed;
             this.radius = 12;
             this.color = '#ff3333';
-            this.reward = baseReward;
+            this.reward = Math.floor(baseReward * waveMultiplier);
         }
 
         this.maxHp = this.hp;
+        
+        // Store multiplier for spawn cost calculation
+        if (this.type === 'normal' || this.type === 'fast' || this.type === 'tank') {
+            this.spawnCost = waveMultiplier;
+        } else if (this.type === 'rampage') {
+            this.spawnCost = 5 * rampageMultiplier; // Base 5 slots * multiplier
+        } else if (this.type === 'shielder') {
+            this.spawnCost = 10 * shielderMultiplier; // Base 10 slots * multiplier
+        } else {
+            this.spawnCost = 1;
+        }
         
         // Knockback animation properties
         this.knockbackActive = false;
@@ -4151,7 +4205,83 @@ class Enemy {
             this.rotation = (this.rotation || 0) + 0.02;
         }
         
-        if (this.type === 'fortress') {
+        // Update rotation for storm boss
+        if (this.type === 'storm') {
+            this.rotation = (this.rotation || 0) + 0.03;
+        }
+        
+        if (this.type === 'storm') {
+            // Draw rotating diamond (square rotated 45 degrees) with hollow center and arrows
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            
+            // Draw outer diamond with hollow center
+            const holeSize = this.radius * 0.4;
+            
+            // Use path to create diamond with hole
+            ctx.beginPath();
+            // Outer diamond
+            ctx.moveTo(0, -this.radius);
+            ctx.lineTo(this.radius, 0);
+            ctx.lineTo(0, this.radius);
+            ctx.lineTo(-this.radius, 0);
+            ctx.closePath();
+            // Inner diamond (hole) - draw in reverse to create hole
+            ctx.moveTo(0, -holeSize);
+            ctx.lineTo(-holeSize, 0);
+            ctx.lineTo(0, holeSize);
+            ctx.lineTo(holeSize, 0);
+            ctx.closePath();
+            
+            // Fill using evenodd rule to create hole
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = this.color;
+            ctx.fill('evenodd');
+            
+            ctx.restore();
+            
+            // Draw floating arrows (outside rotation, like fortress arms)
+            const arrowDistance = this.radius * 1.5;
+            const arrowSize = this.radius * 0.6; // Increased from 0.4 to 0.6
+            
+            // Top arrow
+            ctx.save();
+            ctx.translate(this.x, this.y - arrowDistance);
+            ctx.fillStyle = '#aa44ff';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#aa44ff';
+            // Arrow pointing up (chevron/arrowhead shape)
+            ctx.beginPath();
+            ctx.moveTo(0, -arrowSize * 0.6); // Tip
+            ctx.lineTo(-arrowSize * 0.5, arrowSize * 0.4); // Left base
+            ctx.lineTo(-arrowSize * 0.2, arrowSize * 0.4); // Left inner
+            ctx.lineTo(0, 0); // Center
+            ctx.lineTo(arrowSize * 0.2, arrowSize * 0.4); // Right inner
+            ctx.lineTo(arrowSize * 0.5, arrowSize * 0.4); // Right base
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+            
+            // Bottom arrow
+            ctx.save();
+            ctx.translate(this.x, this.y + arrowDistance);
+            ctx.fillStyle = '#aa44ff';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#aa44ff';
+            // Arrow pointing down
+            ctx.beginPath();
+            ctx.moveTo(0, arrowSize * 0.6); // Tip
+            ctx.lineTo(-arrowSize * 0.5, -arrowSize * 0.4); // Left base
+            ctx.lineTo(-arrowSize * 0.2, -arrowSize * 0.4); // Left inner
+            ctx.lineTo(0, 0); // Center
+            ctx.lineTo(arrowSize * 0.2, -arrowSize * 0.4); // Right inner
+            ctx.lineTo(arrowSize * 0.5, -arrowSize * 0.4); // Right base
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        } else if (this.type === 'fortress') {
             // Draw rotating hexagon with 3 protruding arms
             ctx.save();
             ctx.translate(this.x, this.y);
@@ -4381,8 +4511,117 @@ class Enemy {
         const creditBonus = getSkillBonus('enemy_credits');
         money += Math.floor(this.reward * creditBonus);
         
-        // Add to endless score
-        if (endlessMode) {
+        // Storm boss splits into 3 smaller storms
+        if (this.type === 'storm' && this.canSplit) {
+            const splitLevel = this.splitLevel + 1;
+            
+            // Calculate parent's current HP percentage
+            const parentHpPercentage = this.hp / this.maxHp;
+            
+            // Create 3 smaller storms at current position
+            for (let i = 0; i < 3; i++) {
+                const angle = (Math.PI * 2 / 3) * i;
+                const offsetX = Math.cos(angle) * 30;
+                const offsetY = Math.sin(angle) * 30;
+                
+                // Create new storm enemy
+                const newStorm = new Enemy(this.path, 'storm');
+                newStorm.splitLevel = splitLevel; // Set split level BEFORE hp calculation
+                newStorm.stormGroupId = this.stormGroupId; // Inherit group ID
+                
+                // Recalculate stats based on splitLevel
+                const baseHp = 30 + (wave * 15);
+                const baseReward = 10 + Math.floor(wave * 1.5);
+                const splitMultipliers = [1.0, 0.75, 0.5, 0.25];
+                const splitMultiplier = splitMultipliers[splitLevel] || 0.25;
+                
+                const maxHpForSplit = baseHp * 30.0 * splitMultiplier;
+                newStorm.maxHp = maxHpForSplit;
+                newStorm.hp = maxHpForSplit * parentHpPercentage; // Apply parent's HP percentage
+                newStorm.radius = 35 - (splitLevel * 7);
+                newStorm.reward = Math.floor(baseReward * 30.0 * splitMultiplier);
+                newStorm.canSplit = splitLevel < 3;
+                
+                // Set position slightly offset from death location
+                const currentPathIndex = this.pathIndex;
+                if (currentPathIndex < this.path.length) {
+                    newStorm.pathIndex = currentPathIndex;
+                    newStorm.x = this.x + offsetX;
+                    newStorm.y = this.y + offsetY;
+                }
+                
+                // Inherit some debuffs
+                newStorm.slowDuration = this.slowDuration * 0.5;
+                newStorm.slowAmount = this.slowAmount;
+                newStorm.burnDuration = this.burnDuration * 0.5;
+                newStorm.burnDamage = this.burnDamage;
+                
+                enemies.push(newStorm);
+                totalWaveEnemies++;
+            }
+            
+            // Purple particle effect for split (more visible)
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(this.x, this.y, '#cc44ff')); // Brighter purple
+            }
+            createExplosion(this.x, this.y, '#8800ff', 40);
+            playSound('explosion');
+            
+            // Add normal score for split storms
+            if (endlessMode) {
+                endlessScore += 100; // Normal enemy score
+            }
+            
+            // Skip normal die() processing for splitting storms
+            updateUI();
+            return;
+        } else if (this.type === 'storm' && !this.canSplit) {
+            // Count this kill for the storm group
+            const currentCount = (stormGroupKillCount.get(this.stormGroupId) || 0) + 1;
+            stormGroupKillCount.set(this.stormGroupId, currentCount);
+            
+            if (currentCount === 27) {
+                // 27th smallest storm defeated - show boss explosion animation and heal
+                playSound('boss_death');
+                
+                // Heal lives for 27th storm defeat
+                lives += 5;
+                createDamageText(this.x, this.y - this.radius - 20, '+5 LIVES');
+                
+                // Create massive multi-colored explosion (same as boss)
+                createExplosion(this.x, this.y, '#8800ff', 100);
+                createExplosion(this.x, this.y, '#aa44ff', 80);
+                createExplosion(this.x, this.y, '#cc44ff', 60);
+                createExplosion(this.x, this.y, '#ee66ff', 40);
+                createExplosion(this.x, this.y, '#ffffff', 50);
+                // Create elliptical shockwaves
+                createEllipticalWaves(this.x, this.y);
+                
+                // Add bonus score for completing the group
+                if (endlessMode) {
+                    endlessScore += 1000; // Same as boss
+                }
+                
+                // Clean up the counter for this group
+                stormGroupKillCount.delete(this.stormGroupId);
+            } else {
+                // Not the 27th storm - just normal death effect
+                createExplosion(this.x, this.y, this.color);
+                playSound('enemyDestroy');
+                
+                // Add normal score
+                if (endlessMode) {
+                    endlessScore += 100; // Normal enemy score
+                }
+            }
+            
+            // Skip normal die() processing for all storms
+            updateUI();
+            return;
+        }
+        
+        // Add to endless score (skip for storm - already handled above)
+        if (endlessMode && this.type !== 'storm') {
             if (this.type === 'fortress') {
                 endlessScore += 10000;
             } else if (this.type === 'boss') {
@@ -4407,8 +4646,8 @@ class Enemy {
         // Play enemy destroy sound
         playSound('enemyDestroy');
         
-        // Boss defeated - heal 5 lives
-        if (this.isBoss) {
+        // Boss defeated - heal 5 lives (but not for splitting storms)
+        if (this.isBoss && !(this.type === 'storm' && this.canSplit)) {
             lives += 5;
             // Create massive multi-colored explosion
             createExplosion(this.x, this.y, '#ff0000', 100);
@@ -4420,7 +4659,7 @@ class Enemy {
             createEllipticalWaves(this.x, this.y);
             // Show heal text
             createDamageText(this.x, this.y - this.radius - 20, '+5 LIVES');
-        } else {
+        } else if (!(this.type === 'storm')) {
             createExplosion(this.x, this.y, this.color);
         }
         
@@ -6088,7 +6327,8 @@ class Projectile {
         // Apply laceration bonus damage
         const hasLaceration = enemy.lacerationStacks > 0;
         if (hasLaceration) {
-            finalDamage += this.damage * 0.3 * enemy.lacerationStacks; // +30% per stack
+            const lacerationBonus = getSkillBonus('laceration_damage');
+            finalDamage += this.damage * 0.3 * enemy.lacerationStacks * lacerationBonus; // +30% per stack (with skill bonus)
         }
         
         // Let takeDamage handle the damage text display (for shield mechanics)
@@ -6427,7 +6667,21 @@ class DamageText {
         const alpha = Math.max(0, this.life);
         ctx.save();
         ctx.globalAlpha = alpha;
-        ctx.font = 'bold 14px Orbitron';
+        
+        // Set default font first
+        let fontSize = 14;
+        let fontWeight = 'bold';
+        
+        // Determine font size based on damage type
+        if (this.isText) {
+            fontSize = 16;
+        } else if (this.isCrit) {
+            fontSize = 18;
+        } else if (this.isLaceration) {
+            fontSize = 16;
+        }
+        
+        ctx.font = `${fontWeight} ${fontSize}px Orbitron`;
         ctx.textAlign = 'center';
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 3;
@@ -6440,19 +6694,16 @@ class DamageText {
         } else if (this.isText) {
             // Special text (like +5 LIVES)
             ctx.fillStyle = '#00ff00';
-            ctx.font = 'bold 16px Orbitron';
             ctx.strokeText(this.damage, this.x, this.y);
             ctx.fillText(this.damage, this.x, this.y);
         } else if (this.isCrit) {
             // Critical hit - purple and larger
             ctx.fillStyle = '#ff00ff';
-            ctx.font = 'bold 18px Orbitron';
             ctx.strokeText(this.damage, this.x, this.y);
             ctx.fillText(this.damage, this.x, this.y);
         } else if (this.isLaceration) {
             // Laceration damage - pink
             ctx.fillStyle = '#ff00aa';
-            ctx.font = 'bold 16px Orbitron';
             ctx.strokeText(this.damage, this.x, this.y);
             ctx.fillText(this.damage, this.x, this.y);
         } else if (this.isFrostDamage) {
@@ -6481,8 +6732,10 @@ class DamageText {
 function createDamageText(x, y, damage, isBurn = false, isCrit = false, isLaceration = false, customColor = null, isFrostDamage = false) {
     damageTexts.push(new DamageText(x, y, damage, isBurn, isCrit, isLaceration, customColor, isFrostDamage));
     
-    // Track damage for DPS calculation
-    totalDamageDealt += damage;
+    // Track damage for DPS calculation (only if damage is a number)
+    if (typeof damage === 'number') {
+        totalDamageDealt += damage;
+    }
 }
 
 // Zombie Class (ネクロマンサーで生成されたゾンビ)
@@ -7613,44 +7866,51 @@ function gameLoop(timestamp) {
             
             let type = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
             
-            // Shielder enemies take 10 spawn slots
-            if (type === 'shielder') {
-                if (enemiesToSpawn >= 10) {
-                    enemies.push(new Enemy(path, type));
-                    enemiesToSpawn -= 10;
-                } else {
-                    // Not enough slots, spawn normal instead
-                    type = 'normal';
-                    enemies.push(new Enemy(path, type));
-                    enemiesToSpawn--;
-                }
+            // Calculate spawn cost based on wave and enemy type
+            let spawnCost = 1;
+            if (type === 'normal' || type === 'fast' || type === 'tank') {
+                spawnCost = Math.max(1, Math.floor((wave - 1) / 100) + 1);
+            } else if (type === 'rampage') {
+                const rampageMultiplier = Math.max(1, Math.floor(wave / 100));
+                spawnCost = 5 * rampageMultiplier;
+            } else if (type === 'shielder') {
+                const shielderMultiplier = Math.max(1, Math.floor((wave - 50) / 100) + 1);
+                spawnCost = 10 * shielderMultiplier;
             }
-            // Rampage enemies take 5 spawn slots
-            else if (type === 'rampage') {
-                if (enemiesToSpawn >= 5) {
-                    enemies.push(new Enemy(path, type));
-                    enemiesToSpawn -= 5;
-                } else {
-                    // Not enough slots, spawn normal instead
-                    type = 'normal';
-                    enemies.push(new Enemy(path, type));
-                    enemiesToSpawn--;
-                }
-            } else {
+            
+            // Check if we have enough spawn slots
+            if (enemiesToSpawn >= spawnCost) {
                 enemies.push(new Enemy(path, type));
-                enemiesToSpawn--;
+                enemiesToSpawn -= spawnCost;
+            } else if (type === 'shielder' || type === 'rampage') {
+                // Not enough slots for shielder/rampage, try spawning normal instead
+                type = 'normal';
+                spawnCost = Math.max(1, Math.floor((wave - 1) / 100) + 1);
+                if (enemiesToSpawn >= spawnCost) {
+                    enemies.push(new Enemy(path, type));
+                    enemiesToSpawn -= spawnCost;
+                }
             }
             spawnTimer = timestamp;
         }
     }
     
     // Check if we need to spawn boss (separate check to avoid blocking wave completion)
-    if (waveActive && enemiesToSpawn === 0 && !bossSpawned && !fortressBossSpawned) {
+    // Calculate threshold based on wave multiplier to handle high-wave scenarios
+    const maxMultiplier = Math.max(
+        Math.max(1, Math.floor((wave - 1) / 100) + 1), // normal/fast/tank multiplier
+        Math.max(1, Math.floor(wave / 100)), // rampage multiplier (base 5 slots)
+        Math.max(1, Math.floor((wave - 50) / 100) + 1) // shielder multiplier (base 10 slots)
+    );
+    const spawnThreshold = maxMultiplier * 10; // Maximum possible spawn cost
+    
+    if (waveActive && enemiesToSpawn <= spawnThreshold && !bossSpawned && !fortressBossSpawned) {
         // In endless mode, spawn fortress boss every 50 waves
         if (endlessMode && wave % 50 === 0) {
             enemies.push(new Enemy(path, 'fortress'));
             fortressBossSpawned = true;
             totalWaveEnemies++;
+            enemiesToSpawn = 0; // Reset remaining spawns
             
             // Trigger boss appearance effects
             bossShockwaveRadius = 0;
@@ -7658,10 +7918,12 @@ function gameLoop(timestamp) {
             screenShakeDuration = 30;
             screenShakeIntensity = 12;
         } else if (wave % 10 === 0) {
-            // Normal boss at wave 10, 20, 30, etc.
-            enemies.push(new Enemy(path, 'boss'));
+            // Boss wave: 70% normal boss, 30% storm boss
+            const bossType = Math.random() < 0.7 ? 'boss' : 'storm';
+            enemies.push(new Enemy(path, bossType));
             bossSpawned = true;
             totalWaveEnemies++;
+            enemiesToSpawn = 0; // Reset remaining spawns
             
             // Trigger boss appearance shockwave
             bossShockwaveRadius = 0;
@@ -7673,11 +7935,12 @@ function gameLoop(timestamp) {
         } else {
             // No boss for this wave, mark as spawned to allow wave completion
             bossSpawned = true;
+            enemiesToSpawn = 0; // Reset remaining spawns
         }
     }
     
     // Check for wave completion
-    if (gameActive && waveActive && enemiesToSpawn === 0 && enemies.length === 0) {
+    if (gameActive && waveActive && enemiesToSpawn <= 0 && enemies.length === 0) {
         waveActive = false;
         bossSpawned = false;
         fortressBossSpawned = false;
@@ -10254,7 +10517,7 @@ function executeCommand(command) {
         if (parts.length < 4) {
             console.log('Usage: /summon <enemy_type> <count> <wave_strength>');
             console.log('Example: /summon fortress 1 100');
-            console.log('Available types: normal, fast, tank, rampage, boss, fortress');
+            console.log('Available types: normal, fast, tank, rampage, boss, storm, fortress, shielder');
             return;
         }
         
@@ -10328,6 +10591,7 @@ function updateAutoComplete(input, suggestList) {
         '/summon tank <count> <wave>',
         '/summon rampage <count> <wave>',
         '/summon boss <count> <wave>',
+        '/summon storm <count> <wave>',
         '/summon fortress <count> <wave>',
         '/summon shielder <count> <wave>',
         '/clear tower',
@@ -10399,7 +10663,7 @@ function clearTarget(target) {
 
 function summonEnemies(enemyType, count, waveStrength) {
     // Validate enemy type
-    const validTypes = ['normal', 'fast', 'tank', 'rampage', 'boss', 'fortress', 'shielder', 'decoy'];
+    const validTypes = ['normal', 'fast', 'tank', 'rampage', 'boss', 'fortress', 'shielder', 'decoy', 'storm'];
     if (!validTypes.includes(enemyType)) {
         console.log(`Invalid enemy type: ${enemyType}`);
         console.log(`Valid types: ${validTypes.join(', ')}`);

@@ -125,6 +125,7 @@
             pointer-events: auto;
             flex-wrap: wrap;
             position: relative; /* For upgrade panel positioning context if needed */
+            min-height: 90px; /* 最小高さを確保してタブレットで見切れないように */
         }
 
         /* Upgrade Panel Style */
@@ -657,15 +658,145 @@
                 min-width: 220px;
             }
             .skill-tree-title {
-                font-size: 1.8rem;
+                font-size: 1.5rem;
             }
             .chip-display {
-                font-size: 1rem;
-                padding: 8px 15px;
+                font-size: 0.9rem;
+                padding: 6px 12px;
+            }
+            .skill-tree-header {
+                top: 10px;
+                padding: 0 15px;
             }
             .skill-canvas-container {
-                width: 95%;
-                height: 65%;
+                top: 70px;
+                left: 5%;
+                right: 5%;
+                bottom: 120px;
+            }
+            .skill-back-btn {
+                bottom: 15px;
+                left: 15px;
+                padding: 10px 30px;
+                font-size: 1rem;
+            }
+            .skill-unlocked-btn {
+                bottom: 15px;
+                right: 15px;
+                padding: 10px 25px;
+                font-size: 0.95rem;
+            }
+        }
+
+        /* タブレット端末（768px-1024px）*/
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .skill-canvas-container {
+                top: 90px;
+                bottom: 110px;
+            }
+            .skill-back-btn {
+                bottom: 20px;
+                left: 20px;
+                padding: 12px 35px;
+                font-size: 1.1rem;
+            }
+            .skill-unlocked-btn {
+                bottom: 20px;
+                right: 20px;
+                padding: 12px 30px;
+                font-size: 1.05rem;
+            }
+            .bottom-bar {
+                padding: 12px;
+                gap: 12px;
+            }
+            .upgrade-panel {
+                bottom: 110px;
+            }
+            .evolution-panel {
+                bottom: 110px;
+            }
+        }
+
+        /* タブレット縦向き（高さが狭い場合）*/
+        @media (min-width: 769px) and (max-width: 1024px) and (max-height: 800px) {
+            .skill-canvas-container {
+                top: 80px;
+                bottom: 100px;
+            }
+            .skill-back-btn {
+                bottom: 15px;
+                padding: 10px 30px;
+                font-size: 1rem;
+            }
+            .skill-unlocked-btn {
+                bottom: 15px;
+                padding: 10px 25px;
+                font-size: 0.95rem;
+            }
+        }
+
+        /* 超小型デバイス（スマホ横向き、古い端末など）*/
+        @media (max-width: 480px) {
+            .skill-tree-title {
+                font-size: 1.2rem;
+            }
+            .chip-display {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+            .skill-tree-header {
+                top: 5px;
+                padding: 0 10px;
+            }
+            .skill-canvas-container {
+                top: 60px;
+                left: 3%;
+                right: 3%;
+                bottom: 100px;
+            }
+            .skill-back-btn {
+                bottom: 10px;
+                left: 10px;
+                padding: 8px 20px;
+                font-size: 0.9rem;
+            }
+            .skill-unlocked-btn {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px 18px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* 高さが狭い端末（横向きスマホなど）*/
+        @media (max-height: 500px) {
+            .skill-tree-header {
+                top: 5px;
+                padding: 0 10px;
+            }
+            .skill-tree-title {
+                font-size: 1.2rem;
+            }
+            .chip-display {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+            .skill-canvas-container {
+                top: 50px;
+                bottom: 80px;
+            }
+            .skill-back-btn {
+                bottom: 8px;
+                left: 8px;
+                padding: 6px 18px;
+                font-size: 0.85rem;
+            }
+            .skill-unlocked-btn {
+                bottom: 8px;
+                right: 8px;
+                padding: 6px 15px;
+                font-size: 0.8rem;
             }
         }
 
@@ -1361,8 +1492,8 @@
     </div>
 
     <!-- Commander Selection Screen -->
-    <div id="commander-screen" class="menu-screen hidden" style="background: linear-gradient(135deg, #1a0040 0%, #000520 100%);">
-        <div style="max-width: 1000px; margin: 0 auto; padding: 2rem;">
+    <div id="commander-screen" class="menu-screen hidden" style="background: linear-gradient(135deg, #1a0040 0%, #000520 100%); overflow-y: auto; overflow-x: hidden;">
+        <div style="max-width: 1000px; margin: 0 auto; padding: 2rem; min-height: 100vh;">
             <h1 style="text-align: center; color: #00ffff; font-size: 2.5rem; margin-bottom: 1rem; font-family: 'Orbitron', sans-serif;">指揮官編成</h1>
             
             <!-- Current Commander Display -->

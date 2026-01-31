@@ -1261,10 +1261,13 @@ function renderCharacter(char) {
   const nameEnArr = Array.isArray(char.name_en) ? char.name_en : [char.name_en];
 
   const mobile = isMobileWidth();
-  const objectPosition = mobile
+  const cardSize = getCardSize();
+  // カードサイズがsmallまたはモバイルの場合はスマホ用データを使用
+  const useSmallSize = cardSize === 'small' || mobile;
+  const objectPosition = useSmallSize
     ? (char.imageZoomPosition_mobile || char.imageZoomPosition || 'center')
     : (char.imageZoomPosition || 'center');
-  const imgWidth = mobile
+  const imgWidth = useSmallSize
     ? (char.imgsize_mobile || char.imgsize || '100%')
     : (char.imgsize || '100%');
   const displayName = currentDisplayLanguage === 'en' && nameEnArr[0] ? nameEnArr[0] : nameArr[0];
@@ -2379,6 +2382,10 @@ function setupHamburgerTouchControl() {
   const drawer = document.getElementById('hamburgerDrawer');
   if (!drawer) return;
 
+  let swipeCloseStartX = null;
+  let swipeCloseStartY = null;
+  let swipeCloseStartTime = null;
+
   // タッチイベントで背景スクロールを防ぐ
   drawer.addEventListener('touchstart', function(e) {
     // ドロワーが開いている時のみ制御
@@ -2386,6 +2393,11 @@ function setupHamburgerTouchControl() {
       // タッチ開始位置を記録
       this.startY = e.touches[0].clientY;
       this.startX = e.touches[0].clientX;
+      
+      // スワイプで閉じる用の記録
+      swipeCloseStartX = e.touches[0].clientX;
+      swipeCloseStartY = e.touches[0].clientY;
+      swipeCloseStartTime = Date.now();
     }
   }, { passive: false });
 
@@ -2416,10 +2428,28 @@ function setupHamburgerTouchControl() {
     }
   }, { passive: false });
 
-  drawer.addEventListener('touchend', function() {
+  drawer.addEventListener('touchend', function(e) {
+    // スワイプで閉じる処理
+    if (swipeCloseStartX !== null && drawer.classList.contains('open')) {
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - swipeCloseStartX;
+      const deltaY = touch.clientY - swipeCloseStartY;
+      const deltaTime = Date.now() - swipeCloseStartTime;
+      
+      // 左方向（負の方向）へのスワイプで、横移動が縦移動より大きく、300ms以内で50px以上の場合
+      if (deltaX < -50 && 
+          Math.abs(deltaX) > Math.abs(deltaY) && 
+          deltaTime < 300) {
+        toggleHamburgerMenu();
+      }
+    }
+    
     // タッチ終了時にスタート位置をリセット
     this.startY = null;
     this.startX = null;
+    swipeCloseStartX = null;
+    swipeCloseStartY = null;
+    swipeCloseStartTime = null;
   }, { passive: true });
 }
 
@@ -2427,14 +2457,18 @@ function setupHamburgerTouchControl() {
 let edgeSwipeStartX = null;
 let edgeSwipeStartY = null;
 let edgeSwipeStartTime = null;
-const EDGE_ZONE_WIDTH = 40; // 左端から20pxの領域
-const SWIPE_THRESHOLD = 50; // 50px以上スワイプで開く
+const SWIPE_OPEN_THRESHOLD = 100; // 100px以上スワイプで開く（大きくしました）
 const SWIPE_MAX_TIME = 300; // 300ms以内のスワイプ
+
+// スワイプ領域を画面幅の1/3に設定する関数
+function getEdgeZoneWidth() {
+  return window.innerWidth / 3;
+}
 
 document.addEventListener('touchstart', function(e) {
   const touch = e.touches[0];
-  // 左端からのタッチかチェック
-  if (touch.clientX <= EDGE_ZONE_WIDTH) {
+  // 左端からのタッチかチェック（画面幅の1/3）
+  if (touch.clientX <= getEdgeZoneWidth()) {
     edgeSwipeStartX = touch.clientX;
     edgeSwipeStartY = touch.clientY;
     edgeSwipeStartTime = Date.now();
@@ -2449,8 +2483,8 @@ document.addEventListener('touchmove', function(e) {
   const deltaY = touch.clientY - edgeSwipeStartY;
   const deltaTime = Date.now() - edgeSwipeStartTime;
   
-  // 右方向へのスワイプで、横移動が縦移動より大きい場合
-  if (deltaX > SWIPE_THRESHOLD && 
+  // 右方向へのスワイプで、横移動が縦移動より大きい場合（100px以上）
+  if (deltaX > SWIPE_OPEN_THRESHOLD && 
       Math.abs(deltaX) > Math.abs(deltaY) && 
       deltaTime < SWIPE_MAX_TIME) {
     
@@ -2473,6 +2507,48 @@ document.addEventListener('touchend', function() {
   edgeSwipeStartY = null;
   edgeSwipeStartTime = null;
 }, { passive: true });
+
+// オーバーレイでのスワイプで閉じる機能
+let overlaySwipeStartX = null;
+let overlaySwipeStartY = null;
+let overlaySwipeStartTime = null;
+
+// ページ読み込み後にオーバーレイにイベントリスナーを追加
+window.addEventListener('DOMContentLoaded', function() {
+  const overlay = document.getElementById('hamburgerOverlay');
+  if (!overlay) return;
+
+  overlay.addEventListener('touchstart', function(e) {
+    overlaySwipeStartX = e.touches[0].clientX;
+    overlaySwipeStartY = e.touches[0].clientY;
+    overlaySwipeStartTime = Date.now();
+  }, { passive: true });
+
+  overlay.addEventListener('touchmove', function(e) {
+    if (overlaySwipeStartX === null) return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - overlaySwipeStartX;
+    const deltaY = touch.clientY - overlaySwipeStartY;
+    const deltaTime = Date.now() - overlaySwipeStartTime;
+    
+    // 左方向へのスワイプで50px以上、300ms以内の場合、メニューを閉じる
+    if (deltaX < -50 && 
+        Math.abs(deltaX) > Math.abs(deltaY) && 
+        deltaTime < 300) {
+      toggleHamburgerMenu();
+      overlaySwipeStartX = null;
+      overlaySwipeStartY = null;
+      overlaySwipeStartTime = null;
+    }
+  }, { passive: true });
+
+  overlay.addEventListener('touchend', function() {
+    overlaySwipeStartX = null;
+    overlaySwipeStartY = null;
+    overlaySwipeStartTime = null;
+  }, { passive: true });
+});
 
 /**
  * キャラクターの詳細を表示する
@@ -2946,8 +3022,12 @@ function renderRelationCharacters(currentId) {
 // ▼ハンバーガーメニュー制御
 function toggleHamburgerMenu() {
   const drawer = document.getElementById('hamburgerDrawer');
+  const overlay = document.getElementById('hamburgerOverlay');
   if (drawer) {
     const isOpen = drawer.classList.toggle('open');
+    if (overlay) {
+      overlay.classList.toggle('open', isOpen);
+    }
     if (isOpen) {
       // 背景スクロール防止を追加
       document.body.classList.add('hamburger-open');
@@ -2965,9 +3045,21 @@ function toggleHamburgerMenu() {
 function closeHamburgerOnOutside(e) {
   const drawer = document.getElementById('hamburgerDrawer');
   const btn = document.getElementById('hamburgerBtn');
-  if (!drawer.contains(e.target) && (!btn || !btn.contains(e.target))) {
+  const overlay = document.getElementById('hamburgerOverlay');
+  
+  // オーバーレイがクリックされた場合、またはドロワーとボタン以外がクリックされた場合
+  if (overlay && overlay === e.target) {
+    // オーバーレイを直接クリックした場合
     drawer.classList.remove('open');
-    // 背景スクロール防止を解除
+    overlay.classList.remove('open');
+    document.body.classList.remove('hamburger-open');
+    document.removeEventListener('click', closeHamburgerOnOutside, true);
+  } else if (!drawer.contains(e.target) && (!btn || !btn.contains(e.target))) {
+    // ドロワーとボタン以外をクリックした場合
+    drawer.classList.remove('open');
+    if (overlay) {
+      overlay.classList.remove('open');
+    }
     document.body.classList.remove('hamburger-open');
     document.removeEventListener('click', closeHamburgerOnOutside, true);
   }
@@ -3019,9 +3111,29 @@ function showNameSuggestions() {
   const keyword = keywordRaw.toLowerCase();
   const keywordHira = toHiragana(keywordRaw);
 
+  // 入力がない場合は検索履歴を表示
   if (!keyword) {
-    suggestionsDiv.style.display = 'none';
-    suggestionsDiv.innerHTML = '';
+    const history = getSearchHistory();
+    if (history.length === 0) {
+      suggestionsDiv.style.display = 'none';
+      suggestionsDiv.innerHTML = '';
+      suggestionActiveIndex = -1;
+      input.classList.remove('suggestions-active');
+      return;
+    }
+    
+    suggestionsDiv.innerHTML = history.map(historyKeyword => {
+      return `<div class="suggestion-item" onclick="useSearchHistory('${escapeHtml(historyKeyword).replace(/'/g, "\\'")}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #999;">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span style="flex: 1;">${escapeHtml(historyKeyword)}</span>
+      </div>`;
+    }).join('') + '<div class="suggestion-item" onclick="clearSearchHistory()" style="text-align: center; color: #ff6b6b; font-size: 12px; border-top: 1px solid #eee;">履歴をクリア</div>';
+    
+    suggestionsDiv.style.display = 'block';
+    input.classList.add('suggestions-active');
     suggestionActiveIndex = -1;
     return;
   }
@@ -3174,6 +3286,7 @@ function showNameSuggestions() {
     suggestionsDiv.style.display = 'none';
     suggestionsDiv.innerHTML = '';
     suggestionActiveIndex = -1;
+    input.classList.remove('suggestions-active');
     return;
   }
 
@@ -3196,6 +3309,7 @@ function showNameSuggestions() {
       onclick="selectSuggestion('${c.type}', '${c.searchValue.replace(/'/g, "\\'")}', ${c.type === 'character' ? c.id : 'null'})">${displayText}<span style="color:#888;font-size:0.9em;">${c.subtitle}</span></div>`;
   }).join('');
   suggestionsDiv.style.display = 'block';
+  input.classList.add('suggestions-active');
 }
 
 /**
@@ -3204,7 +3318,9 @@ function showNameSuggestions() {
 function selectSuggestion(type, searchValue, charId = null) {
   const searchInput = document.getElementById('searchName');
   searchInput.value = searchValue;
-  document.getElementById('nameSuggestions').style.display = 'none';
+  const suggestionsDiv = document.getElementById('nameSuggestions');
+  suggestionsDiv.style.display = 'none';
+  searchInput.classList.remove('suggestions-active');
   suggestionActiveIndex = -1;
   filterCharacters();
 }
@@ -3242,13 +3358,17 @@ function handleSuggestionKey(e) {
       items[suggestionActiveIndex].click();
     } else {
       // 候補が選択されていない場合、直接検索実行
+      const searchInput = document.getElementById('searchName');
       document.getElementById('nameSuggestions').style.display = 'none';
+      searchInput.classList.remove('suggestions-active');
       suggestionActiveIndex = -1;
       filterCharacters();
     }
   } else if (e.key === 'Escape') {
     // ESCキーで候補を閉じる
+    const searchInput = document.getElementById('searchName');
     document.getElementById('nameSuggestions').style.display = 'none';
+    searchInput.classList.remove('suggestions-active');
     suggestionActiveIndex = -1;
   }
 }
@@ -3268,21 +3388,43 @@ function updateSuggestionActive() {
 // 検索ボックスのクリアボタン表示制御
 const searchInput = document.getElementById('searchName');
 const clearBtn = document.getElementById('clearSearchBtn');
+const searchIconBtn = document.getElementById('searchIconBtn');
 if (searchInput && clearBtn) {
   // inputイベント: クリアボタン表示制御と予測候補表示
   searchInput.addEventListener('input', function() {
-    clearBtn.style.display = this.value ? 'flex' : 'none';
+    const hasValue = !!this.value;
+    clearBtn.style.display = hasValue ? 'flex' : 'none';
+    // 検索アイコンボタンの位置調整
+    if (searchIconBtn) {
+      if (hasValue) {
+        searchIconBtn.classList.remove('right-aligned');
+      } else {
+        searchIconBtn.classList.add('right-aligned');
+      }
+    }
     showNameSuggestions(); // 予測候補表示
   }, { passive: true });
   
   // 初期化時も
-  clearBtn.style.display = searchInput.value ? 'flex' : 'none';
-
-  // ▼追加: フォーカス時にキーワードがあれば予測候補を再表示
-  searchInput.addEventListener('focus', function() {
-    if (this.value && this.value.trim()) {
-      showNameSuggestions();
+  const hasInitialValue = !!searchInput.value;
+  clearBtn.style.display = hasInitialValue ? 'flex' : 'none';
+  if (searchIconBtn) {
+    // 初期状態設定時はトランジションを無効化
+    searchIconBtn.classList.add('no-transition');
+    if (hasInitialValue) {
+      searchIconBtn.classList.remove('right-aligned');
+    } else {
+      searchIconBtn.classList.add('right-aligned');
     }
+    // 少し遅らせてトランジションを有効化
+    setTimeout(() => {
+      searchIconBtn.classList.remove('no-transition');
+    }, 50);
+  }
+
+  // ▼追加: フォーカス時に検索履歴または予測候補を表示
+  searchInput.addEventListener('focus', function() {
+    showNameSuggestions();
   }, { passive: true });
   
   // キーボード操作のイベントリスナーを追加 (preventDefault使用のためpassive不可)
@@ -3302,6 +3444,9 @@ function clearSearchInput() {
   // ボタン非表示
   const clearBtn = document.getElementById('clearSearchBtn');
   if (clearBtn) clearBtn.style.display = 'none';
+  // 検索アイコンボタンを右寄せ
+  const searchIconBtn = document.getElementById('searchIconBtn');
+  if (searchIconBtn) searchIconBtn.classList.add('right-aligned');
 }
 
 // 入力欄外クリックで候補を閉じる
@@ -3311,6 +3456,7 @@ document.addEventListener('click', function(e) {
   const clearBtn = document.getElementById('clearSearchBtn');
   if (!input.contains(e.target) && !suggestionsDiv.contains(e.target) && (!clearBtn || !clearBtn.contains(e.target))) {
     suggestionsDiv.style.display = 'none';
+    input.classList.remove('suggestions-active');
     suggestionActiveIndex = -1;
   }
 }, { passive: true });
@@ -3615,7 +3761,7 @@ async function showNoteEditor(charId) {
   }
   
   const char = characters.find(c => c.id === charId);
-  const charName = char ? (currentDisplayLanguage === 'en' && char.nameEn ? char.nameEn[0] : char.name[0]) : '';
+  const charName = char ? (currentDisplayLanguage === 'en' && char.nameEn ? (Array.isArray(char.nameEn) ? char.nameEn[0] : char.nameEn) : (Array.isArray(char.name) ? char.name[0] : char.name)) : '';
   
   // 既存のモーダルを削除
   const existingModal = document.getElementById('noteEditorModal');
@@ -5393,7 +5539,7 @@ function toggleFavoriteFromContextMenu(charId) {
   // 通知を表示
   const isFavorite = favorites.includes(charId);
   const character = characters.find(c => c.id === charId);
-  const characterName = character ? (character.name ? character.name[0] : 'キャラクター') : 'キャラクター';
+  const characterName = character ? (character.name ? (Array.isArray(character.name) ? character.name[0] : character.name) : 'キャラクター') : 'キャラクター';
   showNotification(
     isFavorite ? `${characterName}をお気に入りに追加しました` : `${characterName}をお気に入りから削除しました`
   );
@@ -6989,3 +7135,274 @@ document.addEventListener('DOMContentLoaded', () => {
     filterInfoPopup.addEventListener('mouseleave', hideFilterInfoDelayed);
   }
 });
+
+// ===============================================
+// 閲覧履歴機能
+// ===============================================
+const VIEW_HISTORY_KEY = 'character_view_history';
+const MAX_HISTORY = 10;
+
+// 閲覧履歴を取得
+function getViewHistory() {
+  const history = localStorage.getItem(VIEW_HISTORY_KEY);
+  return history ? JSON.parse(history) : [];
+}
+
+// 閲覧履歴を保存
+function saveViewHistory(history) {
+  localStorage.setItem(VIEW_HISTORY_KEY, JSON.stringify(history));
+}
+
+// 閲覧履歴に追加
+function addToViewHistory(charId) {
+  let history = getViewHistory();
+  // 既存の同じIDを削除
+  history = history.filter(id => id !== charId);
+  // 先頭に追加
+  history.unshift(charId);
+  // 最大数を超えたら削除
+  if (history.length > MAX_HISTORY) {
+    history = history.slice(0, MAX_HISTORY);
+  }
+  saveViewHistory(history);
+  updateViewHistoryDisplay();
+}
+
+// 閲覧履歴の表示を更新
+function updateViewHistoryDisplay() {
+  const historyList = document.getElementById('viewHistoryList');
+  if (!historyList) return;
+  
+  const history = getViewHistory();
+  if (history.length === 0) {
+    historyList.innerHTML = 'まだ閲覧履歴がありません';
+    return;
+  }
+  
+  historyList.innerHTML = history.map((charId, index) => {
+    const char = characters.find(c => c.id === charId);
+    if (!char) return '';
+    const name = Array.isArray(char.name) ? char.name[0] : char.name;
+    return `<div class="history-item" onclick="showCharacterDetails(${charId})" style="animation-delay: ${index * 0.03}s">
+      <div class="history-item-text">${escapeHtml(name)}</div>
+    </div>`;
+  }).join('');
+}
+
+// 閲覧履歴をクリア
+function clearViewHistory() {
+  if (confirm('閲覧履歴をクリアしますか？')) {
+    localStorage.removeItem(VIEW_HISTORY_KEY);
+    updateViewHistoryDisplay();
+    addNotification('閲覧履歴をクリアしました', 'success');
+  }
+}
+
+// 閲覧履歴の折りたたみ切り替え
+function toggleViewHistory() {
+  const content = document.getElementById('viewHistoryContent');
+  const isCollapsed = content.classList.contains('collapsed');
+  
+  if (isCollapsed) {
+    content.classList.remove('collapsed');
+    updateViewHistoryDisplay();
+  } else {
+    content.classList.add('collapsed');
+  }
+}
+
+// ===============================================
+// 検索履歴機能
+// ===============================================
+const SEARCH_HISTORY_KEY = 'character_search_history';
+const MAX_SEARCH_HISTORY = 5;
+
+// 検索履歴を取得
+function getSearchHistory() {
+  const history = localStorage.getItem(SEARCH_HISTORY_KEY);
+  return history ? JSON.parse(history) : [];
+}
+
+// 検索履歴を保存
+function saveSearchHistory(history) {
+  localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+}
+
+// 検索履歴に追加
+function addToSearchHistory(keyword) {
+  if (!keyword || keyword.trim() === '') return;
+  
+  let history = getSearchHistory();
+  // 既存の同じキーワードを削除
+  history = history.filter(k => k !== keyword);
+  // 先頭に追加
+  history.unshift(keyword);
+  // 最大数を超えたら削除
+  if (history.length > MAX_SEARCH_HISTORY) {
+    history = history.slice(0, MAX_SEARCH_HISTORY);
+  }
+  saveSearchHistory(history);
+}
+
+// 検索履歴を使用
+function useSearchHistory(keyword) {
+  const searchInput = document.getElementById('searchName');
+  searchInput.value = keyword;
+  const suggestionsDiv = document.getElementById('nameSuggestions');
+  if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+  filterCharacters();
+}
+
+// 検索履歴をクリア
+function clearSearchHistory() {
+  localStorage.removeItem(SEARCH_HISTORY_KEY);
+  const suggestionsDiv = document.getElementById('nameSuggestions');
+  if (suggestionsDiv) {
+    suggestionsDiv.style.display = 'none';
+    suggestionsDiv.innerHTML = '';
+  }
+  addNotification('検索履歴をクリアしました', 'success');
+}
+
+// filterCharacters関数を拡張して検索履歴に追加
+const originalFilterCharacters = window.filterCharacters;
+if (originalFilterCharacters) {
+  window.filterCharacters = function() {
+    const searchInput = document.getElementById('searchName');
+    if (searchInput && searchInput.value.trim()) {
+      addToSearchHistory(searchInput.value.trim());
+    }
+    return originalFilterCharacters.apply(this, arguments);
+  };
+}
+
+// ===============================================
+// カードサイズ調整機能
+// ===============================================
+const CARD_SIZE_KEY = 'character_card_size';
+
+// カードサイズを取得
+function getCardSize() {
+  return localStorage.getItem(CARD_SIZE_KEY) || 'normal';
+}
+
+// カードサイズを保存
+function saveCardSize(size) {
+  localStorage.setItem(CARD_SIZE_KEY, size);
+}
+
+// カードサイズを切り替え
+function toggleCardSize() {
+  const sizes = ['normal', 'small'];
+  const current = getCardSize();
+  const currentIndex = sizes.indexOf(current);
+  const nextIndex = (currentIndex + 1) % sizes.length;
+  const nextSize = sizes[nextIndex];
+  
+  // bodyのクラスを更新
+  document.body.classList.remove('card-size-small');
+  if (nextSize !== 'normal') {
+    document.body.classList.add(`card-size-${nextSize}`);
+  }
+  
+  saveCardSize(nextSize);
+  updateCardSizeStatus();
+  
+  // カードを再描画
+  filterCharacters();
+  
+  addNotification(`カードサイズ: ${getSizeLabel(nextSize)}`, 'info');
+}
+
+// サイズラベルを取得
+function getSizeLabel(size) {
+  const labels = { normal: '通常', small: '小' };
+  return labels[size] || '通常';
+}
+
+// カードサイズステータスを更新
+function updateCardSizeStatus() {
+  const status = document.getElementById('cardSizeStatus');
+  if (status) {
+    status.textContent = getSizeLabel(getCardSize());
+  }
+}
+
+// 初期化時にカードサイズを適用
+document.addEventListener('DOMContentLoaded', () => {
+  const size = getCardSize();
+  if (size !== 'normal') {
+    document.body.classList.add(`card-size-${size}`);
+  }
+  updateCardSizeStatus();
+});
+
+// ===============================================
+// キーボードショートカット
+// ===============================================
+document.addEventListener('keydown', (e) => {
+  // 入力欄にフォーカスがある場合は無視
+  const activeElement = document.activeElement;
+  const isInputFocused = activeElement && (
+    activeElement.tagName === 'INPUT' ||
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.isContentEditable
+  );
+  
+  // / キー: 検索にフォーカス
+  if (e.key === '/' && !isInputFocused) {
+    e.preventDefault();
+    const searchInput = document.getElementById('searchName');
+    if (searchInput) {
+      searchInput.focus();
+      showNameSuggestions();
+    }
+  }
+  
+  // Escキー: 詳細を閉じる、または検索履歴を閉じる
+  if (e.key === 'Escape') {
+    const detailsPopup = document.getElementById('detailsPopup');
+    const searchHistory = document.getElementById('searchHistory');
+    
+    if (detailsPopup && detailsPopup.style.display === 'block') {
+      closeDetailsPopup();
+    } else if (searchHistory && searchHistory.style.display === 'block') {
+      searchHistory.style.display = 'none';
+    } else if (isInputFocused && activeElement.id === 'searchName') {
+      activeElement.blur();
+    }
+  }
+  
+  // 詳細画面が開いている場合のキーボードナビゲーション
+  const detailsPopup = document.getElementById('detailsPopup');
+  if (detailsPopup && detailsPopup.style.display === 'block' && !isInputFocused) {
+    // 左矢印: 前のキャラ
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prevBtn = document.querySelector('.detail-nav-btn.prev');
+      if (prevBtn) prevBtn.click();
+    }
+    // 右矢印: 次のキャラ
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const nextBtn = document.querySelector('.detail-nav-btn.next');
+      if (nextBtn) nextBtn.click();
+    }
+  }
+});
+
+// グローバル関数として公開
+window.toggleViewHistory = toggleViewHistory;
+window.clearViewHistory = clearViewHistory;
+window.toggleCardSize = toggleCardSize;
+window.useSearchHistory = useSearchHistory;
+window.clearSearchHistory = clearSearchHistory;
+
+// showCharacterDetails関数を拡張して閲覧履歴に追加
+const originalShowCharacterDetails = window.showCharacterDetails;
+if (originalShowCharacterDetails) {
+  window.showCharacterDetails = function(charId, imgIndex) {
+    addToViewHistory(charId);
+    return originalShowCharacterDetails.call(this, charId, imgIndex);
+  };
+}
